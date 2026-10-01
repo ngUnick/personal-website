@@ -2,7 +2,15 @@
 
 ## Status
 
-The application architecture has not been implemented. The decisions below distinguish accepted product constraints from provisional technical direction.
+The initial walking skeleton is implemented. It validates the chosen frontend, API, SSR, and feature-boundary shape without introducing persistence or administration concerns.
+
+## Implemented baseline
+
+- `apps/web` is a standalone Angular application using TypeScript, SCSS, server-side rendering, and client hydration.
+- `apps/api` is a NestJS REST API with a global `/api` prefix and OpenAPI documentation.
+- The first vertical slice is `GET /api/projects` → typed Angular projects data-access boundary → runtime server-rendered and hydrated `/projects` route. Browsers use same-origin `/api`; the server API origin is configured with `API_BASE_URL` and has a local development fallback.
+- `GET /api/health` is intentionally deterministic and contains no infrastructure dependency checks.
+- The API remains a modular monolith. The projects service currently owns one explicit in-memory placeholder record; it has no repository or persistence abstraction yet.
 
 ## Accepted constraints
 
@@ -14,9 +22,9 @@ The application architecture has not been implemented. The decisions below disti
 
 ## Provisional technical direction
 
-The present leading option is an Angular and TypeScript frontend with SSR/hydration and SCSS, paired with a Node.js and NestJS REST API documented through OpenAPI. The expected shape is a modular monolith with PostgreSQL, object storage for media, and server-side sessions secured by HttpOnly cookies.
+Angular SSR/hydration, SCSS, NestJS REST, OpenAPI, and the modular-monolith direction are now validated by the first walking skeleton. See [ADR 0001](adr/0001-use-angular-and-nestjs-for-the-initial-application.md).
 
-These are not implementation commitments. They will be validated through ADRs when application work begins.
+PostgreSQL, object storage for media, server-side sessions secured by HttpOnly cookies, CI/CD, hosting, and the remainder of the public and administration experiences remain provisional and unimplemented.
 
 ## Deliberately out of scope for now
 

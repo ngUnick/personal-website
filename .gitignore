@@ -17,3 +17,10 @@ Desktop.ini
 *.log
 *.tmp
 *.temp
+
+# JavaScript tooling
+node_modules/
+dist/
+.angular/
+coverage/
+*.tsbuildinfo
