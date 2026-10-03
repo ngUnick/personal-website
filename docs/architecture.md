@@ -2,7 +2,7 @@
 
 ## Status
 
-The initial walking skeleton is implemented. It validates the chosen frontend, API, SSR, and feature-boundary shape without introducing persistence or administration concerns.
+The initial walking skeleton now includes a narrow PostgreSQL persistence slice for projects. It validates the frontend, API, SSR, feature boundary, and durable projects read path without introducing administration concerns.
 
 ## Implemented baseline
 
@@ -10,7 +10,8 @@ The initial walking skeleton is implemented. It validates the chosen frontend, A
 - `apps/api` is a NestJS REST API with a global `/api` prefix and OpenAPI documentation.
 - The first vertical slice is `GET /api/projects` → typed Angular projects data-access boundary → runtime server-rendered and hydrated `/projects` route. Browsers use same-origin `/api`; the server API origin is configured with `API_BASE_URL` and has a local development fallback.
 - `GET /api/health` is intentionally deterministic and contains no infrastructure dependency checks.
-- The API remains a modular monolith. The projects service currently owns one explicit in-memory placeholder record; it has no repository or persistence abstraction yet.
+- The API remains a modular monolith. `ProjectsService` depends only on a projects persistence boundary; its Drizzle implementation reads published projects from PostgreSQL. API DTOs are intentionally separate from Drizzle table and row types.
+- Docker Compose provides the local PostgreSQL database. Versioned Drizzle migrations define the schema, and a deterministic development-only seed provides the explicit fake placeholder project.
 
 ## Accepted constraints
 
@@ -24,7 +25,7 @@ The initial walking skeleton is implemented. It validates the chosen frontend, A
 
 Angular SSR/hydration, SCSS, NestJS REST, OpenAPI, and the modular-monolith direction are now validated by the first walking skeleton. See [ADR 0001](adr/0001-use-angular-and-nestjs-for-the-initial-application.md).
 
-PostgreSQL, object storage for media, server-side sessions secured by HttpOnly cookies, CI/CD, hosting, and the remainder of the public and administration experiences remain provisional and unimplemented.
+PostgreSQL with Drizzle is implemented for the initial projects read path; see [ADR 0002](adr/0002-use-postgresql-and-drizzle-for-project-persistence.md). Object storage for media, server-side sessions secured by HttpOnly cookies, CD, hosting, and the remainder of the public and administration experiences remain provisional and unimplemented.
 
 ## Deliberately out of scope for now
 

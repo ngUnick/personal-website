@@ -10,7 +10,7 @@ export class ProjectsController {
 
   @Get()
   @ApiOkResponse({ type: ProjectResponseDto, isArray: true })
-  getProjects(): ProjectResponseDto[] {
+  async getProjects(): Promise<ProjectResponseDto[]> {
     return this.projectsService.getProjects();
   }
 }

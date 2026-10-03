@@ -12,6 +12,21 @@ jobs:
   verify:
     name: Test and build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://personal_website:personal_website@localhost:5432/personal_website
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: personal_website
+          POSTGRES_USER: personal_website
+          POSTGRES_PASSWORD: personal_website
+        options: >-
+          --health-cmd "pg_isready -U personal_website -d personal_website"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -24,6 +39,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply database migrations
+        run: npm run db:migrate --workspace=@personal-website/api
+
+      - name: Seed deterministic development data
+        run: npm run db:seed --workspace=@personal-website/api
 
       - name: Run tests
         run: npm test

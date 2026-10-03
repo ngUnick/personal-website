@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ProjectResponseDto } from './project-response.dto.js';
+import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
+import type { ProjectsPersistence } from './projects.persistence.js';
 
 @Injectable()
 export class ProjectsService {
-  getProjects(): ProjectResponseDto[] {
-    return [{
-      slug: 'placeholder-project',
-      title: 'Placeholder Project',
-      summary: 'Temporary sample content used to validate the application path.',
-    }];
+  constructor(@Inject(PROJECTS_PERSISTENCE) private readonly projectsPersistence: ProjectsPersistence) {}
+
+  async getProjects(): Promise<ProjectResponseDto[]> {
+    return this.projectsPersistence.findPublished();
   }
 }

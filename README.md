@@ -17,13 +17,22 @@ The first walking skeleton is implemented:
 
 The displayed project is temporary sample content used only to validate the application path; it is not portfolio content.
 
+Projects are now persisted in PostgreSQL through a narrow API-side data-access boundary. The included seed creates only the same clearly fake placeholder record used by the walking skeleton.
+
 ## Development
 
 Prerequisites: Node.js 26 or a compatible version supported by the included Angular and NestJS toolchain.
 
+Docker Engine and Docker Compose are required for the local PostgreSQL database.
+
 ```sh
 npm install
+docker compose up -d
+npm run db:migrate --workspace=@personal-website/api
+npm run db:seed --workspace=@personal-website/api
 ```
+
+`db:migrate` applies committed schema migrations; it does not synchronize the schema automatically. `db:seed` is deterministic development-only data and refuses to run with `NODE_ENV=production`.
 
 Run the API and web application in separate terminals:
 
@@ -40,6 +49,8 @@ Useful commands:
 npm test
 npm run build
 ```
+
+Stop the local database with `docker compose down`. Add `-v` only when you intentionally want to remove the local database volume.
 
 OpenAPI documentation is available at `/api/docs` while the API is running.
 
