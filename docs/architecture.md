@@ -12,6 +12,7 @@ The initial walking skeleton now includes a narrow PostgreSQL persistence slice 
 - `GET /api/health` is intentionally deterministic and contains no infrastructure dependency checks.
 - The API remains a modular monolith. `ProjectsService` depends only on a projects persistence boundary; its Drizzle implementation reads published projects from PostgreSQL. API DTOs are intentionally separate from Drizzle table and row types.
 - Docker Compose provides the local PostgreSQL database. Versioned Drizzle migrations define the schema, and a deterministic development-only seed provides the explicit fake placeholder project.
+- Experience is a separate feature with its own publication enum, persistence boundary, public DTO, and SSR `/experience` listing. Its deterministic seed is explicitly fictional and does not represent personal career data.
 
 ## Accepted constraints
 

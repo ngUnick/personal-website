@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
-import { projects } from './schema.js';
+import { experiences, projects } from './schema.js';
 
 if (process.env.NODE_ENV === 'production') {
   throw new Error('The development seed must not run in production.');
@@ -31,6 +31,33 @@ try {
           'Temporary sample content used to validate the application path.',
         status: 'published',
         featured: true,
+        displayOrder: 0,
+      },
+    });
+
+  await db
+    .insert(experiences)
+    .values({
+      id: '00000000-0000-4000-8000-000000000010',
+      organization: 'Example Software Studio',
+      role: 'Example Software Engineer',
+      summary:
+        'Fictional development fixture used to validate the public experience path.',
+      startDate: '2024-01-01',
+      endDate: null,
+      status: 'published',
+      displayOrder: 0,
+    })
+    .onConflictDoUpdate({
+      target: experiences.id,
+      set: {
+        organization: 'Example Software Studio',
+        role: 'Example Software Engineer',
+        summary:
+          'Fictional development fixture used to validate the public experience path.',
+        startDate: '2024-01-01',
+        endDate: null,
+        status: 'published',
         displayOrder: 0,
       },
     });

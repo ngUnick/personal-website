@@ -6,6 +6,8 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { apiBaseUrlProvider } from './core/api-base-url';
 import { ProjectsDataAccess } from './projects/projects.data-access';
 import { ProjectsHttpService } from './projects/projects-http.service';
+import { ExperienceDataAccess } from './experience/experience.data-access';
+import { ExperienceHttpService } from './experience/experience-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,5 +17,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     apiBaseUrlProvider,
     { provide: ProjectsDataAccess, useClass: ProjectsHttpService },
-  ]
+    { provide: ExperienceDataAccess, useClass: ExperienceHttpService },
+  ],
 };

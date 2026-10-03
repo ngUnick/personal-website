@@ -1,0 +1,31 @@
+<main class="experience-page">
+  <header>
+    <p class="eyebrow">Professional path</p>
+    <h1>Experience</h1>
+    <p class="intro">
+      Fictional development entries used to validate this public portfolio section.
+    </p>
+  </header>
+  <section aria-labelledby="experience-heading">
+    <h2 id="experience-heading">Selected experience</h2>
+    <ol>
+      @for (experience of experiences(); track experience.organization + experience.role) {
+        <li>
+          <article>
+            <h3>{{ experience.role }}</h3>
+            <p class="organization">{{ experience.organization }}</p>
+            <p>{{ experience.summary }}</p>
+            <p class="dates">
+              <time [attr.datetime]="experience.startDate">{{ experience.startDate }}</time> –
+              @if (experience.endDate) {
+                <time [attr.datetime]="experience.endDate">{{ experience.endDate }}</time>
+              } @else {
+                Present
+              }
+            </p>
+          </article>
+        </li>
+      }
+    </ol>
+  </section>
+</main>

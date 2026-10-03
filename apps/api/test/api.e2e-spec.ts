@@ -50,6 +50,21 @@ describe('API (e2e)', () => {
         },
       ]));
 
+  it('returns the deterministic published experience fixture', () =>
+    request(app.getHttpServer())
+      .get('/api/experience')
+      .expect(200)
+      .expect([
+        {
+          organization: 'Example Software Studio',
+          role: 'Example Software Engineer',
+          summary:
+            'Fictional development fixture used to validate the public experience path.',
+          startDate: '2024-01-01',
+          endDate: null,
+        },
+      ]));
+
   it('returns a published project by slug', () =>
     request(app.getHttpServer())
       .get('/api/projects/placeholder-project')
