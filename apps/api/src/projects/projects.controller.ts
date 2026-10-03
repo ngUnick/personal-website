@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param } from '@nestjs/common';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ProjectResponseDto } from './project-response.dto.js';
 import { ProjectsService } from './projects.service.js';
 
@@ -12,5 +12,12 @@ export class ProjectsController {
   @ApiOkResponse({ type: ProjectResponseDto, isArray: true })
   async getProjects(): Promise<ProjectResponseDto[]> {
     return this.projectsService.getProjects();
+  }
+
+  @Get(':slug')
+  @ApiOkResponse({ type: ProjectResponseDto })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  async getProject(@Param('slug') slug: string): Promise<ProjectResponseDto> {
+    return this.projectsService.getProject(slug);
   }
 }

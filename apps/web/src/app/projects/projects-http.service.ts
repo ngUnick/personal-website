@@ -12,4 +12,8 @@ export class ProjectsHttpService extends ProjectsDataAccess {
   getProjects(): Observable<Project[]> {
     return this.http.get<Project[]>(`${this.apiBaseUrl}/projects`);
   }
+
+  getProject(slug: string): Observable<Project> {
+    return this.http.get<Project>(`${this.apiBaseUrl}/projects/${slug}`);
+  }
 }

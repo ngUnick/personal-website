@@ -1,0 +1,11 @@
+<main class="project-detail-page">
+  <a routerLink="/projects">Back to projects</a>
+
+  @if (project(); as project) {
+    <article>
+      <p class="eyebrow">Project detail</p>
+      <h1>{{ project.title }}</h1>
+      <p class="summary">{{ project.summary }}</p>
+    </article>
+  }
+</main>

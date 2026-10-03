@@ -1,26 +1,23 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { ProjectDetailPage } from './project-detail.page';
 import { ProjectsDataAccess } from './projects.data-access';
-import { ProjectsPage } from './projects.page';
 
-describe('ProjectsPage', () => {
-  it('renders projects from its data-access boundary', async () => {
+describe('ProjectDetailPage', () => {
+  it('renders a project from its data-access boundary', async () => {
     await TestBed.configureTestingModule({
-      imports: [ProjectsPage],
+      imports: [ProjectDetailPage],
       providers: [
         provideRouter([]),
         {
+          provide: ActivatedRoute,
+          useValue: { paramMap: of(convertToParamMap({ slug: 'placeholder-project' })) },
+        },
+        {
           provide: ProjectsDataAccess,
           useValue: {
-            getProjects: () =>
-              of([
-                {
-                  slug: 'placeholder-project',
-                  title: 'Placeholder Project',
-                  summary: 'Temporary sample content used to validate the application path.',
-                },
-              ]),
+            getProjects: () => of([]),
             getProject: () =>
               of({
                 slug: 'placeholder-project',
@@ -31,16 +28,14 @@ describe('ProjectsPage', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(ProjectsPage);
+
+    const fixture = TestBed.createComponent(ProjectDetailPage);
     fixture.detectChanges();
     await fixture.whenStable();
+
     expect(fixture.nativeElement.textContent).toContain('Placeholder Project');
     expect(fixture.nativeElement.textContent).toContain(
       'Temporary sample content used to validate the application path.',
     );
-    const projectLink = fixture.nativeElement.querySelector(
-      'a[href="/projects/placeholder-project"]',
-    );
-    expect(projectLink?.getAttribute('aria-label')).toBe('View Placeholder Project');
   });
 });

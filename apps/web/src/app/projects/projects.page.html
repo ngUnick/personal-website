@@ -12,6 +12,9 @@
         <article class="project-card">
           <h3>{{ project.title }}</h3>
           <p>{{ project.summary }}</p>
+          <a [routerLink]="['/projects', project.slug]" [attr.aria-label]="'View ' + project.title"
+            >View project</a
+          >
         </article>
       }
     </div>

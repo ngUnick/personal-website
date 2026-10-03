@@ -8,4 +8,5 @@ export interface Project {
 
 export abstract class ProjectsDataAccess {
   abstract getProjects(): Observable<Project[]>;
+  abstract getProject(slug: string): Observable<Project>;
 }
