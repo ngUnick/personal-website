@@ -6,6 +6,7 @@ export type PersistedProject = {
 
 export interface ProjectsPersistence {
   findPublished(): Promise<PersistedProject[]>;
+  findFeaturedPublished(): Promise<PersistedProject[]>;
   findPublishedBySlug(slug: string): Promise<PersistedProject | undefined>;
 }
 

@@ -14,6 +14,10 @@ export class ProjectsService {
     return this.projectsPersistence.findPublished();
   }
 
+  async getFeaturedProjects(): Promise<ProjectResponseDto[]> {
+    return this.projectsPersistence.findFeaturedPublished();
+  }
+
   async getProject(slug: string): Promise<ProjectResponseDto> {
     const project = await this.projectsPersistence.findPublishedBySlug(slug);
 

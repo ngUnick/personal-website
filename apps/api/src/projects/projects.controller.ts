@@ -1,5 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ProjectResponseDto } from './project-response.dto.js';
 import { ProjectsService } from './projects.service.js';
 
@@ -10,7 +15,19 @@ export class ProjectsController {
 
   @Get()
   @ApiOkResponse({ type: ProjectResponseDto, isArray: true })
-  async getProjects(): Promise<ProjectResponseDto[]> {
+  @ApiQuery({
+    name: 'featured',
+    required: false,
+    type: Boolean,
+    description: 'When true, return only featured published projects.',
+  })
+  async getProjects(
+    @Query('featured') featured?: string,
+  ): Promise<ProjectResponseDto[]> {
+    if (featured === 'true') {
+      return this.projectsService.getFeaturedProjects();
+    }
+
     return this.projectsService.getProjects();
   }
 

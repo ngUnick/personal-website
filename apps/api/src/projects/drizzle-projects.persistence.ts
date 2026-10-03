@@ -23,6 +23,18 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .orderBy(asc(projects.displayOrder));
   }
 
+  async findFeaturedPublished(): Promise<PersistedProject[]> {
+    return this.database.db
+      .select({
+        slug: projects.slug,
+        title: projects.title,
+        summary: projects.summary,
+      })
+      .from(projects)
+      .where(and(eq(projects.status, 'published'), eq(projects.featured, true)))
+      .orderBy(asc(projects.displayOrder));
+  }
+
   async findPublishedBySlug(
     slug: string,
   ): Promise<PersistedProject | undefined> {

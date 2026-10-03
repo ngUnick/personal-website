@@ -13,6 +13,10 @@ export class ProjectsHttpService extends ProjectsDataAccess {
     return this.http.get<Project[]>(`${this.apiBaseUrl}/projects`);
   }
 
+  getFeaturedProjects(): Observable<Project[]> {
+    return this.http.get<Project[]>(`${this.apiBaseUrl}/projects?featured=true`);
+  }
+
   getProject(slug: string): Observable<Project> {
     return this.http.get<Project>(`${this.apiBaseUrl}/projects/${slug}`);
   }

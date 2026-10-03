@@ -46,4 +46,24 @@ describe('ProjectsHttpService', () => {
     });
     http.verify();
   });
+
+  it('requests featured projects from the API boundary', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        ProjectsHttpService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
+    const service = TestBed.inject(ProjectsHttpService);
+    const http = TestBed.inject(HttpTestingController);
+
+    service.getFeaturedProjects().subscribe();
+
+    const request = http.expectOne('/api/projects?featured=true');
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+    http.verify();
+  });
 });

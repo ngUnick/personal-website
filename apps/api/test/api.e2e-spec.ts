@@ -37,6 +37,19 @@ describe('API (e2e)', () => {
         },
       ]));
 
+  it('returns the featured published placeholder project', () =>
+    request(app.getHttpServer())
+      .get('/api/projects?featured=true')
+      .expect(200)
+      .expect([
+        {
+          slug: 'placeholder-project',
+          title: 'Placeholder Project',
+          summary:
+            'Temporary sample content used to validate the application path.',
+        },
+      ]));
+
   it('returns a published project by slug', () =>
     request(app.getHttpServer())
       .get('/api/projects/placeholder-project')

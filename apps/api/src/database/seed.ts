@@ -17,18 +17,20 @@ try {
       id: '00000000-0000-4000-8000-000000000001',
       slug: 'placeholder-project',
       title: 'Placeholder Project',
-      summary: 'Temporary sample content used to validate the application path.',
+      summary:
+        'Temporary sample content used to validate the application path.',
       status: 'published',
-      featured: false,
+      featured: true,
       displayOrder: 0,
     })
     .onConflictDoUpdate({
       target: projects.slug,
       set: {
         title: 'Placeholder Project',
-        summary: 'Temporary sample content used to validate the application path.',
+        summary:
+          'Temporary sample content used to validate the application path.',
         status: 'published',
-        featured: false,
+        featured: true,
         displayOrder: 0,
       },
     });

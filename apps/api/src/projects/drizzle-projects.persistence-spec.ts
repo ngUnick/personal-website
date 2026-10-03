@@ -47,6 +47,53 @@ describe('DrizzleProjectsPersistence', () => {
     });
   });
 
+  it('reads only featured published projects', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleProjectsPersistence],
+    }).compile();
+
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+    const database = moduleFixture.get(DatabaseService);
+
+    await database.db.insert(projects).values({
+      id: '00000000-0000-4000-8000-000000000003',
+      slug: 'featured-draft-project',
+      title: 'Featured Draft Project',
+      summary: 'Fake draft content used only for persistence verification.',
+      status: 'draft',
+      featured: true,
+      displayOrder: 1,
+    });
+    await database.db.insert(projects).values({
+      id: '00000000-0000-4000-8000-000000000004',
+      slug: 'non-featured-published-project',
+      title: 'Non-featured Published Project',
+      summary: 'Fake published content used only for persistence verification.',
+      status: 'published',
+      featured: false,
+      displayOrder: 2,
+    });
+
+    try {
+      await expect(persistence.findFeaturedPublished()).resolves.toEqual([
+        {
+          slug: 'placeholder-project',
+          title: 'Placeholder Project',
+          summary:
+            'Temporary sample content used to validate the application path.',
+        },
+      ]);
+    } finally {
+      await database.db
+        .delete(projects)
+        .where(eq(projects.slug, 'featured-draft-project'));
+      await database.db
+        .delete(projects)
+        .where(eq(projects.slug, 'non-featured-published-project'));
+    }
+  });
+
   it('does not expose a draft project by slug', async () => {
     moduleFixture = await Test.createTestingModule({
       imports: [DatabaseModule],

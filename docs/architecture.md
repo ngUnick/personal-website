@@ -8,7 +8,7 @@ The initial walking skeleton now includes a narrow PostgreSQL persistence slice 
 
 - `apps/web` is a standalone Angular application using TypeScript, SCSS, server-side rendering, and client hydration.
 - `apps/api` is a NestJS REST API with a global `/api` prefix and OpenAPI documentation.
-- The public projects read path exposes `GET /api/projects` and `GET /api/projects/:slug` through a typed Angular projects data-access boundary. The server-rendered and hydrated `/projects` list navigates to `/projects/:slug` detail routes. Browsers use same-origin `/api`; the server API origin is configured with `API_BASE_URL` and has a local development fallback.
+- The public projects read path exposes `GET /api/projects`, optional featured selection through `GET /api/projects?featured=true`, and `GET /api/projects/:slug` through a typed Angular projects data-access boundary. The server-rendered and hydrated home page presents featured projects, while `/projects` navigates to `/projects/:slug` detail routes. Browsers use same-origin `/api`; the server API origin is configured with `API_BASE_URL` and has a local development fallback.
 - `GET /api/health` is intentionally deterministic and contains no infrastructure dependency checks.
 - The API remains a modular monolith. `ProjectsService` depends only on a projects persistence boundary; its Drizzle implementation reads published projects from PostgreSQL. API DTOs are intentionally separate from Drizzle table and row types.
 - Docker Compose provides the local PostgreSQL database. Versioned Drizzle migrations define the schema, and a deterministic development-only seed provides the explicit fake placeholder project.

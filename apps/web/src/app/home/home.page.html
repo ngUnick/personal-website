@@ -1,0 +1,27 @@
+<main class="home-page">
+  <header>
+    <p class="eyebrow">Software engineering portfolio</p>
+    <h1>Building thoughtful web software.</h1>
+    <p class="intro">
+      A development portfolio shell that will be populated with approved professional content later.
+    </p>
+  </header>
+
+  <section aria-labelledby="featured-projects-heading">
+    <div class="section-heading">
+      <h2 id="featured-projects-heading">Featured projects</h2>
+      <a routerLink="/projects">View all projects</a>
+    </div>
+    <div class="projects-grid">
+      @for (project of featuredProjects(); track project.slug) {
+        <article class="project-card">
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.summary }}</p>
+          <a [routerLink]="['/projects', project.slug]" [attr.aria-label]="'View ' + project.title"
+            >View project</a
+          >
+        </article>
+      }
+    </div>
+  </section>
+</main>
