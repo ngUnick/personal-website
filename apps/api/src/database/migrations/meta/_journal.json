@@ -15,6 +15,13 @@
       "when": 1791052236269,
       "tag": "0001_mushy_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791052928251,
+      "tag": "0002_living_susan_delgado",
+      "breakpoints": true
     }
   ]
 }

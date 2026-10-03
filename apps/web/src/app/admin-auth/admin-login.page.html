@@ -1,0 +1,22 @@
+<main>
+  <h1>Admin login</h1>
+  <p>Development-only access to the future CMS shell.</p>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Identifier
+      <input formControlName="loginIdentifier" autocomplete="username" />
+    </label>
+    <label>
+      Password
+      <input
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+      />
+    </label>
+    <button type="submit">Sign in</button>
+    @if (failed) {
+      <p role="alert">Unable to sign in.</p>
+    }
+  </form>
+</main>

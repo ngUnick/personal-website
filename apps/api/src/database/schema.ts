@@ -73,3 +73,41 @@ export const experiences = pgTable(
     ),
   ],
 );
+
+export const adminUsers = pgTable(
+  'admin_users',
+  {
+    id: uuid('id').primaryKey(),
+    loginIdentifier: text('login_identifier').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('admin_users_login_identifier_unique').on(
+      table.loginIdentifier,
+    ),
+  ],
+);
+
+export const adminSessions = pgTable(
+  'admin_sessions',
+  {
+    id: uuid('id').primaryKey(),
+    tokenHash: text('token_hash').notNull(),
+    adminUserId: uuid('admin_user_id')
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('admin_sessions_token_hash_unique').on(table.tokenHash),
+  ],
+);

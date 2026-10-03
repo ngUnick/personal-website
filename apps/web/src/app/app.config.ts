@@ -8,6 +8,8 @@ import { ProjectsDataAccess } from './projects/projects.data-access';
 import { ProjectsHttpService } from './projects/projects-http.service';
 import { ExperienceDataAccess } from './experience/experience.data-access';
 import { ExperienceHttpService } from './experience/experience-http.service';
+import { AdminAuthDataAccess } from './admin-auth/admin-auth.data-access';
+import { AdminAuthHttpService } from './admin-auth/admin-auth-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -18,5 +20,6 @@ export const appConfig: ApplicationConfig = {
     apiBaseUrlProvider,
     { provide: ProjectsDataAccess, useClass: ProjectsHttpService },
     { provide: ExperienceDataAccess, useClass: ExperienceHttpService },
+    { provide: AdminAuthDataAccess, useClass: AdminAuthHttpService },
   ],
 };

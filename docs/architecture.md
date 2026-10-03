@@ -13,6 +13,7 @@ The initial walking skeleton now includes a narrow PostgreSQL persistence slice 
 - The API remains a modular monolith. `ProjectsService` depends only on a projects persistence boundary; its Drizzle implementation reads published projects from PostgreSQL. API DTOs are intentionally separate from Drizzle table and row types.
 - Docker Compose provides the local PostgreSQL database. Versioned Drizzle migrations define the schema, and a deterministic development-only seed provides the explicit fake placeholder project.
 - Experience is a separate feature with its own publication enum, persistence boundary, public DTO, and SSR `/experience` listing. Its deterministic seed is explicitly fictional and does not represent personal career data.
+- The private CMS uses a single-admin opaque server-session foundation. Password hashes and session-token hashes are stored in PostgreSQL; the browser receives an HttpOnly session cookie. See [ADR 0003](adr/0003-use-opaque-server-sessions-for-single-admin-authentication.md).
 
 ## Accepted constraints
 
