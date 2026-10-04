@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import { sql } from 'drizzle-orm';
 import { and, asc, eq } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service.js';
 import { projects } from '../database/schema.js';
@@ -92,5 +94,19 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
+  }
+
+  async createDraft(input: { slug: string; title: string; summary: string }) {
+    return this.database.db.transaction(async (transaction) => {
+      const [order] = await transaction
+        .select({ value: sql<number>`coalesce(max(${projects.displayOrder}), -1)` })
+        .from(projects);
+      const [project] = await transaction
+        .insert(projects)
+        .values({ id: randomUUID(), ...input, status: 'draft', featured: false, displayOrder: order.value + 1 })
+        .onConflictDoNothing({ target: projects.slug })
+        .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      return project;
+    });
   }
 }

@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions } from '../src/database/schema.js';
+import { adminSessions, projects } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -267,6 +267,31 @@ describe('API (e2e)', () => {
       await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(404);
     } finally {
       await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
+  it('creates a server-owned fictional draft through the protected CMS boundary', async () => {
+    const slug = 'fictional-created-project';
+    const input = { slug, title: 'Fictional Created Project', summary: 'Fake content used only to validate project creation.' };
+    await request(app.getHttpServer()).post('/api/admin/projects').send(input).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.post('/api/admin/projects').send(input).expect(403);
+    await agent.post('/api/admin/projects').set('Origin', 'https://untrusted.example').send(input).expect(403);
+    await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ title: input.title, summary: input.summary }).expect(400);
+    await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, title: '' }).expect(400);
+    await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, summary: '' }).expect(400);
+    await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, slug: 'Invalid Slug' }).expect(400);
+    try {
+      await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, status: 'published', featured: true, displayOrder: 0, id: '00000000-0000-4000-8000-000000000099' }).expect(201).expect(({ body }) => {
+        expect(body).toEqual({ ...input, status: 'draft', featured: false });
+      });
+      await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send(input).expect(409);
+      await agent.get(`/api/admin/projects/${slug}`).expect(200).expect({ ...input, status: 'draft', featured: false });
+      await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body.find((project: { slug: string }) => project.slug === slug)).toBeUndefined());
+      await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect(({ body }) => expect(body.find((project: { slug: string }) => project.slug === slug)).toBeUndefined());
+      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(404);
+    } finally {
+      await app.get(DatabaseService).db.delete(projects).where(eq(projects.slug, slug));
     }
   });
 });

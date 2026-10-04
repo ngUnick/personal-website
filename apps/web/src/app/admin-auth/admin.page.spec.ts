@@ -1,7 +1,7 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AdminProjectsDataAccess } from '../admin/admin-projects.data-access';
 import { AdminAuthDataAccess } from './admin-auth.data-access';
 import { AdminPage } from './admin.page';
@@ -12,7 +12,7 @@ describe('AdminPage', () => {
     const fixture = TestBed.createComponent(AdminPage);
     fixture.detectChanges();
     await fixture.whenStable();
-    const button = fixture.nativeElement.querySelector('button');
+    const button = fixture.nativeElement.querySelector('[aria-label="Toggle featured for Placeholder Project"]');
     expect(button?.getAttribute('aria-label')).toBe('Toggle featured for Placeholder Project');
     expect(button?.getAttribute('aria-pressed')).toBe('true');
     expect(fixture.nativeElement.querySelectorAll('article').length).toBe(2);
@@ -33,5 +33,26 @@ describe('AdminPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(sessionChecks).toBe(0);
+  });
+
+  it('creates a draft with only the editable creation fields then opens its editor', async () => {
+    const navigations: string[] = [];
+    let created: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: (url: string) => { navigations.push(url); return Promise.resolve(true); } } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProjects: () => of([]), createDraft: (input: unknown) => { created = input; return of({ slug: 'fictional-new-project', title: 'Fictional New Project', summary: 'Fake summary', status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.createForm.setValue({ slug: 'fictional-new-project', title: 'Fictional New Project', summary: 'Fake summary' }); component.createDraft();
+    expect(created).toEqual({ slug: 'fictional-new-project', title: 'Fictional New Project', summary: 'Fake summary' });
+    expect(navigations).toEqual(['/admin/projects/fictional-new-project/edit']);
+  });
+
+  it('does not create an invalid draft and renders creation failures accessibly', async () => {
+    let calls = 0;
+    await TestBed.configureTestingModule({ imports: [AdminPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProjects: () => of([]), createDraft: () => { calls += 1; return throwError(() => new Error('create failed')); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.createDraft(); expect(calls).toBe(0);
+    component.createForm.setValue({ slug: 'fictional-new-project', title: 'Fictional New Project', summary: 'Fake summary' }); component.createDraft(); fixture.detectChanges();
+    expect(calls).toBe(1);
+    const alert = fixture.nativeElement.querySelector('[role="alert"]'); expect(alert?.textContent).toContain('Unable to create the project draft');
   });
 });

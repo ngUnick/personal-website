@@ -123,4 +123,20 @@ describe('DrizzleProjectsPersistence', () => {
         .where(eq(projects.slug, 'draft-project'));
     }
   });
+
+  it('creates an unfeatured draft after existing projects and handles duplicate slugs', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const input = { slug: 'persistence-created-draft', title: 'Persistence Created Draft', summary: 'Fake content used only for creation verification.' };
+    try {
+      const created = await persistence.createDraft(input);
+      expect(created).toMatchObject({ ...input, status: 'draft', featured: false });
+      expect(created?.displayOrder).toBeGreaterThan(1);
+      await expect(persistence.createDraft(input)).resolves.toBeUndefined();
+      await expect(persistence.findPublishedBySlug(input.slug)).resolves.toBeUndefined();
+    } finally {
+      await database.db.delete(projects).where(eq(projects.slug, input.slug));
+    }
+  });
 });

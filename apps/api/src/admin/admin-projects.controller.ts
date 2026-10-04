@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ProjectsService } from '../projects/projects.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
@@ -8,6 +8,7 @@ import { UpdateProjectFeaturedDto } from './update-project-featured.dto.js';
 import { AdminProjectDetailResponseDto } from './admin-project-detail-response.dto.js';
 import { UpdateProjectContentDto } from './update-project-content.dto.js';
 import { UpdateProjectStatusDto } from './update-project-status.dto.js';
+import { CreateProjectDraftDto } from './create-project-draft.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -20,6 +21,21 @@ export class AdminProjectsController {
   @UseGuards(AdminSessionGuard)
   async list() {
     return this.projects.getAdminProjects();
+  }
+
+  @Post()
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: CreateProjectDraftDto })
+  @ApiCreatedResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiConflictResponse({ description: 'Project slug already exists.' })
+  async createDraft(@Body() body: CreateProjectDraftDto) {
+    const slug = typeof body?.slug === 'string' ? body.slug.trim() : '';
+    const title = typeof body?.title === 'string' ? body.title.trim() : '';
+    const summary = typeof body?.summary === 'string' ? body.summary.trim() : '';
+    if (!slug || !title || !summary || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new BadRequestException('A lowercase kebab-case slug, title, and summary are required.');
+    return this.projects.createDraft(slug, title, summary);
   }
 
   @Get(':slug')

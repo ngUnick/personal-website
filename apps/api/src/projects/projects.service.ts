@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectResponseDto } from './project-response.dto.js';
 import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
 import type { ProjectsPersistence } from './projects.persistence.js';
@@ -64,6 +64,12 @@ export class ProjectsService {
   async updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminProjectDetail> {
     const project = await this.projectsPersistence.updateStatus(slug, status);
     if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
+  async createDraft(slug: string, title: string, summary: string): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.createDraft({ slug, title, summary });
+    if (!project) throw new ConflictException('Project slug already exists.');
     return this.toAdminProjectDetail(project);
   }
 
