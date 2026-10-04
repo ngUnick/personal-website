@@ -66,7 +66,7 @@ describe('DrizzleProjectsPersistence', () => {
       displayOrder: 1,
     });
     await database.db.insert(projects).values({
-      id: '00000000-0000-4000-8000-000000000004',
+      id: '00000000-0000-4000-8000-000000000006',
       slug: 'non-featured-published-project',
       title: 'Non-featured Published Project',
       summary: 'Fake published content used only for persistence verification.',
