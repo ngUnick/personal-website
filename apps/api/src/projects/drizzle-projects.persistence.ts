@@ -50,4 +50,20 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
 
     return project;
   }
+
+  async findForAdmin() {
+    return this.database.db
+      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+      .from(projects)
+      .orderBy(asc(projects.displayOrder));
+  }
+
+  async updateFeatured(slug: string, featured: boolean) {
+    const [project] = await this.database.db
+      .update(projects)
+      .set({ featured, updatedAt: new Date() })
+      .where(eq(projects.slug, slug))
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+    return project;
+  }
 }

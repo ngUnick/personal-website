@@ -7,7 +7,7 @@ import {
 import type { Request, Response } from 'express';
 import { AdminAuthService, sessionCookieName } from './admin-auth.service.js';
 
-const getCookie = (request: Request) =>
+export const getCookie = (request: Request) =>
   request.headers.cookie
     ?.split(';')
     .map((part) => part.trim())

@@ -6,6 +6,10 @@ export default defineConfig({
   test: {
     globals: true,
     root: './',
-    include: ['**/*.e2e-spec.ts', '**/*.persistence-spec.ts'],
+    include: [
+      '**/*.e2e-spec.ts',
+      '**/*.persistence-spec.ts',
+      '**/*.guard.spec.ts',
+    ],
   },
 });

@@ -23,6 +23,15 @@ describe('API (e2e)', () => {
 
   afterEach(async () => app.close());
 
+  const authenticatedAgent = async () => {
+    const agent = request.agent(app.getHttpServer());
+    await agent
+      .post('/api/admin-auth/login')
+      .send({ loginIdentifier: 'fake-admin', password: 'development-only-password' })
+      .expect(200);
+    return agent;
+  };
+
   it('returns a deterministic health response', () =>
     request(app.getHttpServer())
       .get('/api/health')
@@ -184,4 +193,35 @@ describe('API (e2e)', () => {
     request(app.getHttpServer())
       .get('/api/projects/unknown-project')
       .expect(404));
+
+  it('keeps private project administration behind an authenticated session', async () => {
+    await request(app.getHttpServer()).get('/api/admin/projects').expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/projects').expect(200).expect(({ body }) => {
+      const [project] = body;
+      expect(project).toMatchObject({ slug: 'placeholder-project', status: 'published', featured: true });
+      expect(project).not.toHaveProperty('passwordHash');
+      expect(project).not.toHaveProperty('tokenHash');
+    });
+  });
+
+  it('requires a trusted origin and changes only a project featured state', async () => {
+    await request(app.getHttpServer()).patch('/api/admin/projects/placeholder-project/featured').send({ featured: false }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch('/api/admin/projects/placeholder-project/featured').send({ featured: false }).expect(403);
+    await agent.patch('/api/admin/projects/placeholder-project/featured').set('Origin', 'https://untrusted.example').send({ featured: false }).expect(403);
+    try {
+      await agent.patch('/api/admin/projects/placeholder-project/featured').set('Origin', 'http://localhost:4200').send({ featured: false }).expect(200).expect(({ body }) => {
+        expect(body).toEqual({ slug: 'placeholder-project', title: 'Placeholder Project', status: 'published', featured: false });
+      });
+      await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect([]);
+    } finally {
+      await agent.patch('/api/admin/projects/placeholder-project/featured').set('Origin', 'http://localhost:4200').send({ featured: true }).expect(200);
+    }
+  });
+
+  it('returns 404 for an authenticated update of an unknown project', async () => {
+    const agent = await authenticatedAgent();
+    await agent.patch('/api/admin/projects/unknown/featured').set('Origin', 'http://localhost:4200').send({ featured: false }).expect(404);
+  });
 });

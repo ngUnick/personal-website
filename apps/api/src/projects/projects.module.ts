@@ -11,5 +11,6 @@ import { ProjectsService } from './projects.service.js';
     DrizzleProjectsPersistence,
     { provide: PROJECTS_PERSISTENCE, useExisting: DrizzleProjectsPersistence },
   ],
+  exports: [ProjectsService],
 })
 export class ProjectsModule {}

@@ -16,4 +16,4 @@ The application has no registration, role model, external identity provider, or 
 
 ## Consequences
 
-Server-side sessions can be revoked and expired centrally, but require PostgreSQL for authenticated requests. Before authenticated write endpoints are introduced, the application must add CSRF protection appropriate to its final same-origin/deployment design; this authentication slice does not claim to provide that protection.
+Server-side sessions can be revoked and expired centrally, but require PostgreSQL for authenticated requests. The first authenticated write uses a reusable trusted-origin guard: browser-facing mutations require an `Origin` matching `TRUSTED_WEB_ORIGIN`, whose local development default is the Angular development origin. Final deployment must configure the web/API origin consistently.

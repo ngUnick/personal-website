@@ -50,6 +50,11 @@ export class AdminAuthService {
       ? { authenticated: true, loginIdentifier: session.loginIdentifier }
       : { authenticated: false };
   }
+
+  async requireAuthenticated(token: string | undefined): Promise<void> {
+    const session = await this.getCurrent(token);
+    if (!session.authenticated) throw new UnauthorizedException();
+  }
   async logout(token: string | undefined): Promise<void> {
     if (token) await this.persistence.revokeSession(hashToken(token));
   }

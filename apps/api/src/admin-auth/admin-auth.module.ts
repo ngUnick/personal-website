@@ -13,5 +13,6 @@ import { DrizzleAdminAuthPersistence } from './drizzle-admin-auth.persistence.js
       useExisting: DrizzleAdminAuthPersistence,
     },
   ],
+  exports: [AdminAuthService],
 })
 export class AdminAuthModule {}
