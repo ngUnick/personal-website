@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectResponseDto } from './project-response.dto.js';
 import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
 import type { ProjectsPersistence } from './projects.persistence.js';
-import type { AdminPersistedProject } from './projects.persistence.js';
+import type { AdminPersistedProject, ProjectPublicationStatus } from './projects.persistence.js';
 
 export type AdminProject = Pick<
   AdminPersistedProject,
@@ -57,6 +57,12 @@ export class ProjectsService {
 
   async updateContent(slug: string, title: string, summary: string): Promise<AdminProjectDetail> {
     const project = await this.projectsPersistence.updateContent(slug, { title, summary });
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
+  async updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateStatus(slug, status);
     if (!project) throw new NotFoundException('Project not found.');
     return this.toAdminProjectDetail(project);
   }

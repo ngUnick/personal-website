@@ -84,4 +84,13 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
   }
+
+  async updateStatus(slug: string, status: 'draft' | 'published' | 'archived') {
+    const [project] = await this.database.db
+      .update(projects)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(projects.slug, slug))
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+    return project;
+  }
 }

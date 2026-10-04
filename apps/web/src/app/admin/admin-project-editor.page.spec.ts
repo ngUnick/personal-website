@@ -67,4 +67,22 @@ describe('AdminProjectEditorPage', () => {
     expect(alert).not.toBeNull();
     expect(alert.textContent).toContain('Unable to save project changes');
   });
+
+  it('updates publication status from the server response', async () => {
+    let requestedStatus: string | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), updateStatus: (_slug: string, status: string) => { requestedStatus = status; return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'published', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    const component = fixture.componentInstance as any; component.statusControl.setValue('published'); component.updateStatus(); fixture.detectChanges();
+    expect(requestedStatus).toBe('published');
+    expect(component.project.status).toBe('published');
+    expect(fixture.nativeElement.textContent).toContain('Status: published');
+  });
+
+  it('shows an accessible alert when a publication update fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), updateStatus: () => throwError(() => new Error('status failed')) } }]}).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    const component = fixture.componentInstance as any; component.updateStatus(); await fixture.whenStable(); fixture.detectChanges();
+    const alerts = [...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent);
+    expect(alerts).toContain('Unable to update publication status. Please try again.');
+  });
 });

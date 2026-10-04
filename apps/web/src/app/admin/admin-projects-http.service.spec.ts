@@ -33,6 +33,12 @@ describe('AdminProjectsHttpService', () => {
     expect(update.request.withCredentials).toBe(true);
     expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary' });
     update.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'draft', featured: false });
+    service.updateStatus('draft-placeholder-project', 'published').subscribe();
+    const status = http.expectOne('/api/admin/projects/draft-placeholder-project/status');
+    expect(status.request.method).toBe('PATCH');
+    expect(status.request.withCredentials).toBe(true);
+    expect(status.request.body).toEqual({ status: 'published' });
+    status.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'published', featured: false });
     http.verify();
   });
 });

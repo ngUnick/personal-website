@@ -7,6 +7,7 @@ import { AdminProjectResponseDto } from './admin-project-response.dto.js';
 import { UpdateProjectFeaturedDto } from './update-project-featured.dto.js';
 import { AdminProjectDetailResponseDto } from './admin-project-detail-response.dto.js';
 import { UpdateProjectContentDto } from './update-project-content.dto.js';
+import { UpdateProjectStatusDto } from './update-project-status.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -42,6 +43,19 @@ export class AdminProjectsController {
     const summary = typeof body.summary === 'string' ? body.summary.trim() : '';
     if (!title || !summary) throw new BadRequestException('Title and summary must be non-empty strings.');
     return this.projects.updateContent(slug, title, summary);
+  }
+
+  @Patch(':slug/status')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectStatusDto })
+  @ApiOkResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  async updateStatus(@Param('slug') slug: string, @Body() body: UpdateProjectStatusDto) {
+    const status = body?.status;
+    if (!['draft', 'published', 'archived'].includes(status)) throw new BadRequestException('A valid project publication status is required.');
+    return this.projects.updateStatus(slug, status);
   }
 
   @Patch(':slug/featured')
