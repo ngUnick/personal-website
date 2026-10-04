@@ -50,6 +50,28 @@ try {
     });
 
   await db
+    .insert(projects)
+    .values({
+      id: '00000000-0000-4000-8000-000000000004',
+      slug: 'draft-placeholder-project',
+      title: 'Draft Placeholder Project',
+      summary: 'Fictional draft content used only to validate private project authoring.',
+      status: 'draft',
+      featured: false,
+      displayOrder: 1,
+    })
+    .onConflictDoUpdate({
+      target: projects.slug,
+      set: {
+        title: 'Draft Placeholder Project',
+        summary: 'Fictional draft content used only to validate private project authoring.',
+        status: 'draft',
+        featured: false,
+        displayOrder: 1,
+      },
+    });
+
+  await db
     .insert(experiences)
     .values({
       id: '00000000-0000-4000-8000-000000000010',

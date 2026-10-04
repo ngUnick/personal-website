@@ -8,6 +8,10 @@ export type AdminProject = Pick<
   AdminPersistedProject,
   'slug' | 'title' | 'status' | 'featured'
 >;
+export type AdminProjectDetail = Pick<
+  AdminPersistedProject,
+  'slug' | 'title' | 'summary' | 'status' | 'featured'
+>;
 
 @Injectable()
 export class ProjectsService {
@@ -45,8 +49,25 @@ export class ProjectsService {
     return this.toAdminProject(project);
   }
 
+  async getAdminProject(slug: string): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.findForAdminBySlug(slug);
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
+  async updateContent(slug: string, title: string, summary: string): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateContent(slug, { title, summary });
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
   private toAdminProject(project: AdminPersistedProject): AdminProject {
     const { slug, title, status, featured } = project;
     return { slug, title, status, featured };
+  }
+
+  private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
+    const { slug, title, summary, status, featured } = project;
+    return { slug, title, summary, status, featured };
   }
 }

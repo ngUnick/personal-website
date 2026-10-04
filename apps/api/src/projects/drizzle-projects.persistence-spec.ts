@@ -104,7 +104,7 @@ describe('DrizzleProjectsPersistence', () => {
     const database = moduleFixture.get(DatabaseService);
 
     await database.db.insert(projects).values({
-      id: '00000000-0000-4000-8000-000000000002',
+      id: '00000000-0000-4000-8000-000000000005',
       slug: 'draft-project',
       title: 'Draft Project',
       summary: 'Fake draft content used only for persistence verification.',

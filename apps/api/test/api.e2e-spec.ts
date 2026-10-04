@@ -224,4 +224,24 @@ describe('API (e2e)', () => {
     const agent = await authenticatedAgent();
     await agent.patch('/api/admin/projects/unknown/featured').set('Origin', 'http://localhost:4200').send({ featured: false }).expect(404);
   });
+
+  it('keeps draft authoring private and changes only draft content', async () => {
+    await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+    await request(app.getHttpServer()).get('/api/admin/projects/draft-placeholder-project').expect(401);
+    await request(app.getHttpServer()).patch('/api/admin/projects/draft-placeholder-project/content').send({ title: 'Changed', summary: 'Changed' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/projects/draft-placeholder-project').expect(200).expect(({ body }) => {
+      expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', status: 'draft', featured: false });
+    });
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').send({ title: '', summary: 'Valid summary' }).expect(403);
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: '', summary: 'Valid summary' }).expect(400);
+    try {
+      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Edited Draft', summary: 'Edited fictional draft content.' }).expect(200).expect(({ body }) => {
+        expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited fictional draft content.', status: 'draft', featured: false });
+      });
+      await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+    } finally {
+      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.' }).expect(200);
+    }
+  });
 });

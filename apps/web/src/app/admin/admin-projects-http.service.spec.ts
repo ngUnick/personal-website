@@ -17,4 +17,22 @@ describe('AdminProjectsHttpService', () => {
     request.flush({ slug: 'placeholder-project', title: 'Placeholder Project', status: 'published', featured: false });
     http.verify();
   });
+
+  it('uses private credentialed detail and content endpoints', () => {
+    TestBed.configureTestingModule({ providers: [AdminProjectsHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
+    const service = TestBed.inject(AdminProjectsHttpService);
+    const http = TestBed.inject(HttpTestingController);
+    service.getProject('draft-placeholder-project').subscribe();
+    const detail = http.expectOne('/api/admin/projects/draft-placeholder-project');
+    expect(detail.request.method).toBe('GET');
+    expect(detail.request.withCredentials).toBe(true);
+    detail.flush({ slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', summary: 'Draft summary', status: 'draft', featured: false });
+    service.updateContent('draft-placeholder-project', { title: 'Edited Draft', summary: 'Edited summary' }).subscribe();
+    const update = http.expectOne('/api/admin/projects/draft-placeholder-project/content');
+    expect(update.request.method).toBe('PATCH');
+    expect(update.request.withCredentials).toBe(true);
+    expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary' });
+    update.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'draft', featured: false });
+    http.verify();
+  });
 });

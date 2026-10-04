@@ -58,10 +58,28 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .orderBy(asc(projects.displayOrder));
   }
 
+  async findForAdminBySlug(slug: string) {
+    const [project] = await this.database.db
+      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+      .from(projects)
+      .where(eq(projects.slug, slug))
+      .limit(1);
+    return project;
+  }
+
   async updateFeatured(slug: string, featured: boolean) {
     const [project] = await this.database.db
       .update(projects)
       .set({ featured, updatedAt: new Date() })
+      .where(eq(projects.slug, slug))
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+    return project;
+  }
+
+  async updateContent(slug: string, content: { title: string; summary: string }) {
+    const [project] = await this.database.db
+      .update(projects)
+      .set({ ...content, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
