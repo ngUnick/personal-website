@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ExperienceResponseDto } from './experience-response.dto.js';
 import { EXPERIENCE_PERSISTENCE } from './experience.persistence.js';
-import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience } from './experience.persistence.js';
+import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience, ExperiencePublicationStatus } from './experience.persistence.js';
 
 export type AdminExperience = Pick<AdminPersistedExperience, 'id' | 'organization' | 'role' | 'status'>;
 export type AdminExperienceDetail = Omit<AdminPersistedExperience, 'displayOrder'>;
@@ -29,6 +29,12 @@ export class ExperienceService {
 
   async updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminExperienceDetail> {
     const experience = await this.experiencePersistence.updateContent(id, content);
+    if (!experience) throw new NotFoundException('Experience not found.');
+    return this.toAdminDetail(experience);
+  }
+
+  async updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminExperienceDetail> {
+    const experience = await this.experiencePersistence.updateStatus(id, status);
     if (!experience) throw new NotFoundException('Experience not found.');
     return this.toAdminDetail(experience);
   }

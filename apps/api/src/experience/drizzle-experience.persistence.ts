@@ -7,6 +7,7 @@ import type {
   PersistedExperience,
   AdminPersistedExperience,
   ExperienceContentUpdate,
+  ExperiencePublicationStatus,
 } from './experience.persistence.js';
 
 @Injectable()
@@ -37,6 +38,11 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
 
   async updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminPersistedExperience | undefined> {
     await this.database.db.update(experiences).set({ ...content, updatedAt: new Date() }).where(eq(experiences.id, id));
+    return this.findForAdminById(id);
+  }
+
+  async updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined> {
+    await this.database.db.update(experiences).set({ status, updatedAt: new Date() }).where(eq(experiences.id, id));
     return this.findForAdminById(id);
   }
 

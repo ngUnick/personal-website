@@ -6,6 +6,7 @@ import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { AdminExperienceResponseDto } from './admin-experience-response.dto.js';
 import { AdminExperienceDetailResponseDto } from './admin-experience-detail-response.dto.js';
 import { UpdateExperienceContentDto } from './update-experience-content.dto.js';
+import { UpdateExperienceStatusDto } from './update-experience-status.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -47,5 +48,18 @@ export class AdminExperienceController {
     const endDate = body?.endDate === null ? null : typeof body?.endDate === 'string' ? body.endDate : undefined;
     if (!organization || !role || !summary || !isCalendarDate(startDate) || (endDate !== null && (!endDate || !isCalendarDate(endDate))) || (endDate !== null && endDate < startDate)) throw new BadRequestException('Valid experience content and chronological calendar dates are required.');
     return this.experience.updateContent(id, { organization, role, summary, startDate, endDate });
+  }
+
+  @Patch(':id/status')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceStatusDto })
+  @ApiOkResponse({ type: AdminExperienceDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async updateStatus(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceStatusDto) {
+    const status = body?.status;
+    if (!['draft', 'published', 'archived'].includes(status)) throw new BadRequestException('A valid experience publication status is required.');
+    return this.experience.updateStatus(id, status);
   }
 }

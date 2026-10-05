@@ -24,6 +24,7 @@ export interface ExperiencePersistence {
   findForAdmin(): Promise<AdminPersistedExperience[]>;
   findForAdminById(id: string): Promise<AdminPersistedExperience | undefined>;
   updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminPersistedExperience | undefined>;
+  updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined>;
 }
 
 export const EXPERIENCE_PERSISTENCE = Symbol('EXPERIENCE_PERSISTENCE');

@@ -9,4 +9,5 @@ export abstract class AdminExperienceDataAccess {
   abstract getExperiences(): Observable<AdminExperience[]>;
   abstract getExperience(id: string): Observable<AdminExperienceDetail>;
   abstract updateContent(id: string, content: ExperienceContentUpdate): Observable<AdminExperienceDetail>;
+  abstract updateStatus(id: string, status: ExperiencePublicationStatus): Observable<AdminExperienceDetail>;
 }

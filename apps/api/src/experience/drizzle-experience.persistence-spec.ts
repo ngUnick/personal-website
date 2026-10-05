@@ -108,4 +108,21 @@ describe('DrizzleExperiencePersistence', () => {
       await persistence.updateContent(draftId, original);
     }
   });
+
+  it('publishes and archives the draft without changing its content or order', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const draftId = '00000000-0000-4000-8000-000000000014';
+    const original = await persistence.findForAdminById(draftId);
+    expect(original?.status).toBe('draft');
+    try {
+      await expect(persistence.updateStatus(draftId, 'published')).resolves.toEqual({ ...original, status: 'published' });
+      await expect(persistence.findPublished()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ organization: original?.organization })]));
+      await expect(persistence.updateStatus(draftId, 'archived')).resolves.toEqual({ ...original, status: 'archived' });
+      await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: original?.organization }));
+      await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateStatus(draftId, 'draft');
+    }
+  });
 });

@@ -356,4 +356,26 @@ describe('API (e2e)', () => {
       await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send(original).expect(200);
     }
   });
+
+  it('changes Experience publication state through the protected lifecycle', async () => {
+    const id = '00000000-0000-4000-8000-000000000014';
+    const publicFixture = [{ organization: 'Example Software Studio', role: 'Example Software Engineer', summary: 'Fictional development fixture used to validate the public experience path.', startDate: '2024-01-01', endDate: null }];
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/status`).send({ status: 'published' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/experience/${id}/status`).send({ status: 'published' }).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'https://untrusted.example').send({ status: 'published' }).expect(403);
+    await agent.patch('/api/admin/experience/not-a-uuid/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(400);
+    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(404);
+    await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'invalid' }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 1 }).expect(400);
+    try {
+      await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200).expect(({ body }) => expect(body).toEqual({ id, organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null, status: 'published' }));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).toEqual([...publicFixture, { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null }]));
+      await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'archived' }).expect(200);
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(publicFixture);
+    } finally {
+      await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
 });
