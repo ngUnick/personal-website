@@ -89,7 +89,7 @@ describe('DrizzleExperiencePersistence', () => {
     const draftId = '00000000-0000-4000-8000-000000000014';
     const original = { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null };
     const before = await persistence.findForAdmin();
-    expect(before.map((experience) => experience.id)).toEqual([
+    expect(before.map((experience) => experience.id).slice(0, 2)).toEqual([
       '00000000-0000-4000-8000-000000000010',
       draftId,
     ]);
@@ -123,6 +123,27 @@ describe('DrizzleExperiencePersistence', () => {
       await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
     } finally {
       await persistence.updateStatus(draftId, 'draft');
+    }
+  });
+
+  it('creates a server-owned draft at the end of the private sequence', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const input = { organization: 'Temporary Creation Studio', role: 'Temporary Engineer', summary: 'Fictional temporary record for creation verification.', startDate: '2026-01-01', endDate: null };
+    const prior = await persistence.findForAdmin();
+    const created = await persistence.createDraft(input);
+    try {
+      expect(created).toMatchObject({
+        ...input,
+        status: 'draft',
+        displayOrder: Math.max(...prior.map((experience) => experience.displayOrder)) + 1,
+      });
+      expect(created.id).toMatch(/^[0-9a-f-]{36}$/i);
+      await expect(persistence.findForAdmin()).resolves.toEqual([...prior, created]);
+      await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: input.organization }));
+    } finally {
+      await database.db.delete(experiences).where(eq(experiences.id, created.id));
     }
   });
 });

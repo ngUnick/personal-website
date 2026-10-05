@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions, projects } from '../src/database/schema.js';
+import { adminSessions, experiences, projects } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -377,5 +377,31 @@ describe('API (e2e)', () => {
     } finally {
       await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
     }
+  });
+
+  it('creates a server-owned Experience draft through the protected CMS boundary', async () => {
+    const input = { organization: 'Temporary API Creation Studio', role: 'Temporary API Engineer', summary: 'Fictional content used only to validate Experience creation.', startDate: '2026-01-01', endDate: null };
+    await request(app.getHttpServer()).post('/api/admin/experience').send(input).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.post('/api/admin/experience').send(input).expect(403);
+    await agent.post('/api/admin/experience').set('Origin', 'https://untrusted.example').send(input).expect(403);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, organization: undefined }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, organization: 1 }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, role: undefined }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, role: 1 }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, summary: undefined }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, summary: 1 }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, startDate: undefined }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, startDate: 1 }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, endDate: 1 }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, startDate: '2026-02-31' }).expect(400);
+    await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, endDate: '2025-12-31' }).expect(400);
+    let id = '';
+    try {
+      await agent.post('/api/admin/experience').set('Origin', 'http://localhost:4200').send({ ...input, id: '00000000-0000-4000-8000-000000000099', status: 'published', displayOrder: 0 }).expect(201).expect(({ body }) => { id = body.id; expect(body).toEqual({ id: expect.any(String), ...input, status: 'draft' }); expect(id).not.toBe('00000000-0000-4000-8000-000000000099'); });
+      await agent.get(`/api/admin/experience/${id}`).expect(200).expect({ id, ...input, status: 'draft' });
+      await agent.get('/api/admin/experience').expect(200).expect(({ body }) => expect(body).toContainEqual({ id, organization: input.organization, role: input.role, status: 'draft' }));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: input.organization })));
+    } finally { if (id) await app.get(DatabaseService).db.delete(experiences).where(eq(experiences.id, id)); }
   });
 });

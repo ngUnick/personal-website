@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { experiences } from '../database/schema.js';
 import type {
@@ -8,6 +9,7 @@ import type {
   AdminPersistedExperience,
   ExperienceContentUpdate,
   ExperiencePublicationStatus,
+  CreateExperienceDraft,
 } from './experience.persistence.js';
 
 @Injectable()
@@ -44,6 +46,14 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
   async updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined> {
     await this.database.db.update(experiences).set({ status, updatedAt: new Date() }).where(eq(experiences.id, id));
     return this.findForAdminById(id);
+  }
+
+  async createDraft(input: CreateExperienceDraft): Promise<AdminPersistedExperience> {
+    return this.database.db.transaction(async (transaction) => {
+      const [order] = await transaction.select({ value: sql<number>`coalesce(max(${experiences.displayOrder}), -1)` }).from(experiences);
+      const [created] = await transaction.insert(experiences).values({ id: randomUUID(), ...input, status: 'draft', displayOrder: order.value + 1 }).returning(this.adminProjection);
+      return created;
+    });
   }
 
   private readonly adminProjection = {
