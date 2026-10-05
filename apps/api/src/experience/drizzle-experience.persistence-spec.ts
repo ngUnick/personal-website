@@ -146,4 +146,19 @@ describe('DrizzleExperiencePersistence', () => {
       await database.db.delete(experiences).where(eq(experiences.id, created.id));
     }
   });
+
+  it('moves adjacent Experience records without changing their content or status', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const firstId = '00000000-0000-4000-8000-000000000010'; const draftId = '00000000-0000-4000-8000-000000000014';
+    const original = await persistence.findForAdmin();
+    try {
+      await expect(persistence.moveExperience('00000000-0000-4000-8000-000000000099', 'up')).resolves.toBeUndefined();
+      const moved = await persistence.moveExperience(draftId, 'up');
+      expect(moved?.map((experience) => experience.id)).toEqual([draftId, firstId]);
+      expect(moved?.[0]).toMatchObject({ id: draftId, organization: 'Example Draft Studio', status: 'draft' });
+      await expect(persistence.moveExperience(draftId, 'up')).resolves.toEqual(moved);
+    } finally { await persistence.moveExperience(draftId, 'down'); }
+    await expect(persistence.findForAdmin()).resolves.toEqual(original);
+  });
 });

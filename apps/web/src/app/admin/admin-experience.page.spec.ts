@@ -33,9 +33,23 @@ describe('AdminExperiencePage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to create the experience draft');
   });
 
+  it('uses the authoritative response when moving an experience', async () => {
+    let moved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => of([{ id: 'first', organization: 'First', role: 'Engineer', status: 'published' }, { id: 'second', organization: 'Second', role: 'Engineer', status: 'draft' }]), moveExperience: (id: string, direction: string) => { moved = { id, direction }; return of([{ id: 'second', organization: 'Second', role: 'Engineer', status: 'draft' }, { id: 'first', organization: 'First', role: 'Engineer', status: 'published' }]); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperiencePage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    expect(fixture.nativeElement.querySelector('[aria-label="Move First up"]')?.disabled).toBe(true); expect(fixture.nativeElement.querySelector('[aria-label="Move Second down"]')?.disabled).toBe(true); component.moveExperience(component.experiences[1], 'up'); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    expect(moved).toEqual({ id: 'second', direction: 'up' }); expect(component.experiences.map((experience: { id: string }) => experience.id)).toEqual(['second', 'first']);
+  });
+
+  it('renders a distinct error when ordering fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => of([{ id: 'id', organization: 'Draft Studio', role: 'Engineer', status: 'draft' }]), moveExperience: () => throwError(() => new Error('failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperiencePage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any; component.moveExperience(component.experiences[0], 'down'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to update experience order');
+  });
+
   it('makes no SSR requests', async () => {
-    let sessions = 0; let dataCalls = 0; let createCalls = 0;
-    await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: false }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => { dataCalls += 1; return of([]); }, createDraft: () => { createCalls += 1; return of({}); } } }] }).compileComponents();
-    const fixture = TestBed.createComponent(AdminExperiencePage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0); expect(createCalls).toBe(0);
+    let sessions = 0; let dataCalls = 0; let createCalls = 0; let moveCalls = 0;
+    await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: false }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => { dataCalls += 1; return of([]); }, createDraft: () => { createCalls += 1; return of({}); }, moveExperience: () => { moveCalls += 1; return of([]); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperiencePage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0); expect(createCalls).toBe(0); expect(moveCalls).toBe(0);
   });
 });

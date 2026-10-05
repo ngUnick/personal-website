@@ -8,6 +8,7 @@ import { AdminExperienceDetailResponseDto } from './admin-experience-detail-resp
 import { UpdateExperienceContentDto } from './update-experience-content.dto.js';
 import { UpdateExperienceStatusDto } from './update-experience-status.dto.js';
 import { CreateExperienceDraftDto } from './create-experience-draft.dto.js';
+import { UpdateExperienceOrderDto } from './update-experience-order.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -76,5 +77,18 @@ export class AdminExperienceController {
     const status = body?.status;
     if (!['draft', 'published', 'archived'].includes(status)) throw new BadRequestException('A valid experience publication status is required.');
     return this.experience.updateStatus(id, status);
+  }
+
+  @Patch(':id/order')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceOrderDto })
+  @ApiOkResponse({ type: AdminExperienceResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async updateOrder(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceOrderDto) {
+    const direction = body?.direction;
+    if (direction !== 'up' && direction !== 'down') throw new BadRequestException('A valid experience order direction is required.');
+    return this.experience.moveExperience(id, direction);
   }
 }

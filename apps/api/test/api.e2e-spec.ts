@@ -379,6 +379,28 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('moves Experience through the protected adjacent ordering boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000014';
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/order`).send({ direction: 'up' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/experience/${id}/order`).send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'https://untrusted.example').send({ direction: 'up' }).expect(403);
+    await agent.patch('/api/admin/experience/not-a-uuid/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(400);
+    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(404);
+    await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'sideways' }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 1 }).expect(400);
+    try {
+      await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
+      await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect(({ body }) => { expect(body).toEqual([{ id, organization: 'Example Draft Studio', role: 'Example Draft Engineer', status: 'published' }, { id: '00000000-0000-4000-8000-000000000010', organization: 'Example Software Studio', role: 'Example Software Engineer', status: 'published' }]); expect(body[0]).not.toHaveProperty('displayOrder'); expect(body[0]).not.toHaveProperty('summary'); expect(body[0]).not.toHaveProperty('startDate'); expect(body[0]).not.toHaveProperty('updatedAt'); });
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body.map((item: { organization: string }) => item.organization)).toEqual(['Example Draft Studio', 'Example Software Studio']));
+      await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect(({ body }) => expect(body.map((item: { id: string }) => item.id)).toEqual([id, '00000000-0000-4000-8000-000000000010']));
+    } finally {
+      await agent.patch(`/api/admin/experience/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(200);
+      await agent.patch(`/api/admin/experience/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
   it('creates a server-owned Experience draft through the protected CMS boundary', async () => {
     const input = { organization: 'Temporary API Creation Studio', role: 'Temporary API Engineer', summary: 'Fictional content used only to validate Experience creation.', startDate: '2026-01-01', endDate: null };
     await request(app.getHttpServer()).post('/api/admin/experience').send(input).expect(401);

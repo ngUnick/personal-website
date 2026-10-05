@@ -5,6 +5,7 @@ export type AdminExperience = { id: string; organization: string; role: string; 
 export type AdminExperienceDetail = AdminExperience & { summary: string; startDate: string; endDate: string | null };
 export type ExperienceContentUpdate = Pick<AdminExperienceDetail, 'organization' | 'role' | 'summary' | 'startDate' | 'endDate'>;
 export type CreateExperienceDraft = ExperienceContentUpdate;
+export type ExperienceOrderDirection = 'up' | 'down';
 
 export abstract class AdminExperienceDataAccess {
   abstract getExperiences(): Observable<AdminExperience[]>;
@@ -12,4 +13,5 @@ export abstract class AdminExperienceDataAccess {
   abstract updateContent(id: string, content: ExperienceContentUpdate): Observable<AdminExperienceDetail>;
   abstract updateStatus(id: string, status: ExperiencePublicationStatus): Observable<AdminExperienceDetail>;
   abstract createDraft(input: CreateExperienceDraft): Observable<AdminExperienceDetail>;
+  abstract moveExperience(id: string, direction: ExperienceOrderDirection): Observable<AdminExperience[]>;
 }

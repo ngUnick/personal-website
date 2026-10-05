@@ -19,6 +19,7 @@ export type ExperienceContentUpdate = Pick<
   'organization' | 'role' | 'summary' | 'startDate' | 'endDate'
 >;
 export type CreateExperienceDraft = ExperienceContentUpdate;
+export type ExperienceOrderDirection = 'up' | 'down';
 
 export interface ExperiencePersistence {
   findPublished(): Promise<PersistedExperience[]>;
@@ -27,6 +28,7 @@ export interface ExperiencePersistence {
   updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminPersistedExperience | undefined>;
   updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined>;
   createDraft(input: CreateExperienceDraft): Promise<AdminPersistedExperience>;
+  moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined>;
 }
 
 export const EXPERIENCE_PERSISTENCE = Symbol('EXPERIENCE_PERSISTENCE');

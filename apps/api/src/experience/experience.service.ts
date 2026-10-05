@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ExperienceResponseDto } from './experience-response.dto.js';
 import { EXPERIENCE_PERSISTENCE } from './experience.persistence.js';
-import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience, ExperiencePublicationStatus, CreateExperienceDraft } from './experience.persistence.js';
+import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience, ExperiencePublicationStatus, CreateExperienceDraft, ExperienceOrderDirection } from './experience.persistence.js';
 
 export type AdminExperience = Pick<AdminPersistedExperience, 'id' | 'organization' | 'role' | 'status'>;
 export type AdminExperienceDetail = Omit<AdminPersistedExperience, 'displayOrder'>;
@@ -41,6 +41,12 @@ export class ExperienceService {
 
   async createDraft(input: CreateExperienceDraft): Promise<AdminExperienceDetail> {
     return this.toAdminDetail(await this.experiencePersistence.createDraft(input));
+  }
+
+  async moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminExperience[]> {
+    const experiences = await this.experiencePersistence.moveExperience(id, direction);
+    if (!experiences) throw new NotFoundException('Experience not found.');
+    return experiences.map(({ id, organization, role, status }) => ({ id, organization, role, status }));
   }
 
   private toAdminDetail(experience: AdminPersistedExperience): AdminExperienceDetail {

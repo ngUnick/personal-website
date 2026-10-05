@@ -10,6 +10,7 @@ import type {
   ExperienceContentUpdate,
   ExperiencePublicationStatus,
   CreateExperienceDraft,
+  ExperienceOrderDirection,
 } from './experience.persistence.js';
 
 @Injectable()
@@ -53,6 +54,20 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
       const [order] = await transaction.select({ value: sql<number>`coalesce(max(${experiences.displayOrder}), -1)` }).from(experiences);
       const [created] = await transaction.insert(experiences).values({ id: randomUUID(), ...input, status: 'draft', displayOrder: order.value + 1 }).returning(this.adminProjection);
       return created;
+    });
+  }
+
+  async moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined> {
+    return this.database.db.transaction(async (transaction) => {
+      const ordered = await transaction.select(this.adminProjection).from(experiences).orderBy(asc(experiences.displayOrder));
+      const index = ordered.findIndex((experience) => experience.id === id);
+      if (index === -1) return undefined;
+      const neighborIndex = direction === 'up' ? index - 1 : index + 1;
+      if (neighborIndex < 0 || neighborIndex >= ordered.length) return ordered;
+      const experience = ordered[index]; const neighbor = ordered[neighborIndex]; const now = new Date();
+      await transaction.update(experiences).set({ displayOrder: neighbor.displayOrder, updatedAt: now }).where(eq(experiences.id, experience.id));
+      await transaction.update(experiences).set({ displayOrder: experience.displayOrder, updatedAt: now }).where(eq(experiences.id, neighbor.id));
+      return transaction.select(this.adminProjection).from(experiences).orderBy(asc(experiences.displayOrder));
     });
   }
 
