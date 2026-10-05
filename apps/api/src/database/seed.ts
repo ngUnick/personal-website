@@ -101,6 +101,33 @@ try {
         displayOrder: 0,
       },
     });
+
+  await db
+    .insert(experiences)
+    .values({
+      id: '00000000-0000-4000-8000-000000000014',
+      organization: 'Example Draft Studio',
+      role: 'Example Draft Engineer',
+      summary:
+        'Fictional draft experience used only to validate private CMS authoring.',
+      startDate: '2025-01-01',
+      endDate: null,
+      status: 'draft',
+      displayOrder: 1,
+    })
+    .onConflictDoUpdate({
+      target: experiences.id,
+      set: {
+        organization: 'Example Draft Studio',
+        role: 'Example Draft Engineer',
+        summary:
+          'Fictional draft experience used only to validate private CMS authoring.',
+        startDate: '2025-01-01',
+        endDate: null,
+        status: 'draft',
+        displayOrder: 1,
+      },
+    });
 } finally {
   await pool.end();
 }

@@ -82,4 +82,30 @@ describe('DrizzleExperiencePersistence', () => {
         .where(eq(experiences.organization, 'Second Example Studio'));
     }
   });
+
+  it('supports private draft authoring without changing publication or order', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const draftId = '00000000-0000-4000-8000-000000000014';
+    const original = { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null };
+    const before = await persistence.findForAdmin();
+    expect(before.map((experience) => experience.id)).toEqual([
+      '00000000-0000-4000-8000-000000000010',
+      draftId,
+    ]);
+    await expect(persistence.findForAdminById(draftId)).resolves.toEqual({
+      id: draftId,
+      ...original,
+      status: 'draft',
+      displayOrder: 1,
+    });
+    await expect(persistence.findForAdminById('00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined();
+    try {
+      const updated = await persistence.updateContent(draftId, { organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31' });
+      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', displayOrder: 1 });
+      await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: 'Edited Draft Studio' }));
+    } finally {
+      await persistence.updateContent(draftId, original);
+    }
+  });
 });

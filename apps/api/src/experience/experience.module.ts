@@ -14,5 +14,6 @@ import { ExperienceService } from './experience.service.js';
       useExisting: DrizzleExperiencePersistence,
     },
   ],
+  exports: [ExperienceService],
 })
 export class ExperienceModule {}

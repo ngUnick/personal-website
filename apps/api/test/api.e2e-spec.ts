@@ -320,4 +320,40 @@ describe('API (e2e)', () => {
       await app.get(DatabaseService).db.delete(projects).where(eq(projects.slug, slug));
     }
   });
+
+  it('keeps Experience draft authoring private and server-owned', async () => {
+    const id = '00000000-0000-4000-8000-000000000014';
+    const original = { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null };
+    await request(app.getHttpServer()).get('/api/experience').expect(200).expect([{ organization: 'Example Software Studio', role: 'Example Software Engineer', summary: 'Fictional development fixture used to validate the public experience path.', startDate: '2024-01-01', endDate: null }]);
+    await request(app.getHttpServer()).get('/api/admin/experience').expect(401);
+    await request(app.getHttpServer()).get(`/api/admin/experience/${id}`).expect(401);
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/content`).send(original).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/experience/not-a-uuid').expect(400);
+    await agent.get('/api/admin/experience/00000000-0000-4000-8000-000000000099').expect(404);
+    await agent.patch(`/api/admin/experience/${id}/content`).send(original).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'https://untrusted.example').send(original).expect(403);
+    await agent.patch('/api/admin/experience/not-a-uuid/content').set('Origin', 'http://localhost:4200').send(original).expect(400);
+    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/content').set('Origin', 'http://localhost:4200').send(original).expect(404);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, organization: undefined }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, organization: 1 }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, role: undefined }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, role: 1 }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, summary: undefined }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, summary: 1 }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, startDate: undefined }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, startDate: 1 }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, endDate: 1 }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, startDate: '2026-02-31' }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, endDate: '2024-12-31' }).expect(400);
+    try {
+      await agent.get('/api/admin/experience').expect(200).expect(({ body }) => expect(body).toEqual(expect.arrayContaining([expect.objectContaining({ id, status: 'draft' })])));
+      await agent.get(`/api/admin/experience/${id}`).expect(200).expect(({ body }) => { expect(body).toEqual({ id, ...original, status: 'draft' }); expect(body).not.toHaveProperty('displayOrder'); expect(body).not.toHaveProperty('createdAt'); expect(body).not.toHaveProperty('updatedAt'); });
+      const edited = { organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft experience.', startDate: '2025-02-01', endDate: '2025-12-31' };
+      await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...edited, id: '00000000-0000-4000-8000-000000000099', status: 'published', displayOrder: 0 }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, ...edited, status: 'draft' }));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body.find((item: { organization: string }) => item.organization === edited.organization)).toBeUndefined());
+    } finally {
+      await agent.patch(`/api/admin/experience/${id}/content`).set('Origin', 'http://localhost:4200').send(original).expect(200);
+    }
+  });
 });
