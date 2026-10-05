@@ -12,6 +12,7 @@ export type AdminPersistedProject = PersistedProject & {
 export type ProjectPublicationStatus = 'draft' | 'published' | 'archived';
 export type ProjectContentUpdate = Pick<PersistedProjectDetail, 'title' | 'summary' | 'caseStudy'>;
 export type CreateProjectDraft = Pick<PersistedProject, 'slug' | 'title' | 'summary'>;
+export type ProjectOrderDirection = 'up' | 'down';
 
 export interface ProjectsPersistence {
   findPublished(): Promise<PersistedProject[]>;
@@ -22,6 +23,7 @@ export interface ProjectsPersistence {
   updateFeatured(slug: string, featured: boolean): Promise<AdminPersistedProject | undefined>;
   updateContent(slug: string, content: ProjectContentUpdate): Promise<AdminPersistedProject | undefined>;
   updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminPersistedProject | undefined>;
+  moveProject(slug: string, direction: ProjectOrderDirection): Promise<AdminPersistedProject[] | undefined>;
   createDraft(input: CreateProjectDraft): Promise<AdminPersistedProject | undefined>;
 }
 

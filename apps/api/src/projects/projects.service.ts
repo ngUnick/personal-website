@@ -3,7 +3,7 @@ import { ProjectResponseDto } from './project-response.dto.js';
 import { ProjectDetailResponseDto } from './project-detail-response.dto.js';
 import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
 import type { ProjectsPersistence } from './projects.persistence.js';
-import type { AdminPersistedProject, ProjectPublicationStatus } from './projects.persistence.js';
+import type { AdminPersistedProject, ProjectOrderDirection, ProjectPublicationStatus } from './projects.persistence.js';
 
 export type AdminProject = Pick<
   AdminPersistedProject,
@@ -66,6 +66,12 @@ export class ProjectsService {
     const project = await this.projectsPersistence.updateStatus(slug, status);
     if (!project) throw new NotFoundException('Project not found.');
     return this.toAdminProjectDetail(project);
+  }
+
+  async moveProject(slug: string, direction: ProjectOrderDirection): Promise<AdminProject[]> {
+    const projects = await this.projectsPersistence.moveProject(slug, direction);
+    if (!projects) throw new NotFoundException('Project not found.');
+    return projects.map((project) => this.toAdminProject(project));
   }
 
   async createDraft(slug: string, title: string, summary: string): Promise<AdminProjectDetail> {

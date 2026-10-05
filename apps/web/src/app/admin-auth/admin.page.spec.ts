@@ -16,6 +16,23 @@ describe('AdminPage', () => {
     expect(button?.getAttribute('aria-label')).toBe('Toggle featured for Placeholder Project');
     expect(button?.getAttribute('aria-pressed')).toBe('true');
     expect(fixture.nativeElement.querySelectorAll('article').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('[aria-label="Move Placeholder Project up"]')?.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[aria-label="Move Draft Placeholder Project down"]')?.disabled).toBe(true);
+  });
+
+  it('replaces the ordered list after a move and renders ordering errors accessibly', async () => {
+    let moved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProjects: () => of([{ slug: 'first', title: 'First', status: 'draft', featured: false }, { slug: 'second', title: 'Second', status: 'draft', featured: false }]), moveProject: (slug: string, direction: string) => { moved = { slug, direction }; return of([{ slug: 'second', title: 'Second', status: 'draft', featured: false }, { slug: 'first', title: 'First', status: 'draft', featured: false }]); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.moveProject(component.projects[1], 'up'); fixture.detectChanges();
+    expect(moved).toEqual({ slug: 'second', direction: 'up' }); expect(component.projects.map((project: { slug: string }) => project.slug)).toEqual(['second', 'first']);
+  });
+
+  it('renders an ordering failure accessibly', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProjects: () => of([{ slug: 'first', title: 'First', status: 'draft', featured: false }]), moveProject: () => throwError(() => new Error('order failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.moveProject(component.projects[0], 'down'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to update project order');
   });
 
   it('redirects an unauthenticated browser user to the login page', async () => {

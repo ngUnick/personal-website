@@ -47,4 +47,13 @@ describe('AdminProjectsHttpService', () => {
     create.flush({ slug: 'fictional-new-project', title: 'Fictional New Project', summary: 'Fake draft content.', status: 'draft', featured: false });
     http.verify();
   });
+
+  it('uses the credentialed adjacent ordering endpoint', () => {
+    TestBed.configureTestingModule({ providers: [AdminProjectsHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
+    const service = TestBed.inject(AdminProjectsHttpService); const http = TestBed.inject(HttpTestingController);
+    service.moveProject('placeholder-project', 'up').subscribe();
+    const request = http.expectOne('/api/admin/projects/placeholder-project/order');
+    expect(request.request.method).toBe('PATCH'); expect(request.request.withCredentials).toBe(true); expect(request.request.body).toEqual({ direction: 'up' });
+    request.flush([]); http.verify();
+  });
 });

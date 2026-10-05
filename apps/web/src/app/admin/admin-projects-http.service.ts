@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../core/api-base-url';
-import { AdminProject, AdminProjectDetail, AdminProjectsDataAccess, CreateProjectDraft, ProjectContentUpdate, ProjectPublicationStatus } from './admin-projects.data-access';
+import { AdminProject, AdminProjectDetail, AdminProjectsDataAccess, CreateProjectDraft, ProjectContentUpdate, ProjectOrderDirection, ProjectPublicationStatus } from './admin-projects.data-access';
 
 @Injectable()
 export class AdminProjectsHttpService extends AdminProjectsDataAccess {
@@ -14,4 +14,5 @@ export class AdminProjectsHttpService extends AdminProjectsDataAccess {
   updateContent(slug: string, content: ProjectContentUpdate): Observable<AdminProjectDetail> { return this.http.patch<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects/${slug}/content`, content, { withCredentials: true }); }
   updateStatus(slug: string, status: ProjectPublicationStatus): Observable<AdminProjectDetail> { return this.http.patch<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects/${slug}/status`, { status }, { withCredentials: true }); }
   createDraft(input: CreateProjectDraft): Observable<AdminProjectDetail> { return this.http.post<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects`, input, { withCredentials: true }); }
+  moveProject(slug: string, direction: ProjectOrderDirection): Observable<AdminProject[]> { return this.http.patch<AdminProject[]>(`${this.apiBaseUrl}/admin/projects/${slug}/order`, { direction }, { withCredentials: true }); }
 }

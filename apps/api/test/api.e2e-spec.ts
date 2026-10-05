@@ -226,6 +226,29 @@ describe('API (e2e)', () => {
     await agent.patch('/api/admin/projects/unknown/featured').set('Origin', 'http://localhost:4200').send({ featured: false }).expect(404);
   });
 
+  it('moves projects through the protected adjacent ordering boundary', async () => {
+    const slug = 'draft-placeholder-project';
+    await request(app.getHttpServer()).patch(`/api/admin/projects/${slug}/order`).send({ direction: 'up' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/projects/${slug}/order`).send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'https://untrusted.example').send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'sideways' }).expect(400);
+    await agent.patch('/api/admin/projects/unknown/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(404);
+    try {
+      await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
+      await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect(({ body }) => {
+        expect(body.map((project: { slug: string }) => project.slug).slice(0, 2)).toEqual([slug, 'placeholder-project']);
+      });
+      await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body.map((project: { slug: string }) => project.slug)).toEqual([slug, 'placeholder-project']));
+      await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect(({ body }) => expect(body.map((project: { slug: string }) => project.slug)).toEqual(['placeholder-project']));
+      await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect(({ body }) => expect(body.map((project: { slug: string }) => project.slug).slice(0, 2)).toEqual([slug, 'placeholder-project']));
+    } finally {
+      await agent.patch(`/api/admin/projects/${slug}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(200);
+      await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
   it('keeps draft authoring private and changes only draft content', async () => {
     await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
     await request(app.getHttpServer()).get('/api/admin/projects/draft-placeholder-project').expect(401);

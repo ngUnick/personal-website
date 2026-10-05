@@ -9,6 +9,7 @@ import { AdminProjectDetailResponseDto } from './admin-project-detail-response.d
 import { UpdateProjectContentDto } from './update-project-content.dto.js';
 import { UpdateProjectStatusDto } from './update-project-status.dto.js';
 import { CreateProjectDraftDto } from './create-project-draft.dto.js';
+import { UpdateProjectOrderDto } from './update-project-order.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -72,6 +73,19 @@ export class AdminProjectsController {
     const status = body?.status;
     if (!['draft', 'published', 'archived'].includes(status)) throw new BadRequestException('A valid project publication status is required.');
     return this.projects.updateStatus(slug, status);
+  }
+
+  @Patch(':slug/order')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectOrderDto })
+  @ApiOkResponse({ type: AdminProjectResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  async updateOrder(@Param('slug') slug: string, @Body() body: UpdateProjectOrderDto) {
+    const direction = body?.direction;
+    if (direction !== 'up' && direction !== 'down') throw new BadRequestException('A valid project order direction is required.');
+    return this.projects.moveProject(slug, direction);
   }
 
   @Patch(':slug/featured')

@@ -140,4 +140,20 @@ describe('DrizzleProjectsPersistence', () => {
       await database.db.delete(projects).where(eq(projects.slug, input.slug));
     }
   });
+
+  it('moves adjacent projects without changing their content or state', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence); const database = moduleFixture.get(DatabaseService);
+    const first = { id: '00000000-0000-4000-8000-000000000007', slug: 'order-first', title: 'Order First', summary: 'Fake order fixture.', status: 'draft' as const, featured: false, displayOrder: 20 };
+    const second = { ...first, id: '00000000-0000-4000-8000-000000000008', slug: 'order-second', title: 'Order Second', displayOrder: 21 };
+    await database.db.insert(projects).values([first, second]);
+    try {
+      expect(await persistence.moveProject('missing-order-project', 'up')).toBeUndefined();
+      const moved = await persistence.moveProject(second.slug, 'up');
+      expect(moved?.filter((project) => project.slug.startsWith('order-')).map((project) => project.slug)).toEqual([second.slug, first.slug]);
+      expect(moved?.find((project) => project.slug === second.slug)).toMatchObject({ title: second.title, status: second.status, featured: second.featured, summary: second.summary });
+      await persistence.moveProject(second.slug, 'down');
+      expect((await persistence.findForAdmin()).filter((project) => project.slug.startsWith('order-')).map((project) => project.slug)).toEqual([first.slug, second.slug]);
+    } finally { await database.db.delete(projects).where(eq(projects.slug, first.slug)); await database.db.delete(projects).where(eq(projects.slug, second.slug)); }
+  });
 });

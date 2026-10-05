@@ -7,6 +7,7 @@ import { projects } from '../database/schema.js';
 import {
   PersistedProject,
   PersistedProjectDetail,
+  ProjectOrderDirection,
   ProjectsPersistence,
 } from './projects.persistence.js';
 
@@ -96,6 +97,28 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
+  }
+
+  async moveProject(slug: string, direction: ProjectOrderDirection) {
+    return this.database.db.transaction(async (transaction) => {
+      const ordered = await transaction
+        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+        .from(projects)
+        .orderBy(asc(projects.displayOrder));
+      const index = ordered.findIndex((project) => project.slug === slug);
+      if (index === -1) return undefined;
+      const neighborIndex = direction === 'up' ? index - 1 : index + 1;
+      if (neighborIndex < 0 || neighborIndex >= ordered.length) return ordered;
+      const project = ordered[index];
+      const neighbor = ordered[neighborIndex];
+      const now = new Date();
+      await transaction.update(projects).set({ displayOrder: neighbor.displayOrder, updatedAt: now }).where(eq(projects.slug, project.slug));
+      await transaction.update(projects).set({ displayOrder: project.displayOrder, updatedAt: now }).where(eq(projects.slug, neighbor.slug));
+      return transaction
+        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+        .from(projects)
+        .orderBy(asc(projects.displayOrder));
+    });
   }
 
   async createDraft(input: { slug: string; title: string; summary: string }) {
