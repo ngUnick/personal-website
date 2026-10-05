@@ -1,5 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectResponseDto } from './project-response.dto.js';
+import { ProjectDetailResponseDto } from './project-detail-response.dto.js';
 import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
 import type { ProjectsPersistence } from './projects.persistence.js';
 import type { AdminPersistedProject, ProjectPublicationStatus } from './projects.persistence.js';
@@ -10,7 +11,7 @@ export type AdminProject = Pick<
 >;
 export type AdminProjectDetail = Pick<
   AdminPersistedProject,
-  'slug' | 'title' | 'summary' | 'status' | 'featured'
+  'slug' | 'title' | 'summary' | 'caseStudy' | 'status' | 'featured'
 >;
 
 @Injectable()
@@ -28,7 +29,7 @@ export class ProjectsService {
     return this.projectsPersistence.findFeaturedPublished();
   }
 
-  async getProject(slug: string): Promise<ProjectResponseDto> {
+  async getProject(slug: string): Promise<ProjectDetailResponseDto> {
     const project = await this.projectsPersistence.findPublishedBySlug(slug);
 
     if (!project) {
@@ -55,8 +56,8 @@ export class ProjectsService {
     return this.toAdminProjectDetail(project);
   }
 
-  async updateContent(slug: string, title: string, summary: string): Promise<AdminProjectDetail> {
-    const project = await this.projectsPersistence.updateContent(slug, { title, summary });
+  async updateContent(slug: string, title: string, summary: string, caseStudy: string): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateContent(slug, { title, summary, caseStudy });
     if (!project) throw new NotFoundException('Project not found.');
     return this.toAdminProjectDetail(project);
   }
@@ -79,7 +80,7 @@ export class ProjectsService {
   }
 
   private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
-    const { slug, title, summary, status, featured } = project;
-    return { slug, title, summary, status, featured };
+    const { slug, title, summary, caseStudy, status, featured } = project;
+    return { slug, title, summary, caseStudy, status, featured };
   }
 }

@@ -6,6 +6,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ProjectResponseDto } from './project-response.dto.js';
+import { ProjectDetailResponseDto } from './project-detail-response.dto.js';
 import { ProjectsService } from './projects.service.js';
 
 @ApiTags('projects')
@@ -32,9 +33,9 @@ export class ProjectsController {
   }
 
   @Get(':slug')
-  @ApiOkResponse({ type: ProjectResponseDto })
+  @ApiOkResponse({ type: ProjectDetailResponseDto })
   @ApiNotFoundResponse({ description: 'Project not found.' })
-  async getProject(@Param('slug') slug: string): Promise<ProjectResponseDto> {
+  async getProject(@Param('slug') slug: string): Promise<ProjectDetailResponseDto> {
     return this.projectsService.getProject(slug);
   }
 }

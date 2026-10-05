@@ -29,6 +29,7 @@ export const projects = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     summary: text('summary').notNull(),
+    caseStudy: text('case_study').notNull().default(''),
     status: projectPublicationStatus('status').notNull().default('draft'),
     featured: boolean('featured').notNull().default(false),
     displayOrder: integer('display_order').notNull(),

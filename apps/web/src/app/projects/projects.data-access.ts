@@ -5,9 +5,10 @@ export interface Project {
   title: string;
   summary: string;
 }
+export interface ProjectDetail extends Project { caseStudy: string; }
 
 export abstract class ProjectsDataAccess {
   abstract getProjects(): Observable<Project[]>;
   abstract getFeaturedProjects(): Observable<Project[]>;
-  abstract getProject(slug: string): Observable<Project>;
+  abstract getProject(slug: string): Observable<ProjectDetail>;
 }

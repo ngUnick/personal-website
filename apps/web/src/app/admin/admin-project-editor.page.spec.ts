@@ -26,10 +26,10 @@ describe('AdminProjectEditorPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const component = fixture.componentInstance as any;
-    component.form.setValue({ title: 'Client value', summary: 'Client summary' });
+    component.form.setValue({ title: 'Client value', summary: 'Client summary', caseStudy: 'Client narrative' });
     component.save();
     fixture.detectChanges();
-    expect(saved).toEqual({ title: 'Client value', summary: 'Client summary' });
+    expect(saved).toEqual({ title: 'Client value', summary: 'Client summary', caseStudy: 'Client narrative' });
     expect(component.project.summary).toBe('Server value');
   });
 
@@ -47,8 +47,17 @@ describe('AdminProjectEditorPage', () => {
     await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), updateContent: () => { updates += 1; return of({}); } } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
     const component = fixture.componentInstance as any;
-    component.form.setValue({ title: '', summary: '' }); component.save();
+    component.form.setValue({ title: '', summary: '', caseStudy: '' }); component.save();
     expect(updates).toBe(0);
+  });
+
+  it('submits a valid title and summary with a blank case study', async () => {
+    let saved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', status: 'draft', featured: false }), updateContent: (_slug: string, content: unknown) => { saved = content; return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.form.setValue({ title: 'Draft', summary: 'Summary', caseStudy: '' }); component.save();
+    expect(saved).toEqual({ title: 'Draft', summary: 'Summary', caseStudy: '' });
   });
 
   it('redirects an unauthenticated browser user and exposes save failures accessibly', async () => {
@@ -61,7 +70,7 @@ describe('AdminProjectEditorPage', () => {
   it('shows an alert when a save fails', async () => {
     await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), updateContent: () => throwError(() => new Error('save failed')) } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
-    const component = fixture.componentInstance as any; component.project = { slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }; fixture.detectChanges(); component.form.setValue({ title: 'Draft', summary: 'Summary' }); component.save(); await fixture.whenStable(); fixture.detectChanges();
+    const component = fixture.componentInstance as any; component.project = { slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', status: 'draft', featured: false }; fixture.detectChanges(); component.form.setValue({ title: 'Draft', summary: 'Summary', caseStudy: '' }); component.save(); await fixture.whenStable(); fixture.detectChanges();
     expect(component.saveError()).toBe(true);
     const alert = fixture.nativeElement.querySelector('[role="alert"]');
     expect(alert).not.toBeNull();

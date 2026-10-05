@@ -3,19 +3,20 @@ export type PersistedProject = {
   title: string;
   summary: string;
 };
+export type PersistedProjectDetail = PersistedProject & { caseStudy: string };
 export type AdminPersistedProject = PersistedProject & {
   status: ProjectPublicationStatus;
   featured: boolean;
   displayOrder: number;
-};
+} & { caseStudy: string };
 export type ProjectPublicationStatus = 'draft' | 'published' | 'archived';
-export type ProjectContentUpdate = Pick<PersistedProject, 'title' | 'summary'>;
+export type ProjectContentUpdate = Pick<PersistedProjectDetail, 'title' | 'summary' | 'caseStudy'>;
 export type CreateProjectDraft = Pick<PersistedProject, 'slug' | 'title' | 'summary'>;
 
 export interface ProjectsPersistence {
   findPublished(): Promise<PersistedProject[]>;
   findFeaturedPublished(): Promise<PersistedProject[]>;
-  findPublishedBySlug(slug: string): Promise<PersistedProject | undefined>;
+  findPublishedBySlug(slug: string): Promise<PersistedProjectDetail | undefined>;
   findForAdmin(): Promise<AdminPersistedProject[]>;
   findForAdminBySlug(slug: string): Promise<AdminPersistedProject | undefined>;
   updateFeatured(slug: string, featured: boolean): Promise<AdminPersistedProject | undefined>;

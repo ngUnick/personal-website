@@ -44,6 +44,7 @@ describe('DrizzleProjectsPersistence', () => {
       title: 'Placeholder Project',
       summary:
         'Temporary sample content used to validate the application path.',
+      caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
     });
   });
 
@@ -131,7 +132,7 @@ describe('DrizzleProjectsPersistence', () => {
     const input = { slug: 'persistence-created-draft', title: 'Persistence Created Draft', summary: 'Fake content used only for creation verification.' };
     try {
       const created = await persistence.createDraft(input);
-      expect(created).toMatchObject({ ...input, status: 'draft', featured: false });
+      expect(created).toMatchObject({ ...input, caseStudy: '', status: 'draft', featured: false });
       expect(created?.displayOrder).toBeGreaterThan(1);
       await expect(persistence.createDraft(input)).resolves.toBeUndefined();
       await expect(persistence.findPublishedBySlug(input.slug)).resolves.toBeUndefined();

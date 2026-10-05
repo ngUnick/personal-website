@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../core/api-base-url';
-import { Project, ProjectsDataAccess } from './projects.data-access';
+import { Project, ProjectDetail, ProjectsDataAccess } from './projects.data-access';
 
 @Injectable()
 export class ProjectsHttpService extends ProjectsDataAccess {
@@ -17,7 +17,7 @@ export class ProjectsHttpService extends ProjectsDataAccess {
     return this.http.get<Project[]>(`${this.apiBaseUrl}/projects?featured=true`);
   }
 
-  getProject(slug: string): Observable<Project> {
-    return this.http.get<Project>(`${this.apiBaseUrl}/projects/${slug}`);
+  getProject(slug: string): Observable<ProjectDetail> {
+    return this.http.get<ProjectDetail>(`${this.apiBaseUrl}/projects/${slug}`);
   }
 }

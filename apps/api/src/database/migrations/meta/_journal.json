@@ -22,6 +22,13 @@
       "when": 1791052928251,
       "tag": "0002_living_susan_delgado",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791200819170,
+      "tag": "0003_jittery_mandroid",
+      "breakpoints": true
     }
   ]
 }

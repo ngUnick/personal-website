@@ -27,11 +27,11 @@ describe('AdminProjectsHttpService', () => {
     expect(detail.request.method).toBe('GET');
     expect(detail.request.withCredentials).toBe(true);
     detail.flush({ slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', summary: 'Draft summary', status: 'draft', featured: false });
-    service.updateContent('draft-placeholder-project', { title: 'Edited Draft', summary: 'Edited summary' }).subscribe();
+    service.updateContent('draft-placeholder-project', { title: 'Edited Draft', summary: 'Edited summary', caseStudy: 'Edited narrative' }).subscribe();
     const update = http.expectOne('/api/admin/projects/draft-placeholder-project/content');
     expect(update.request.method).toBe('PATCH');
     expect(update.request.withCredentials).toBe(true);
-    expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary' });
+    expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary', caseStudy: 'Edited narrative' });
     update.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'draft', featured: false });
     service.updateStatus('draft-placeholder-project', 'published').subscribe();
     const status = http.expectOne('/api/admin/projects/draft-placeholder-project/status');

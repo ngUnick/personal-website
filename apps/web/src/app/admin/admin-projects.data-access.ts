@@ -2,8 +2,8 @@ import { Observable } from 'rxjs';
 
 export type ProjectPublicationStatus = 'draft' | 'published' | 'archived';
 export type AdminProject = { slug: string; title: string; status: ProjectPublicationStatus; featured: boolean };
-export type AdminProjectDetail = AdminProject & { summary: string };
-export type ProjectContentUpdate = { title: string; summary: string };
+export type AdminProjectDetail = AdminProject & { summary: string; caseStudy: string };
+export type ProjectContentUpdate = { title: string; summary: string; caseStudy: string };
 export type CreateProjectDraft = { slug: string; title: string; summary: string };
 
 export abstract class AdminProjectsDataAccess {

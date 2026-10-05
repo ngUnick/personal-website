@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "case_study" text DEFAULT '' NOT NULL;

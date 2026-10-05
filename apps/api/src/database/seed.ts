@@ -33,6 +33,7 @@ try {
       title: 'Placeholder Project',
       summary:
         'Temporary sample content used to validate the application path.',
+      caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       status: 'published',
       featured: true,
       displayOrder: 0,
@@ -43,6 +44,7 @@ try {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
         status: 'published',
         featured: true,
         displayOrder: 0,
@@ -56,6 +58,7 @@ try {
       slug: 'draft-placeholder-project',
       title: 'Draft Placeholder Project',
       summary: 'Fictional draft content used only to validate private project authoring.',
+      caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.',
       status: 'draft',
       featured: false,
       displayOrder: 1,
@@ -65,6 +68,7 @@ try {
       set: {
         title: 'Draft Placeholder Project',
         summary: 'Fictional draft content used only to validate private project authoring.',
+        caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.',
         status: 'draft',
         featured: false,
         displayOrder: 1,

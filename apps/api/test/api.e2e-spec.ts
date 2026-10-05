@@ -187,6 +187,7 @@ describe('API (e2e)', () => {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       }));
 
   it('returns 404 when a project slug is not public', () =>
@@ -231,17 +232,19 @@ describe('API (e2e)', () => {
     await request(app.getHttpServer()).patch('/api/admin/projects/draft-placeholder-project/content').send({ title: 'Changed', summary: 'Changed' }).expect(401);
     const agent = await authenticatedAgent();
     await agent.get('/api/admin/projects/draft-placeholder-project').expect(200).expect(({ body }) => {
-      expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', status: 'draft', featured: false });
+      expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.', status: 'draft', featured: false });
     });
-    await agent.patch('/api/admin/projects/draft-placeholder-project/content').send({ title: '', summary: 'Valid summary' }).expect(403);
-    await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: '', summary: 'Valid summary' }).expect(400);
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').send({ title: '', summary: 'Valid summary', caseStudy: '' }).expect(403);
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: '', summary: 'Valid summary', caseStudy: '' }).expect(400);
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Valid title', summary: 'Valid summary' }).expect(400);
+    await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Valid title', summary: 'Valid summary', caseStudy: 42 }).expect(400);
     try {
-      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Edited Draft', summary: 'Edited fictional draft content.' }).expect(200).expect(({ body }) => {
-        expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited fictional draft content.', status: 'draft', featured: false });
+      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Edited Draft', summary: 'Edited fictional draft content.', caseStudy: 'Edited fictional narrative.' }).expect(200).expect(({ body }) => {
+        expect(body).toEqual({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited fictional draft content.', caseStudy: 'Edited fictional narrative.', status: 'draft', featured: false });
       });
       await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
     } finally {
-      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.' }).expect(200);
+      await agent.patch('/api/admin/projects/draft-placeholder-project/content').set('Origin', 'http://localhost:4200').send({ title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.' }).expect(200);
     }
   });
 
@@ -257,7 +260,7 @@ describe('API (e2e)', () => {
     await agent.patch('/api/admin/projects/unknown/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(404);
     try {
       await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200).expect(({ body }) => {
-        expect(body).toEqual({ slug, title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', status: 'published', featured: false });
+        expect(body).toEqual({ slug, title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.', caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.', status: 'published', featured: false });
       });
       await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body.find((project: { slug: string }) => project.slug === slug)).toMatchObject({ slug, title: 'Draft Placeholder Project', summary: 'Fictional draft content used only to validate private project authoring.' }));
       await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body.slug).toBe(slug));
@@ -283,10 +286,10 @@ describe('API (e2e)', () => {
     await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, slug: 'Invalid Slug' }).expect(400);
     try {
       await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send({ ...input, status: 'published', featured: true, displayOrder: 0, id: '00000000-0000-4000-8000-000000000099' }).expect(201).expect(({ body }) => {
-        expect(body).toEqual({ ...input, status: 'draft', featured: false });
+        expect(body).toEqual({ ...input, caseStudy: '', status: 'draft', featured: false });
       });
       await agent.post('/api/admin/projects').set('Origin', 'http://localhost:4200').send(input).expect(409);
-      await agent.get(`/api/admin/projects/${slug}`).expect(200).expect({ ...input, status: 'draft', featured: false });
+      await agent.get(`/api/admin/projects/${slug}`).expect(200).expect({ ...input, caseStudy: '', status: 'draft', featured: false });
       await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body.find((project: { slug: string }) => project.slug === slug)).toBeUndefined());
       await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect(({ body }) => expect(body.find((project: { slug: string }) => project.slug === slug)).toBeUndefined());
       await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(404);

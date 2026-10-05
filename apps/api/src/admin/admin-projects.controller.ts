@@ -57,8 +57,8 @@ export class AdminProjectsController {
   async updateContent(@Param('slug') slug: string, @Body() body: UpdateProjectContentDto) {
     const title = typeof body.title === 'string' ? body.title.trim() : '';
     const summary = typeof body.summary === 'string' ? body.summary.trim() : '';
-    if (!title || !summary) throw new BadRequestException('Title and summary must be non-empty strings.');
-    return this.projects.updateContent(slug, title, summary);
+    if (!title || !summary || typeof body.caseStudy !== 'string') throw new BadRequestException('Title and summary must be non-empty strings and case study must be text.');
+    return this.projects.updateContent(slug, title, summary, body.caseStudy.trim());
   }
 
   @Patch(':slug/status')

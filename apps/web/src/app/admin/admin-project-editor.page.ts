@@ -8,7 +8,7 @@ import { AdminProjectDetail, AdminProjectsDataAccess, ProjectPublicationStatus }
 @Component({
   selector: 'app-admin-project-editor-page',
   imports: [ReactiveFormsModule],
-  template: `<main><h1>Project editor</h1>@if (project) { <form [formGroup]="form" (ngSubmit)="save()"><label>Title <input formControlName="title" /></label><label>Summary <textarea formControlName="summary"></textarea></label><button type="submit" [disabled]="form.invalid">Save</button></form><section aria-label="Publication status"><h2>Publication</h2><label>Status <select [formControl]="statusControl"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label><button type="button" (click)="updateStatus()">Update publication status</button></section><section aria-label="Private project preview"><h2>Preview</h2><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><p>Status: {{ project.status }}</p></section> }@if (saveError()) { <p role="alert">Unable to save project changes. Please try again.</p> }@if (statusError()) { <p role="alert">Unable to update publication status. Please try again.</p> }</main>`,
+  template: `<main><h1>Project editor</h1>@if (project) { <form [formGroup]="form" (ngSubmit)="save()"><label>Title <input formControlName="title" /></label><label>Summary <textarea formControlName="summary"></textarea></label><label>Case study <textarea formControlName="caseStudy"></textarea></label><button type="submit" [disabled]="form.invalid">Save</button></form><section aria-label="Publication status"><h2>Publication</h2><label>Status <select [formControl]="statusControl"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label><button type="button" (click)="updateStatus()">Update publication status</button></section><section aria-label="Private project preview"><h2>Preview</h2><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><p>{{ project.caseStudy }}</p><p>Status: {{ project.status }}</p></section> }@if (saveError()) { <p role="alert">Unable to save project changes. Please try again.</p> }@if (statusError()) { <p role="alert">Unable to update publication status. Please try again.</p> }</main>`,
 })
 export class AdminProjectEditorPage {
   private readonly auth = inject(AdminAuthDataAccess);
@@ -19,7 +19,7 @@ export class AdminProjectEditorPage {
   protected project: AdminProjectDetail | undefined;
   protected readonly saveError = signal(false);
   protected readonly statusError = signal(false);
-  protected readonly form = new FormGroup({ title: new FormControl('', { nonNullable: true, validators: [Validators.required] }), summary: new FormControl('', { nonNullable: true, validators: [Validators.required] }) });
+  protected readonly form = new FormGroup({ title: new FormControl('', { nonNullable: true, validators: [Validators.required] }), summary: new FormControl('', { nonNullable: true, validators: [Validators.required] }), caseStudy: new FormControl('', { nonNullable: true }) });
   protected readonly statusControl = new FormControl<ProjectPublicationStatus>('draft', { nonNullable: true });
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -28,5 +28,5 @@ export class AdminProjectEditorPage {
   protected save() { if (!this.project || this.form.invalid) return; this.saveError.set(false); this.projects.updateContent(this.project.slug, this.form.getRawValue()).subscribe({ next: (project) => this.applyProject(project), error: () => this.saveError.set(true) }); }
   protected updateStatus() { if (!this.project) return; this.statusError.set(false); this.projects.updateStatus(this.project.slug, this.statusControl.getRawValue()).subscribe({ next: (project) => this.applyProject(project), error: () => this.statusError.set(true) }); }
   private load() { const slug = this.route.snapshot.paramMap.get('slug'); if (slug) this.projects.getProject(slug).subscribe((project) => this.applyProject(project)); }
-  private applyProject(project: AdminProjectDetail) { this.project = project; this.form.setValue({ title: project.title, summary: project.summary }); this.statusControl.setValue(project.status); }
+  private applyProject(project: AdminProjectDetail) { this.project = project; this.form.setValue({ title: project.title, summary: project.summary, caseStudy: project.caseStudy ?? '' }); this.statusControl.setValue(project.status); }
 }
