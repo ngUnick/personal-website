@@ -5,6 +5,7 @@ import {
   type PublicEducation,
   type AdminPersistedEducation,
   type EducationContentUpdate,
+  type CreateEducationDraft,
   type EducationPublicationStatus,
 } from './education.persistence.js';
 
@@ -49,6 +50,10 @@ export class EducationService {
     const education = await this.persistence.updateStatus(id, status);
     if (!education) throw new NotFoundException('Education not found.');
     return this.toAdminDetail(education);
+  }
+
+  async createDraft(input: CreateEducationDraft) {
+    return this.toAdminDetail(await this.persistence.createDraft(input));
   }
 
   private async requireAdminEducation(id: string) {

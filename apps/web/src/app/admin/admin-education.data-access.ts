@@ -16,6 +16,7 @@ export type EducationContentUpdate = Pick<
   AdminEducationDetail,
   'institution' | 'qualification' | 'summary' | 'startDate' | 'endDate'
 >;
+export type CreateEducationDraft = EducationContentUpdate;
 
 export abstract class AdminEducationDataAccess {
   abstract getEducations(): Observable<AdminEducation[]>;
@@ -27,5 +28,8 @@ export abstract class AdminEducationDataAccess {
   abstract updateStatus(
     id: string,
     status: EducationPublicationStatus,
+  ): Observable<AdminEducationDetail>;
+  abstract createDraft(
+    input: CreateEducationDraft,
   ): Observable<AdminEducationDetail>;
 }

@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions, experiences, projects } from '../src/database/schema.js';
+import { adminSessions, educations, experiences, projects } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -471,6 +471,29 @@ describe('API (e2e)', () => {
       await request(app.getHttpServer()).get('/api/education').expect(200).expect(publicFixture);
     } finally {
       await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
+  it('creates a server-owned Education Draft through the protected CMS boundary', async () => {
+    const input = { institution: 'Temporary API Institute', qualification: 'Temporary API Qualification', summary: 'Fictional content used only to validate Education creation.', startDate: '2026-01-01', endDate: null };
+    await request(app.getHttpServer()).post('/api/admin/education').send(input).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.post('/api/admin/education').send(input).expect(403);
+    await agent.post('/api/admin/education').set('Origin', 'https://untrusted.example').send(input).expect(403);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, institution: undefined }).expect(400);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, institution: 1 }).expect(400);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, qualification: '' }).expect(400);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, summary: 1 }).expect(400);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, startDate: '2026-02-31' }).expect(400);
+    await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, endDate: '2025-12-31' }).expect(400);
+    let id = '';
+    try {
+      await agent.post('/api/admin/education').set('Origin', 'http://localhost:4200').send({ ...input, id: '00000000-0000-4000-8000-000000000099', status: 'published', displayOrder: 0 }).expect(201).expect(({ body }) => { id = body.id; expect(body).toEqual({ id: expect.any(String), ...input, status: 'draft' }); expect(id).not.toBe('00000000-0000-4000-8000-000000000099'); });
+      await agent.get(`/api/admin/education/${id}`).expect(200).expect({ id, ...input, status: 'draft' });
+      await agent.get('/api/admin/education').expect(200).expect(({ body }) => expect(body.at(-1)).toEqual({ id, institution: input.institution, qualification: input.qualification, status: 'draft' }));
+      await request(app.getHttpServer()).get('/api/education').expect(200).expect([{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }]);
+    } finally {
+      if (id) await app.get(DatabaseService).db.delete(educations).where(eq(educations.id, id));
     }
   });
 });

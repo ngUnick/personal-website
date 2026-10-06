@@ -6,10 +6,12 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -23,6 +25,7 @@ import { AdminEducationResponseDto } from './admin-education-response.dto.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateEducationContentDto } from './update-education-content.dto.js';
 import { UpdateEducationStatusDto } from './update-education-status.dto.js';
+import { CreateEducationDraftDto } from './create-education-draft.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -46,6 +49,16 @@ export class AdminEducationController {
   @ApiUnauthorizedResponse()
   list() {
     return this.education.getAdminEducation();
+  }
+
+  @Post()
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: CreateEducationDraftDto })
+  @ApiCreatedResponse({ type: AdminEducationDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  createDraft(@Body() body: CreateEducationDraftDto) {
+    return this.education.createDraft(this.validContent(body));
   }
 
   @Get(':id')
@@ -90,7 +103,7 @@ export class AdminEducationController {
     return this.education.updateStatus(id, status);
   }
 
-  private validContent(body: UpdateEducationContentDto) {
+  private validContent(body: UpdateEducationContentDto | CreateEducationDraftDto) {
     const institution =
       typeof body?.institution === 'string' ? body.institution.trim() : '';
     const qualification =

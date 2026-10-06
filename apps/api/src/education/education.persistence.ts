@@ -18,6 +18,7 @@ export type EducationContentUpdate = Pick<
   PublicEducation,
   'institution' | 'qualification' | 'summary' | 'startDate' | 'endDate'
 >;
+export type CreateEducationDraft = EducationContentUpdate;
 
 export interface EducationPersistence {
   findPublished(): Promise<PublicEducation[]>;
@@ -31,6 +32,7 @@ export interface EducationPersistence {
     id: string,
     status: EducationPublicationStatus,
   ): Promise<AdminPersistedEducation | undefined>;
+  createDraft(input: CreateEducationDraft): Promise<AdminPersistedEducation>;
 }
 
 export const EDUCATION_PERSISTENCE = Symbol('EDUCATION_PERSISTENCE');

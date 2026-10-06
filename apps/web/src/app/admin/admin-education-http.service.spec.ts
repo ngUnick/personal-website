@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { AdminEducationHttpService } from './admin-education-http.service';
 
 describe('AdminEducationHttpService', () => {
-  it('uses the private credentialed list, detail, content, and status endpoints', () => {
+  it('uses the private credentialed list, create, detail, content, and status endpoints', () => {
     TestBed.configureTestingModule({
       providers: [
         AdminEducationHttpService,
@@ -22,11 +22,6 @@ describe('AdminEducationHttpService', () => {
     expect(list.request.method).toBe('GET');
     expect(list.request.withCredentials).toBe(true);
     list.flush([]);
-    service.getEducation(id).subscribe();
-    const detail = http.expectOne(`/api/admin/education/${id}`);
-    expect(detail.request.method).toBe('GET');
-    expect(detail.request.withCredentials).toBe(true);
-    detail.flush({});
     const content = {
       institution: 'Example Institute',
       qualification: 'Example Qualification',
@@ -34,6 +29,17 @@ describe('AdminEducationHttpService', () => {
       startDate: '2024-01-01',
       endDate: null,
     };
+    service.createDraft(content).subscribe();
+    const create = http.expectOne('/api/admin/education');
+    expect(create.request.method).toBe('POST');
+    expect(create.request.withCredentials).toBe(true);
+    expect(create.request.body).toEqual(content);
+    create.flush({});
+    service.getEducation(id).subscribe();
+    const detail = http.expectOne(`/api/admin/education/${id}`);
+    expect(detail.request.method).toBe('GET');
+    expect(detail.request.withCredentials).toBe(true);
+    detail.flush({});
     service.updateContent(id, content).subscribe();
     const update = http.expectOne(`/api/admin/education/${id}/content`);
     expect(update.request.method).toBe('PATCH');

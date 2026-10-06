@@ -192,4 +192,46 @@ describe('DrizzleEducationPersistence', () => {
       }
     }
   });
+
+  it('creates a Draft after the global maximum order without changing public records', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleEducationPersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleEducationPersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const publicBefore = await persistence.findPublished();
+    const orderedBefore = await persistence.findForAdmin();
+    let createdId: string | undefined;
+
+    try {
+      const created = await persistence.createDraft({
+        institution: 'Created Institute',
+        qualification: 'Created Qualification',
+        summary: 'Fictional creation fixture.',
+        startDate: '2026-01-01',
+        endDate: null,
+      });
+      createdId = created.id;
+      expect(created).toEqual({
+        id: expect.any(String),
+        institution: 'Created Institute',
+        qualification: 'Created Qualification',
+        summary: 'Fictional creation fixture.',
+        startDate: '2026-01-01',
+        endDate: null,
+        status: 'draft',
+        displayOrder: orderedBefore.at(-1)!.displayOrder + 1,
+      });
+      expect(created.id).not.toBe('00000000-0000-4000-8000-000000000034');
+      await expect(persistence.findPublished()).resolves.toEqual(publicBefore);
+      await expect(persistence.findForAdmin()).resolves.toEqual([
+        ...orderedBefore,
+        created,
+      ]);
+    } finally {
+      if (createdId)
+        await database.db.delete(educations).where(eq(educations.id, createdId));
+    }
+  });
 });

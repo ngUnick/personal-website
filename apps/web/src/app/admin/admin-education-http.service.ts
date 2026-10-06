@@ -7,6 +7,7 @@ import {
   AdminEducationDataAccess,
   AdminEducationDetail,
   EducationContentUpdate,
+  CreateEducationDraft,
   EducationPublicationStatus,
 } from './admin-education.data-access';
 
@@ -38,5 +39,10 @@ export class AdminEducationHttpService extends AdminEducationDataAccess {
       { status },
       { withCredentials: true },
     );
+  }
+  createDraft(input: CreateEducationDraft): Observable<AdminEducationDetail> {
+    return this.http.post<AdminEducationDetail>(`${this.apiBaseUrl}/admin/education`, input, {
+      withCredentials: true,
+    });
   }
 }

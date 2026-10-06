@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { educations } from '../database/schema.js';
 import {
   type EducationPersistence,
   type AdminPersistedEducation,
   type EducationContentUpdate,
+  type CreateEducationDraft,
   type EducationPublicationStatus,
   type PublicEducation,
 } from './education.persistence.js';
@@ -93,5 +95,34 @@ export class DrizzleEducationPersistence implements EducationPersistence {
       .set({ status, updatedAt: new Date() })
       .where(eq(educations.id, id));
     return this.findForAdminById(id);
+  }
+
+  async createDraft(
+    input: CreateEducationDraft,
+  ): Promise<AdminPersistedEducation> {
+    return this.database.db.transaction(async (transaction) => {
+      const [order] = await transaction
+        .select({ value: sql<number>`coalesce(max(${educations.displayOrder}), -1)` })
+        .from(educations);
+      const [created] = await transaction
+        .insert(educations)
+        .values({
+          id: randomUUID(),
+          ...input,
+          status: 'draft',
+          displayOrder: order.value + 1,
+        })
+        .returning({
+          id: educations.id,
+          institution: educations.institution,
+          qualification: educations.qualification,
+          summary: educations.summary,
+          startDate: educations.startDate,
+          endDate: educations.endDate,
+          status: educations.status,
+          displayOrder: educations.displayOrder,
+        });
+      return created;
+    });
   }
 }
