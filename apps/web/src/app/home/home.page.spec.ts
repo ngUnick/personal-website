@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProjectsDataAccess } from '../projects/projects.data-access';
+import { EducationDataAccess } from '../education/education.data-access';
 import { HomePage } from './home.page';
 
 describe('HomePage', () => {
@@ -30,6 +31,7 @@ describe('HomePage', () => {
               }),
           },
         },
+        { provide: EducationDataAccess, useValue: { getEducation: () => of([{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }]) } },
       ],
     }).compileComponents();
 
@@ -38,6 +40,9 @@ describe('HomePage', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Featured projects');
+    expect(fixture.nativeElement.textContent).toContain('Education');
+    expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
+    expect(fixture.nativeElement.textContent).toContain('Example Technical Institute');
     const projectLink = fixture.nativeElement.querySelector(
       'a[href="/projects/placeholder-project"]',
     );

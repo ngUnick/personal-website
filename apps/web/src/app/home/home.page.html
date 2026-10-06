@@ -25,4 +25,16 @@
       }
     </div>
   </section>
+
+  <section aria-labelledby="education-heading">
+    <h2 id="education-heading">Education</h2>
+    @for (item of education(); track $index) {
+      <article>
+        <h3>{{ item.qualification }}</h3>
+        <p>{{ item.institution }}</p>
+        <p>{{ item.summary }}</p>
+        <p>{{ item.startDate }} — {{ item.endDate ?? 'Present' }}</p>
+      </article>
+    }
+  </section>
 </main>

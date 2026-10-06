@@ -14,6 +14,8 @@ import { AdminProjectsDataAccess } from './admin/admin-projects.data-access';
 import { AdminProjectsHttpService } from './admin/admin-projects-http.service';
 import { AdminExperienceDataAccess } from './admin/admin-experience.data-access';
 import { AdminExperienceHttpService } from './admin/admin-experience-http.service';
+import { EducationDataAccess } from './education/education.data-access';
+import { EducationHttpService } from './education/education-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,5 +29,6 @@ export const appConfig: ApplicationConfig = {
     { provide: AdminAuthDataAccess, useClass: AdminAuthHttpService },
     { provide: AdminProjectsDataAccess, useClass: AdminProjectsHttpService },
     { provide: AdminExperienceDataAccess, useClass: AdminExperienceHttpService },
+    { provide: EducationDataAccess, useClass: EducationHttpService },
   ],
 };

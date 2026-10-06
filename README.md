@@ -8,16 +8,18 @@ The website is being designed as a polished, mobile-first professional presence 
 
 ## Current implementation
 
-The first walking skeleton is implemented:
+The current vertical slices include:
 
 - `apps/web`: Angular, TypeScript, SSR/hydration, and SCSS.
 - `apps/api`: NestJS REST API with OpenAPI documentation.
 - `GET /api/health`: deterministic availability response.
-- `GET /api/projects`: one clearly labelled placeholder project, rendered at `/projects` through a typed frontend data-access boundary.
+- Public project and experience read paths backed by PostgreSQL, including published-only filtering and administrator-controlled display order.
+- A private single-administrator CMS foundation for project and experience authoring, publication, and adjacent ordering.
+- `GET /api/education`: a published-only public Education read path, rendered on the server-rendered home page through a typed frontend data-access boundary.
 
 The displayed project is temporary sample content used only to validate the application path; it is not portfolio content.
 
-Projects are now persisted in PostgreSQL through a narrow API-side data-access boundary. The included seed creates only the same clearly fake placeholder record used by the walking skeleton.
+The included development seed is deterministic and contains only clearly fictional records for projects, experience, and education. It is not professional profile content.
 
 ## Development
 

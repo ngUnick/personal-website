@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
-import { adminUsers, experiences, projects } from './schema.js';
+import { adminUsers, educations, experiences, projects } from './schema.js';
 import { hashPassword } from '../admin-auth/password.js';
 
 if (process.env.NODE_ENV === 'production') {
@@ -13,6 +13,11 @@ const db = drizzle({ client: pool });
 
 try {
   const fakeAdminPasswordHash = await hashPassword('development-only-password');
+  await db
+    .insert(educations)
+    .values({ id: '00000000-0000-4000-8000-000000000030', institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01', status: 'published', displayOrder: 0 })
+    .onConflictDoUpdate({ target: educations.id, set: { institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01', status: 'published', displayOrder: 0 } });
+
   await db
     .insert(adminUsers)
     .values({

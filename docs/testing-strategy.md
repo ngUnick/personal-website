@@ -4,11 +4,11 @@ Testing follows the application as it is introduced. Each vertical slice should 
 
 ## Current baseline
 
-- Nest endpoint tests exercise the real application module and verify the health and persisted placeholder-project responses.
-- A focused Drizzle persistence test verifies the seeded PostgreSQL project read path.
-- Angular tests verify the HTTP data-access adapter's requested endpoint and the projects page's rendering through a substituted data-access boundary.
+- Nest endpoint tests exercise the real application module and verify health plus public persisted-content responses.
+- Focused Drizzle persistence tests verify published-only filtering, ordering, and public projections for each implemented PostgreSQL-backed feature.
+- Angular tests verify HTTP data-access adapters' requested endpoints and home/page rendering through substituted data-access boundaries.
 - Production builds are required for both applications.
-- Runtime smoke checks validate the API, OpenAPI surface, and raw server-rendered `/projects` HTML.
+- Runtime smoke checks validate the API, OpenAPI surface, and raw server-rendered public HTML, including persisted content on the home page.
 
 Run the automated suites with `npm test`; build both applications with `npm run build`. Before API persistence tests, start PostgreSQL and apply the committed migrations and development seed.
 

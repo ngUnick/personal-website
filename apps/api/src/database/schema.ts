@@ -21,6 +21,10 @@ export const experiencePublicationStatus = pgEnum(
   'experience_publication_status',
   ['draft', 'published', 'archived'],
 );
+export const educationPublicationStatus = pgEnum(
+  'education_publication_status',
+  ['draft', 'published', 'archived'],
+);
 
 export const projects = pgTable(
   'projects',
@@ -70,6 +74,32 @@ export const experiences = pgTable(
   (table) => [
     check(
       'experiences_display_order_non_negative',
+      sql`${table.displayOrder} >= 0`,
+    ),
+  ],
+);
+
+export const educations = pgTable(
+  'educations',
+  {
+    id: uuid('id').primaryKey(),
+    institution: text('institution').notNull(),
+    qualification: text('qualification').notNull(),
+    summary: text('summary').notNull(),
+    startDate: date('start_date').notNull(),
+    endDate: date('end_date'),
+    status: educationPublicationStatus('status').notNull().default('draft'),
+    displayOrder: integer('display_order').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      'educations_display_order_non_negative',
       sql`${table.displayOrder} >= 0`,
     ),
   ],

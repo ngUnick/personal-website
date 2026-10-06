@@ -1,0 +1,14 @@
+CREATE TYPE "public"."education_publication_status" AS ENUM('draft', 'published', 'archived');--> statement-breakpoint
+CREATE TABLE "educations" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"institution" text NOT NULL,
+	"qualification" text NOT NULL,
+	"summary" text NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date,
+	"status" "education_publication_status" DEFAULT 'draft' NOT NULL,
+	"display_order" integer NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "educations_display_order_non_negative" CHECK ("educations"."display_order" >= 0)
+);

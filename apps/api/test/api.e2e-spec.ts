@@ -38,6 +38,9 @@ describe('API (e2e)', () => {
       .expect(200)
       .expect({ status: 'ok' }));
 
+  it('returns exactly the published fictional education projection', () =>
+    request(app.getHttpServer()).get('/api/education').expect(200).expect([{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }]));
+
   it('returns exactly one explicit placeholder project', () =>
     request(app.getHttpServer())
       .get('/api/projects')
