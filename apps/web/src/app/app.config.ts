@@ -20,6 +20,8 @@ import { AdminEducationDataAccess } from './admin/admin-education.data-access';
 import { AdminEducationHttpService } from './admin/admin-education-http.service';
 import { ProfileDataAccess } from './profile/profile.data-access';
 import { ProfileHttpService } from './profile/profile-http.service';
+import { AdminProfileDataAccess } from './admin/admin-profile.data-access';
+import { AdminProfileHttpService } from './admin/admin-profile-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,5 +38,6 @@ export const appConfig: ApplicationConfig = {
     { provide: EducationDataAccess, useClass: EducationHttpService },
     { provide: AdminEducationDataAccess, useClass: AdminEducationHttpService },
     { provide: ProfileDataAccess, useClass: ProfileHttpService },
+    { provide: AdminProfileDataAccess, useClass: AdminProfileHttpService },
   ],
 };

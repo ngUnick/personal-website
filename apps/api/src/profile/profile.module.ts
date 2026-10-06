@@ -5,5 +5,13 @@ import { ProfileController } from './profile.controller.js';
 import { PROFILE_PERSISTENCE } from './profile.persistence.js';
 import { ProfileService } from './profile.service.js';
 
-@Module({ imports: [DatabaseModule], controllers: [ProfileController], providers: [ProfileService, { provide: PROFILE_PERSISTENCE, useClass: DrizzleProfilePersistence }] })
+@Module({
+  imports: [DatabaseModule],
+  controllers: [ProfileController],
+  providers: [
+    ProfileService,
+    { provide: PROFILE_PERSISTENCE, useClass: DrizzleProfilePersistence },
+  ],
+  exports: [ProfileService],
+})
 export class ProfileModule {}

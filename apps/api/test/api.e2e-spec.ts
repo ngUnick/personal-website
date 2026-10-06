@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions, educations, experiences, projects } from '../src/database/schema.js';
+import { adminSessions, educations, experiences, profiles, projects } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -56,6 +56,30 @@ describe('API (e2e)', () => {
 
   it('returns exactly the fictional public Profile projection', () =>
     request(app.getHttpServer()).get('/api/profile').expect(200).expect({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }));
+
+  it('keeps singleton Profile authoring private, exact, and reflected publicly', async () => {
+    const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' };
+    await request(app.getHttpServer()).get('/api/admin/profile').expect(401);
+    await request(app.getHttpServer()).patch('/api/admin/profile/content').send(original).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/profile').expect(200).expect(original);
+    await agent.patch('/api/admin/profile/content').send(original).expect(403);
+    await agent.patch('/api/admin/profile/content').set('Origin', 'https://untrusted.example').send(original).expect(403);
+    await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, headline: '   ' }).expect(400);
+    await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, summary: 1 }).expect(400);
+    await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, about: undefined }).expect(400);
+    const expected = { headline: 'Edited fictional headline', summary: 'Edited fictional profile summary', about: 'Edited fictional profile about text' };
+    try {
+      await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ headline: ` ${expected.headline} `, summary: ` ${expected.summary} `, about: ` ${expected.about} `, id: 99, createdAt: 'never', updatedAt: 'never' }).expect(200).expect(expected);
+      await agent.get('/api/admin/profile').expect(200).expect(expected);
+      await request(app.getHttpServer()).get('/api/profile').expect(200).expect(expected);
+      const [stored] = await app.get(DatabaseService).db.select().from(profiles);
+      expect(stored.id).toBe(1);
+      expect(stored).toMatchObject(expected);
+    } finally {
+      await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send(original).expect(200);
+    }
+  });
 
   it('returns the featured published placeholder project', () =>
     request(app.getHttpServer())

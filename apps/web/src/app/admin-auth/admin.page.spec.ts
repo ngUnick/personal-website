@@ -16,6 +16,7 @@ describe('AdminPage', () => {
     expect(button?.getAttribute('aria-label')).toBe('Toggle featured for Placeholder Project');
     expect(button?.getAttribute('aria-pressed')).toBe('true');
     expect(fixture.nativeElement.querySelectorAll('article').length).toBe(2);
+    expect(fixture.nativeElement.textContent).toContain('Manage profile');
     expect(fixture.nativeElement.querySelector('[aria-label="Move Placeholder Project up"]')?.disabled).toBe(true);
     expect(fixture.nativeElement.querySelector('[aria-label="Move Draft Placeholder Project down"]')?.disabled).toBe(true);
   });
