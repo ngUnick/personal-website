@@ -76,9 +76,87 @@ describe('DrizzleEducationPersistence', () => {
         },
       ]);
     } finally {
-      await database.db.delete(educations).where(eq(educations.id, insertedIds[0]));
-      await database.db.delete(educations).where(eq(educations.id, insertedIds[1]));
-      await database.db.delete(educations).where(eq(educations.id, insertedIds[2]));
+      await database.db
+        .delete(educations)
+        .where(eq(educations.id, insertedIds[0]));
+      await database.db
+        .delete(educations)
+        .where(eq(educations.id, insertedIds[1]));
+      await database.db
+        .delete(educations)
+        .where(eq(educations.id, insertedIds[2]));
+    }
+  });
+
+  it('reads and updates the seeded Draft without changing server-owned state or public results', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleEducationPersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleEducationPersistence);
+    const id = '00000000-0000-4000-8000-000000000034';
+    const database = moduleFixture.get(DatabaseService);
+    const original = await persistence.findForAdminById(id);
+    const publishedBeforeEdit = await persistence.findPublished();
+
+    try {
+      expect(original).toEqual({
+        id,
+        institution: 'Example Draft Institute',
+        qualification: 'Example Draft Software Program',
+        summary:
+          'Fictional draft education used only to validate private CMS authoring.',
+        startDate: '2024-01-01',
+        endDate: null,
+        status: 'draft',
+        displayOrder: 1,
+      });
+      await expect(persistence.findForAdmin()).resolves.toEqual([
+        {
+          id: '00000000-0000-4000-8000-000000000030',
+          institution: 'Example Technical Institute',
+          qualification: 'Example Software Engineering Diploma',
+          summary:
+            'Fictional education fixture used to validate the public homepage path.',
+          startDate: '2020-01-01',
+          endDate: '2023-01-01',
+          status: 'published',
+          displayOrder: 0,
+        },
+        original,
+      ]);
+      await expect(
+        persistence.updateContent(id, {
+          institution: 'Edited Institute',
+          qualification: 'Edited Qualification',
+          summary: 'Edited fixture.',
+          startDate: '2025-02-01',
+          endDate: '2025-12-31',
+        }),
+      ).resolves.toEqual({
+        id,
+        institution: 'Edited Institute',
+        qualification: 'Edited Qualification',
+        summary: 'Edited fixture.',
+        startDate: '2025-02-01',
+        endDate: '2025-12-31',
+        status: 'draft',
+        displayOrder: 1,
+      });
+      await expect(persistence.findPublished()).resolves.toEqual(
+        publishedBeforeEdit,
+      );
+      await expect(
+        persistence.updateContent('00000000-0000-4000-8000-000000000099', {
+          institution: 'Missing',
+          qualification: 'Missing',
+          summary: 'Missing.',
+          startDate: '2025-01-01',
+          endDate: null,
+        }),
+      ).resolves.toBeUndefined();
+    } finally {
+      if (original) await persistence.updateContent(id, original);
     }
   });
 });

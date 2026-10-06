@@ -15,8 +15,57 @@ try {
   const fakeAdminPasswordHash = await hashPassword('development-only-password');
   await db
     .insert(educations)
-    .values({ id: '00000000-0000-4000-8000-000000000030', institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01', status: 'published', displayOrder: 0 })
-    .onConflictDoUpdate({ target: educations.id, set: { institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01', status: 'published', displayOrder: 0 } });
+    .values({
+      id: '00000000-0000-4000-8000-000000000030',
+      institution: 'Example Technical Institute',
+      qualification: 'Example Software Engineering Diploma',
+      summary:
+        'Fictional education fixture used to validate the public homepage path.',
+      startDate: '2020-01-01',
+      endDate: '2023-01-01',
+      status: 'published',
+      displayOrder: 0,
+    })
+    .onConflictDoUpdate({
+      target: educations.id,
+      set: {
+        institution: 'Example Technical Institute',
+        qualification: 'Example Software Engineering Diploma',
+        summary:
+          'Fictional education fixture used to validate the public homepage path.',
+        startDate: '2020-01-01',
+        endDate: '2023-01-01',
+        status: 'published',
+        displayOrder: 0,
+      },
+    });
+
+  await db
+    .insert(educations)
+    .values({
+      id: '00000000-0000-4000-8000-000000000034',
+      institution: 'Example Draft Institute',
+      qualification: 'Example Draft Software Program',
+      summary:
+        'Fictional draft education used only to validate private CMS authoring.',
+      startDate: '2024-01-01',
+      endDate: null,
+      status: 'draft',
+      displayOrder: 1,
+    })
+    .onConflictDoUpdate({
+      target: educations.id,
+      set: {
+        institution: 'Example Draft Institute',
+        qualification: 'Example Draft Software Program',
+        summary:
+          'Fictional draft education used only to validate private CMS authoring.',
+        startDate: '2024-01-01',
+        endDate: null,
+        status: 'draft',
+        displayOrder: 1,
+      },
+    });
 
   await db
     .insert(adminUsers)
@@ -38,7 +87,8 @@ try {
       title: 'Placeholder Project',
       summary:
         'Temporary sample content used to validate the application path.',
-      caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      caseStudy:
+        'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       status: 'published',
       featured: true,
       displayOrder: 0,
@@ -49,7 +99,8 @@ try {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
-        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+        caseStudy:
+          'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
         status: 'published',
         featured: true,
         displayOrder: 0,
@@ -62,8 +113,10 @@ try {
       id: '00000000-0000-4000-8000-000000000004',
       slug: 'draft-placeholder-project',
       title: 'Draft Placeholder Project',
-      summary: 'Fictional draft content used only to validate private project authoring.',
-      caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.',
+      summary:
+        'Fictional draft content used only to validate private project authoring.',
+      caseStudy:
+        'Fictional draft narrative used only to validate private case-study authoring.',
       status: 'draft',
       featured: false,
       displayOrder: 1,
@@ -72,8 +125,10 @@ try {
       target: projects.slug,
       set: {
         title: 'Draft Placeholder Project',
-        summary: 'Fictional draft content used only to validate private project authoring.',
-        caseStudy: 'Fictional draft narrative used only to validate private case-study authoring.',
+        summary:
+          'Fictional draft content used only to validate private project authoring.',
+        caseStudy:
+          'Fictional draft narrative used only to validate private case-study authoring.',
         status: 'draft',
         featured: false,
         displayOrder: 1,

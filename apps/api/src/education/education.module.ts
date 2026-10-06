@@ -15,5 +15,6 @@ import { EducationService } from './education.service.js';
       useClass: DrizzleEducationPersistence,
     },
   ],
+  exports: [EducationService],
 })
 export class EducationModule {}

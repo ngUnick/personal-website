@@ -429,4 +429,25 @@ describe('API (e2e)', () => {
       await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: input.organization })));
     } finally { if (id) await app.get(DatabaseService).db.delete(experiences).where(eq(experiences.id, id)); }
   });
+  it('keeps Education draft authoring private and server-owned', async () => {
+    const id = '00000000-0000-4000-8000-000000000034';
+    const original = { institution: 'Example Draft Institute', qualification: 'Example Draft Software Program', summary: 'Fictional draft education used only to validate private CMS authoring.', startDate: '2024-01-01', endDate: null };
+    const publicFixture = [{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }];
+    await request(app.getHttpServer()).get('/api/admin/education').expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/education/${id}/content`).send(original).expect(403);
+    await agent.patch(`/api/admin/education/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, startDate: 1 }).expect(400);
+    try {
+      await agent.get('/api/admin/education').expect(200).expect([
+        { id: '00000000-0000-4000-8000-000000000030', institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', status: 'published' },
+        { id, institution: original.institution, qualification: original.qualification, status: 'draft' },
+      ]);
+      await agent.get(`/api/admin/education/${id}`).expect(200).expect({ id, ...original, status: 'draft' });
+      const edited = { institution: 'Edited Draft Institute', qualification: 'Edited Draft Program', summary: 'Edited fictional draft education.', startDate: '2024-02-01', endDate: '2024-12-31' };
+      await agent.patch(`/api/admin/education/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...edited, status: 'published', displayOrder: 0 }).expect(200).expect({ id, ...edited, status: 'draft' });
+      await request(app.getHttpServer()).get('/api/education').expect(200).expect(publicFixture);
+    } finally {
+      await agent.patch(`/api/admin/education/${id}/content`).set('Origin', 'http://localhost:4200').send(original).expect(200);
+    }
+  });
 });
