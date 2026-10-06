@@ -36,6 +36,13 @@
       "when": 1791244207046,
       "tag": "0004_green_onslaught",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791319186771,
+      "tag": "0005_faithful_vampiro",
+      "breakpoints": true
     }
   ]
 }

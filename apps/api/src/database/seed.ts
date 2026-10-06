@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
-import { adminUsers, educations, experiences, projects } from './schema.js';
+import { adminUsers, educations, experiences, profiles, projects } from './schema.js';
 import { hashPassword } from '../admin-auth/password.js';
 
 if (process.env.NODE_ENV === 'production') {
@@ -12,6 +12,7 @@ const pool = new Pool({ connectionString: getDatabaseUrl() });
 const db = drizzle({ client: pool });
 
 try {
+  await db.insert(profiles).values({ id: 1, headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }).onConflictDoUpdate({ target: profiles.id, set: { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' } });
   const fakeAdminPasswordHash = await hashPassword('development-only-password');
   await db
     .insert(educations)

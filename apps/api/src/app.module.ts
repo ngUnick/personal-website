@@ -6,6 +6,7 @@ import { ExperienceModule } from './experience/experience.module.js';
 import { AdminAuthModule } from './admin-auth/admin-auth.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { EducationModule } from './education/education.module.js';
+import { ProfileModule } from './profile/profile.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { EducationModule } from './education/education.module.js';
     AdminAuthModule,
     AdminModule,
     EducationModule,
+    ProfileModule,
   ],
 })
 export class AppModule {}

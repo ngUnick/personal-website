@@ -10,10 +10,12 @@ import { AdminExperiencePage } from './admin/admin-experience.page';
 import { AdminExperienceEditorPage } from './admin/admin-experience-editor.page';
 import { AdminEducationPage } from './admin/admin-education.page';
 import { AdminEducationEditorPage } from './admin/admin-education-editor.page';
+import { AboutPage } from './about/about.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', component: HomePage },
   { path: 'experience', component: ExperiencePage },
+  { path: 'about', component: AboutPage },
   { path: 'admin/login', component: AdminLoginPage },
   { path: 'admin', component: AdminPage },
   { path: 'admin/projects/:slug/edit', component: AdminProjectEditorPage },

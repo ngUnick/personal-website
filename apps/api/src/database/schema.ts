@@ -105,6 +105,19 @@ export const educations = pgTable(
   ],
 );
 
+export const profiles = pgTable('profiles', {
+  id: integer('id').primaryKey(),
+  headline: text('headline').notNull(),
+  summary: text('summary').notNull(),
+  about: text('about').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const adminUsers = pgTable(
   'admin_users',
   {
