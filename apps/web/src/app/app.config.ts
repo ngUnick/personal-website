@@ -22,6 +22,8 @@ import { ProfileDataAccess } from './profile/profile.data-access';
 import { ProfileHttpService } from './profile/profile-http.service';
 import { AdminProfileDataAccess } from './admin/admin-profile.data-access';
 import { AdminProfileHttpService } from './admin/admin-profile-http.service';
+import { TechnologyDataAccess } from './technologies/technology.data-access';
+import { TechnologyHttpService } from './technologies/technology-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,5 +41,6 @@ export const appConfig: ApplicationConfig = {
     { provide: AdminEducationDataAccess, useClass: AdminEducationHttpService },
     { provide: ProfileDataAccess, useClass: ProfileHttpService },
     { provide: AdminProfileDataAccess, useClass: AdminProfileHttpService },
+    { provide: TechnologyDataAccess, useClass: TechnologyHttpService },
   ],
 };

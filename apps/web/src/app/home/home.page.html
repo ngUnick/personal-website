@@ -23,6 +23,13 @@
     </div>
   </section>
 
+  <section aria-labelledby="technical-toolkit-heading">
+    <h2 id="technical-toolkit-heading">Technical Toolkit</h2>
+    @for (technology of technologies(); track $index) {
+      <article><h3>{{ technology.name }}</h3><p>{{ technology.category }}</p></article>
+    }
+  </section>
+
   <section aria-labelledby="education-heading">
     <h2 id="education-heading">Education</h2>
     @for (item of education(); track $index) {

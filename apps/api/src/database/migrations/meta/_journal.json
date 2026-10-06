@@ -43,6 +43,13 @@
       "when": 1791319186771,
       "tag": "0005_faithful_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791324044049,
+      "tag": "0006_friendly_vertigo",
+      "breakpoints": true
     }
   ]
 }

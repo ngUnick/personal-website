@@ -7,6 +7,7 @@ import { AdminAuthModule } from './admin-auth/admin-auth.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { EducationModule } from './education/education.module.js';
 import { ProfileModule } from './profile/profile.module.js';
+import { TechnologyModule } from './technologies/technology.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProfileModule } from './profile/profile.module.js';
     AdminModule,
     EducationModule,
     ProfileModule,
+    TechnologyModule,
   ],
 })
 export class AppModule {}

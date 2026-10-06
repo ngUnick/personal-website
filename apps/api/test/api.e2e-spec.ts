@@ -81,6 +81,12 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('returns only the ordered published fictional Technology projection', () =>
+    request(app.getHttpServer()).get('/api/technologies').expect(200).expect([
+      { name: 'Example TypeScript', category: 'Languages' },
+      { name: 'Example PostgreSQL', category: 'Data' },
+    ]));
+
   it('returns the featured published placeholder project', () =>
     request(app.getHttpServer())
       .get('/api/projects?featured=true')

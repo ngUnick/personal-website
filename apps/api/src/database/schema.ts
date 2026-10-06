@@ -25,6 +25,10 @@ export const educationPublicationStatus = pgEnum(
   'education_publication_status',
   ['draft', 'published', 'archived'],
 );
+export const technologyPublicationStatus = pgEnum(
+  'technology_publication_status',
+  ['draft', 'published', 'archived'],
+);
 
 export const projects = pgTable(
   'projects',
@@ -117,6 +121,22 @@ export const profiles = pgTable('profiles', {
     .notNull()
     .defaultNow(),
 });
+
+export const technologies = pgTable(
+  'technologies',
+  {
+    id: uuid('id').primaryKey(),
+    name: text('name').notNull(),
+    category: text('category').notNull(),
+    status: technologyPublicationStatus('status').notNull().default('draft'),
+    displayOrder: integer('display_order').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('technologies_display_order_non_negative', sql`${table.displayOrder} >= 0`),
+  ],
+);
 
 export const adminUsers = pgTable(
   'admin_users',

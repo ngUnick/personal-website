@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ProjectsDataAccess } from '../projects/projects.data-access';
 import { EducationDataAccess } from '../education/education.data-access';
 import { ProfileDataAccess } from '../profile/profile.data-access';
+import { TechnologyDataAccess } from '../technologies/technology.data-access';
 
 @Component({
   selector: 'app-home-page',
@@ -15,10 +16,12 @@ export class HomePage {
   private readonly projectsDataAccess = inject(ProjectsDataAccess);
   private readonly educationDataAccess = inject(EducationDataAccess);
   private readonly profileDataAccess = inject(ProfileDataAccess);
+  private readonly technologyDataAccess = inject(TechnologyDataAccess);
 
   protected readonly featuredProjects = toSignal(this.projectsDataAccess.getFeaturedProjects(), {
     initialValue: [],
   });
   protected readonly education = toSignal(this.educationDataAccess.getEducation(), { initialValue: [] });
   protected readonly profile = toSignal(this.profileDataAccess.getProfile());
+  protected readonly technologies = toSignal(this.technologyDataAccess.getTechnologies(), { initialValue: [] });
 }
