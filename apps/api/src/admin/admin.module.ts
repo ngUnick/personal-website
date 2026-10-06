@@ -4,10 +4,12 @@ import { ProjectsModule } from '../projects/projects.module.js';
 import { ExperienceModule } from '../experience/experience.module.js';
 import { EducationModule } from '../education/education.module.js';
 import { ProfileModule } from '../profile/profile.module.js';
+import { TechnologyModule } from '../technologies/technology.module.js';
 import { AdminEducationController } from './admin-education.controller.js';
 import { AdminExperienceController } from './admin-experience.controller.js';
 import { AdminProjectsController } from './admin-projects.controller.js';
 import { AdminProfileController } from './admin-profile.controller.js';
+import { AdminTechnologiesController } from './admin-technologies.controller.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 
@@ -18,12 +20,14 @@ import { AdminSessionGuard } from './admin-session.guard.js';
     ExperienceModule,
     EducationModule,
     ProfileModule,
+    TechnologyModule,
   ],
   controllers: [
     AdminProjectsController,
     AdminExperienceController,
     AdminEducationController,
     AdminProfileController,
+    AdminTechnologiesController,
   ],
   providers: [AdminSessionGuard, TrustedOriginGuard],
 })

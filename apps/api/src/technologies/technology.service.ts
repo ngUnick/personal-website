@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { TECHNOLOGY_PERSISTENCE } from './technology.persistence.js';
-import type { TechnologyPersistence } from './technology.persistence.js';
+import type { TechnologyContentUpdate, TechnologyPersistence } from './technology.persistence.js';
 @Injectable()
-export class TechnologyService { constructor(@Inject(TECHNOLOGY_PERSISTENCE) private readonly persistence: TechnologyPersistence) {} getTechnologies() { return this.persistence.findPublished(); } }
+export class TechnologyService { constructor(@Inject(TECHNOLOGY_PERSISTENCE) private readonly persistence: TechnologyPersistence) {} getTechnologies() { return this.persistence.findPublished(); } getAdminTechnologies() { return this.persistence.findForAdmin(); } async getAdminTechnology(id: string) { return this.require(id); } async updateContent(id: string, content: TechnologyContentUpdate) { const technology = await this.persistence.updateContent(id, content); if (!technology) throw new NotFoundException('Technology not found.'); return technology; } private async require(id: string) { const technology = await this.persistence.findForAdminById(id); if (!technology) throw new NotFoundException('Technology not found.'); return technology; } }

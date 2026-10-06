@@ -12,6 +12,8 @@ import { AdminEducationPage } from './admin/admin-education.page';
 import { AdminEducationEditorPage } from './admin/admin-education-editor.page';
 import { AboutPage } from './about/about.page';
 import { AdminProfilePage } from './admin/admin-profile.page';
+import { AdminTechnologiesPage } from './admin/admin-technologies.page';
+import { AdminTechnologyEditorPage } from './admin/admin-technology-editor.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', component: HomePage },
@@ -20,6 +22,8 @@ export const routes: Routes = [
   { path: 'admin/login', component: AdminLoginPage },
   { path: 'admin', component: AdminPage },
   { path: 'admin/profile', component: AdminProfilePage },
+  { path: 'admin/technologies', component: AdminTechnologiesPage },
+  { path: 'admin/technologies/:id/edit', component: AdminTechnologyEditorPage },
   { path: 'admin/projects/:slug/edit', component: AdminProjectEditorPage },
   { path: 'admin/experience', component: AdminExperiencePage },
   { path: 'admin/experience/:id/edit', component: AdminExperienceEditorPage },

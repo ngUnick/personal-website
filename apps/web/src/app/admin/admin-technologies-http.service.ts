@@ -1,0 +1,7 @@
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { API_BASE_URL } from '../core/api-base-url';
+import { AdminTechnology, AdminTechnologiesDataAccess, TechnologyContentUpdate } from './admin-technologies.data-access';
+@Injectable()
+export class AdminTechnologiesHttpService extends AdminTechnologiesDataAccess { private readonly http = inject(HttpClient); private readonly apiBaseUrl = inject(API_BASE_URL); getTechnologies(): Observable<AdminTechnology[]> { return this.http.get<AdminTechnology[]>(`${this.apiBaseUrl}/admin/technologies`, { withCredentials: true }); } getTechnology(id: string): Observable<AdminTechnology> { return this.http.get<AdminTechnology>(`${this.apiBaseUrl}/admin/technologies/${id}`, { withCredentials: true }); } updateContent(id: string, content: TechnologyContentUpdate): Observable<AdminTechnology> { return this.http.patch<AdminTechnology>(`${this.apiBaseUrl}/admin/technologies/${id}/content`, content, { withCredentials: true }); } }

@@ -87,6 +87,31 @@ describe('API (e2e)', () => {
       { name: 'Example PostgreSQL', category: 'Data' },
     ]));
 
+  it('returns only the ordered published fictional Technology projection', () =>
+    request(app.getHttpServer()).get('/api/technologies').expect(200).expect([
+      { name: 'Example TypeScript', category: 'Languages' },
+      { name: 'Example PostgreSQL', category: 'Data' },
+    ]));
+
+  it('keeps draft Technology review and editing private', async () => {
+    const id = '00000000-0000-4000-8000-000000000042';
+    const original = { id, name: 'Example Draft Tool', category: 'Tools', status: 'draft' };
+    await request(app.getHttpServer()).get('/api/admin/technologies').expect(401);
+    await request(app.getHttpServer()).patch(`/api/admin/technologies/${id}/content`).send({ name: 'Edited', category: 'Tools' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/technologies/00000000-0000-4000-8000-000000000099').expect(404);
+    await agent.patch('/api/admin/technologies/00000000-0000-4000-8000-000000000099/content').set('Origin', 'http://localhost:4200').send({ name: 'Missing', category: 'Missing' }).expect(404);
+    await agent.patch(`/api/admin/technologies/${id}/content`).send({ name: 'Edited', category: 'Tools' }).expect(403);
+    await agent.patch('/api/admin/technologies/not-a-uuid/content').set('Origin', 'http://localhost:4200').send({ name: 'Edited', category: 'Tools' }).expect(400);
+    await agent.patch(`/api/admin/technologies/${id}/content`).set('Origin', 'http://localhost:4200').send({ name: ' ', category: 'Tools' }).expect(400);
+    try {
+      await agent.get('/api/admin/technologies').expect(200).expect([{ id: '00000000-0000-4000-8000-000000000040', name: 'Example TypeScript', category: 'Languages', status: 'published' }, { id: '00000000-0000-4000-8000-000000000041', name: 'Example PostgreSQL', category: 'Data', status: 'published' }, original]);
+      await agent.get(`/api/admin/technologies/${id}`).expect(200).expect(original);
+      await agent.patch(`/api/admin/technologies/${id}/content`).set('Origin', 'http://localhost:4200').send({ name: ' Edited Draft Tool ', category: ' Edited Tools ', status: 'published', displayOrder: 0 }).expect(200).expect({ id, name: 'Edited Draft Tool', category: 'Edited Tools', status: 'draft' });
+      await request(app.getHttpServer()).get('/api/technologies').expect(200).expect([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]);
+    } finally { await agent.patch(`/api/admin/technologies/${id}/content`).set('Origin', 'http://localhost:4200').send({ name: original.name, category: original.category }).expect(200); }
+  });
+
   it('returns the featured published placeholder project', () =>
     request(app.getHttpServer())
       .get('/api/projects?featured=true')
