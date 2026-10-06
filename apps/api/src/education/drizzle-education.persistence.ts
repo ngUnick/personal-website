@@ -6,6 +6,7 @@ import {
   type EducationPersistence,
   type AdminPersistedEducation,
   type EducationContentUpdate,
+  type EducationPublicationStatus,
   type PublicEducation,
 } from './education.persistence.js';
 @Injectable()
@@ -81,5 +82,16 @@ export class DrizzleEducationPersistence implements EducationPersistence {
         displayOrder: educations.displayOrder,
       });
     return education;
+  }
+
+  async updateStatus(
+    id: string,
+    status: EducationPublicationStatus,
+  ): Promise<AdminPersistedEducation | undefined> {
+    await this.database.db
+      .update(educations)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(educations.id, id));
+    return this.findForAdminById(id);
   }
 }

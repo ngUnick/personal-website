@@ -27,6 +27,10 @@ export interface EducationPersistence {
     id: string,
     content: EducationContentUpdate,
   ): Promise<AdminPersistedEducation | undefined>;
+  updateStatus(
+    id: string,
+    status: EducationPublicationStatus,
+  ): Promise<AdminPersistedEducation | undefined>;
 }
 
 export const EDUCATION_PERSISTENCE = Symbol('EDUCATION_PERSISTENCE');

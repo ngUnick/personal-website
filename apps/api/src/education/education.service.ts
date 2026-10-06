@@ -5,6 +5,7 @@ import {
   type PublicEducation,
   type AdminPersistedEducation,
   type EducationContentUpdate,
+  type EducationPublicationStatus,
 } from './education.persistence.js';
 
 @Injectable()
@@ -40,6 +41,12 @@ export class EducationService {
 
   async updateContent(id: string, content: EducationContentUpdate) {
     const education = await this.persistence.updateContent(id, content);
+    if (!education) throw new NotFoundException('Education not found.');
+    return this.toAdminDetail(education);
+  }
+
+  async updateStatus(id: string, status: EducationPublicationStatus) {
+    const education = await this.persistence.updateStatus(id, status);
     if (!education) throw new NotFoundException('Education not found.');
     return this.toAdminDetail(education);
   }

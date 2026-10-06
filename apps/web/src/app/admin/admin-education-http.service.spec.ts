@@ -5,8 +5,15 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { AdminEducationHttpService } from './admin-education-http.service';
 
 describe('AdminEducationHttpService', () => {
-  it('uses the private credentialed list, detail, and content endpoints', () => {
-    TestBed.configureTestingModule({ providers: [AdminEducationHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
+  it('uses the private credentialed list, detail, content, and status endpoints', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        AdminEducationHttpService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
+      ],
+    });
     const service = TestBed.inject(AdminEducationHttpService);
     const http = TestBed.inject(HttpTestingController);
     const id = '00000000-0000-4000-8000-000000000034';
@@ -20,13 +27,25 @@ describe('AdminEducationHttpService', () => {
     expect(detail.request.method).toBe('GET');
     expect(detail.request.withCredentials).toBe(true);
     detail.flush({});
-    const content = { institution: 'Example Institute', qualification: 'Example Qualification', summary: 'Fictional content.', startDate: '2024-01-01', endDate: null };
+    const content = {
+      institution: 'Example Institute',
+      qualification: 'Example Qualification',
+      summary: 'Fictional content.',
+      startDate: '2024-01-01',
+      endDate: null,
+    };
     service.updateContent(id, content).subscribe();
     const update = http.expectOne(`/api/admin/education/${id}/content`);
     expect(update.request.method).toBe('PATCH');
     expect(update.request.withCredentials).toBe(true);
     expect(update.request.body).toEqual(content);
     update.flush({});
+    service.updateStatus(id, 'published').subscribe();
+    const status = http.expectOne(`/api/admin/education/${id}/status`);
+    expect(status.request.method).toBe('PATCH');
+    expect(status.request.withCredentials).toBe(true);
+    expect(status.request.body).toEqual({ status: 'published' });
+    status.flush({});
     http.verify();
   });
 });

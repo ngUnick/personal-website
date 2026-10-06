@@ -88,7 +88,7 @@ describe('DrizzleEducationPersistence', () => {
     }
   });
 
-  it('reads and updates the seeded Draft without changing server-owned state or public results', async () => {
+  it('reads, edits, and changes publication for the seeded Draft without changing display order', async () => {
     moduleFixture = await Test.createTestingModule({
       imports: [DatabaseModule],
       providers: [DrizzleEducationPersistence],
@@ -146,6 +146,36 @@ describe('DrizzleEducationPersistence', () => {
       await expect(persistence.findPublished()).resolves.toEqual(
         publishedBeforeEdit,
       );
+      await expect(persistence.updateStatus(id, 'published')).resolves.toEqual({
+        id,
+        institution: 'Edited Institute',
+        qualification: 'Edited Qualification',
+        summary: 'Edited fixture.',
+        startDate: '2025-02-01',
+        endDate: '2025-12-31',
+        status: 'published',
+        displayOrder: 1,
+      });
+      await expect(persistence.findPublished()).resolves.toEqual([
+        ...publishedBeforeEdit,
+        {
+          institution: 'Edited Institute',
+          qualification: 'Edited Qualification',
+          summary: 'Edited fixture.',
+          startDate: '2025-02-01',
+          endDate: '2025-12-31',
+        },
+      ]);
+      await expect(
+        persistence.updateStatus(id, 'archived'),
+      ).resolves.toMatchObject({
+        id,
+        status: 'archived',
+        displayOrder: 1,
+      });
+      await expect(persistence.findPublished()).resolves.toEqual(
+        publishedBeforeEdit,
+      );
       await expect(
         persistence.updateContent('00000000-0000-4000-8000-000000000099', {
           institution: 'Missing',
@@ -156,7 +186,10 @@ describe('DrizzleEducationPersistence', () => {
         }),
       ).resolves.toBeUndefined();
     } finally {
-      if (original) await persistence.updateContent(id, original);
+      if (original) {
+        await persistence.updateContent(id, original);
+        await persistence.updateStatus(id, original.status);
+      }
     }
   });
 });

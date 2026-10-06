@@ -450,4 +450,27 @@ describe('API (e2e)', () => {
       await agent.patch(`/api/admin/education/${id}/content`).set('Origin', 'http://localhost:4200').send(original).expect(200);
     }
   });
+
+  it('changes Education publication state through the protected lifecycle', async () => {
+    const id = '00000000-0000-4000-8000-000000000034';
+    const publicFixture = [{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }];
+    const publishedDraft = { institution: 'Example Draft Institute', qualification: 'Example Draft Software Program', summary: 'Fictional draft education used only to validate private CMS authoring.', startDate: '2024-01-01', endDate: null };
+    await request(app.getHttpServer()).patch(`/api/admin/education/${id}/status`).send({ status: 'published' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/education/${id}/status`).send({ status: 'published' }).expect(403);
+    await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'https://untrusted.example').send({ status: 'published' }).expect(403);
+    await agent.patch('/api/admin/education/not-a-uuid/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(400);
+    await agent.patch('/api/admin/education/00000000-0000-4000-8000-000000000099/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(404);
+    await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'invalid' }).expect(400);
+    await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 1 }).expect(400);
+    try {
+      await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200).expect({ id, ...publishedDraft, status: 'published' });
+      await request(app.getHttpServer()).get('/api/education').expect(200).expect([...publicFixture, publishedDraft]);
+      await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'archived' }).expect(200);
+      await request(app.getHttpServer()).get('/api/education').expect(200).expect(publicFixture);
+    } finally {
+      await agent.patch(`/api/admin/education/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
 });

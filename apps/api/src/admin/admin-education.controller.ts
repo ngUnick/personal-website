@@ -22,6 +22,7 @@ import { AdminEducationDetailResponseDto } from './admin-education-detail-respon
 import { AdminEducationResponseDto } from './admin-education-response.dto.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateEducationContentDto } from './update-education-content.dto.js';
+import { UpdateEducationStatusDto } from './update-education-status.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -68,6 +69,25 @@ export class AdminEducationController {
     @Body() body: UpdateEducationContentDto,
   ) {
     return this.education.updateContent(id, this.validContent(body));
+  }
+
+  @Patch(':id/status')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateEducationStatusDto })
+  @ApiOkResponse({ type: AdminEducationDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  updateStatus(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: UpdateEducationStatusDto,
+  ) {
+    const status = body?.status;
+    if (!['draft', 'published', 'archived'].includes(status))
+      throw new BadRequestException(
+        'A valid education publication status is required.',
+      );
+    return this.education.updateStatus(id, status);
   }
 
   private validContent(body: UpdateEducationContentDto) {
