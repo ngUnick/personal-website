@@ -7,6 +7,7 @@ import {
   type EducationContentUpdate,
   type CreateEducationDraft,
   type EducationPublicationStatus,
+  type EducationOrderDirection,
 } from './education.persistence.js';
 
 @Injectable()
@@ -54,6 +55,17 @@ export class EducationService {
 
   async createDraft(input: CreateEducationDraft) {
     return this.toAdminDetail(await this.persistence.createDraft(input));
+  }
+
+  async moveEducation(id: string, direction: EducationOrderDirection) {
+    const education = await this.persistence.moveEducation(id, direction);
+    if (!education) throw new NotFoundException('Education not found.');
+    return education.map(({ id, institution, qualification, status }) => ({
+      id,
+      institution,
+      qualification,
+      status,
+    }));
   }
 
   private async requireAdminEducation(id: string) {

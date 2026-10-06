@@ -17,6 +17,7 @@ export type EducationContentUpdate = Pick<
   'institution' | 'qualification' | 'summary' | 'startDate' | 'endDate'
 >;
 export type CreateEducationDraft = EducationContentUpdate;
+export type EducationOrderDirection = 'up' | 'down';
 
 export abstract class AdminEducationDataAccess {
   abstract getEducations(): Observable<AdminEducation[]>;
@@ -32,4 +33,8 @@ export abstract class AdminEducationDataAccess {
   abstract createDraft(
     input: CreateEducationDraft,
   ): Observable<AdminEducationDetail>;
+  abstract moveEducation(
+    id: string,
+    direction: EducationOrderDirection,
+  ): Observable<AdminEducation[]>;
 }

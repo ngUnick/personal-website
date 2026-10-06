@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { AdminEducationHttpService } from './admin-education-http.service';
 
 describe('AdminEducationHttpService', () => {
-  it('uses the private credentialed list, create, detail, content, and status endpoints', () => {
+  it('uses the private credentialed list, create, detail, content, status, and order endpoints', () => {
     TestBed.configureTestingModule({
       providers: [
         AdminEducationHttpService,
@@ -52,6 +52,12 @@ describe('AdminEducationHttpService', () => {
     expect(status.request.withCredentials).toBe(true);
     expect(status.request.body).toEqual({ status: 'published' });
     status.flush({});
+    service.moveEducation(id, 'up').subscribe();
+    const order = http.expectOne(`/api/admin/education/${id}/order`);
+    expect(order.request.method).toBe('PATCH');
+    expect(order.request.withCredentials).toBe(true);
+    expect(order.request.body).toEqual({ direction: 'up' });
+    order.flush([]);
     http.verify();
   });
 });

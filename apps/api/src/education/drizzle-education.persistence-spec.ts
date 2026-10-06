@@ -234,4 +234,24 @@ describe('DrizzleEducationPersistence', () => {
         await database.db.delete(educations).where(eq(educations.id, createdId));
     }
   });
+
+  it('moves adjacent records across statuses while preserving public filtering', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleEducationPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleEducationPersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const draftId = '00000000-0000-4000-8000-000000000034';
+    const original = await persistence.findForAdmin();
+    const publicBefore = await persistence.findPublished();
+    try {
+      await expect(persistence.moveEducation(draftId, 'up')).resolves.toEqual([
+        expect.objectContaining({ id: draftId, status: 'draft', displayOrder: 0 }),
+        expect.objectContaining({ id: '00000000-0000-4000-8000-000000000030', status: 'published', displayOrder: 1 }),
+      ]);
+      await expect(persistence.findPublished()).resolves.toEqual(publicBefore);
+      await expect(persistence.moveEducation(draftId, 'up')).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: draftId, displayOrder: 0 })]));
+      await expect(persistence.moveEducation('00000000-0000-4000-8000-000000000099', 'up')).resolves.toBeUndefined();
+    } finally {
+      for (const education of original) await database.db.update(educations).set({ displayOrder: education.displayOrder }).where(eq(educations.id, education.id));
+    }
+  });
 });

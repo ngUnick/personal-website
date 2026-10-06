@@ -8,7 +8,7 @@ import { AdminEducation, AdminEducationDataAccess } from './admin-education.data
 @Component({
   selector: 'app-admin-education-page',
   imports: [ReactiveFormsModule, RouterLink],
-  template: `<main><h1>Admin education</h1><section aria-label="Create education draft"><h2>Create draft</h2><form [formGroup]="createForm" (ngSubmit)="createDraft()"><label>Institution <input formControlName="institution" /></label><label>Qualification <input formControlName="qualification" /></label><label>Summary <textarea formControlName="summary"></textarea></label><label>Start date <input type="date" formControlName="startDate" /></label><label>End date <input type="date" formControlName="endDate" /></label><button type="submit" [disabled]="createForm.invalid">Create draft</button></form></section>@if (createError()) { <p role="alert">Unable to create the education draft. Please try again.</p> }@for (education of educations; track education.id) { <article><h2>{{ education.institution }}</h2><p>{{ education.qualification }}</p><p>Status: {{ education.status }}</p><a [routerLink]="['/admin/education', education.id, 'edit']" [attr.aria-label]="'Edit ' + education.institution">Edit</a></article> }</main>`,
+  template: `<main><h1>Admin education</h1><section aria-label="Create education draft"><h2>Create draft</h2><form [formGroup]="createForm" (ngSubmit)="createDraft()"><label>Institution <input formControlName="institution" /></label><label>Qualification <input formControlName="qualification" /></label><label>Summary <textarea formControlName="summary"></textarea></label><label>Start date <input type="date" formControlName="startDate" /></label><label>End date <input type="date" formControlName="endDate" /></label><button type="submit" [disabled]="createForm.invalid">Create draft</button></form></section>@if (createError()) { <p role="alert">Unable to create the education draft. Please try again.</p> }@if (orderError()) { <p role="alert">Unable to update education order. Please try again.</p> }@for (education of educations; track education.id; let index = $index; let last = $last) { <article><h2>{{ education.institution }}</h2><p>{{ education.qualification }}</p><p>Status: {{ education.status }}</p><button type="button" [disabled]="index === 0" [attr.aria-label]="'Move ' + education.institution + ' up'" (click)="moveEducation(education, 'up')">Move up</button><button type="button" [disabled]="last" [attr.aria-label]="'Move ' + education.institution + ' down'" (click)="moveEducation(education, 'down')">Move down</button><a [routerLink]="['/admin/education', education.id, 'edit']" [attr.aria-label]="'Edit ' + education.institution">Edit</a></article> }</main>`,
 })
 export class AdminEducationPage {
   private readonly auth = inject(AdminAuthDataAccess);
@@ -17,6 +17,7 @@ export class AdminEducationPage {
   private readonly platformId = inject(PLATFORM_ID);
   protected educations: AdminEducation[] = [];
   protected readonly createError = signal(false);
+  protected readonly orderError = signal(false);
   protected readonly createForm = new FormGroup({
     institution: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     qualification: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -46,5 +47,16 @@ export class AdminEducationPage {
         next: (education) => this.router.navigateByUrl(`/admin/education/${education.id}/edit`),
         error: () => this.createError.set(true),
       });
+  }
+
+  protected moveEducation(
+    education: AdminEducation,
+    direction: 'up' | 'down',
+  ) {
+    this.orderError.set(false);
+    this.educationData.moveEducation(education.id, direction).subscribe({
+      next: (educations) => (this.educations = educations),
+      error: () => this.orderError.set(true),
+    });
   }
 }

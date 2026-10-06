@@ -496,4 +496,23 @@ describe('API (e2e)', () => {
       if (id) await app.get(DatabaseService).db.delete(educations).where(eq(educations.id, id));
     }
   });
+
+  it('moves Education through the protected adjacent ordering boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000034';
+    const publicFixture = [{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }];
+    await request(app.getHttpServer()).patch(`/api/admin/education/${id}/order`).send({ direction: 'up' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/education/${id}/order`).send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/education/${id}/order`).set('Origin', 'https://untrusted.example').send({ direction: 'up' }).expect(403);
+    await agent.patch('/api/admin/education/not-a-uuid/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(400);
+    await agent.patch('/api/admin/education/00000000-0000-4000-8000-000000000099/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(404);
+    await agent.patch(`/api/admin/education/${id}/order`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/education/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'sideways' }).expect(400);
+    try {
+      await agent.patch(`/api/admin/education/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect([{ id, institution: 'Example Draft Institute', qualification: 'Example Draft Software Program', status: 'draft' }, { id: '00000000-0000-4000-8000-000000000030', institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', status: 'published' }]);
+      await request(app.getHttpServer()).get('/api/education').expect(200).expect(publicFixture);
+    } finally {
+      await agent.patch(`/api/admin/education/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(200);
+    }
+  });
 });

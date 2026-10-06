@@ -25,6 +25,7 @@ import { AdminEducationResponseDto } from './admin-education-response.dto.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateEducationContentDto } from './update-education-content.dto.js';
 import { UpdateEducationStatusDto } from './update-education-status.dto.js';
+import { UpdateEducationOrderDto } from './update-education-order.dto.js';
 import { CreateEducationDraftDto } from './create-education-draft.dto.js';
 
 function isCalendarDate(value: string): boolean {
@@ -101,6 +102,23 @@ export class AdminEducationController {
         'A valid education publication status is required.',
       );
     return this.education.updateStatus(id, status);
+  }
+
+  @Patch(':id/order')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateEducationOrderDto })
+  @ApiOkResponse({ type: AdminEducationResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  updateOrder(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: UpdateEducationOrderDto,
+  ) {
+    const direction = body?.direction;
+    if (direction !== 'up' && direction !== 'down')
+      throw new BadRequestException('A valid education order direction is required.');
+    return this.education.moveEducation(id, direction);
   }
 
   private validContent(body: UpdateEducationContentDto | CreateEducationDraftDto) {

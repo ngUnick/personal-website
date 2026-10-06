@@ -8,6 +8,7 @@ import {
   type AdminPersistedEducation,
   type EducationContentUpdate,
   type CreateEducationDraft,
+  type EducationOrderDirection,
   type EducationPublicationStatus,
   type PublicEducation,
 } from './education.persistence.js';
@@ -125,4 +126,46 @@ export class DrizzleEducationPersistence implements EducationPersistence {
       return created;
     });
   }
+
+  async moveEducation(
+    id: string,
+    direction: EducationOrderDirection,
+  ): Promise<AdminPersistedEducation[] | undefined> {
+    return this.database.db.transaction(async (transaction) => {
+      const ordered = await transaction
+        .select(this.adminProjection)
+        .from(educations)
+        .orderBy(asc(educations.displayOrder));
+      const index = ordered.findIndex((education) => education.id === id);
+      if (index === -1) return undefined;
+      const neighborIndex = direction === 'up' ? index - 1 : index + 1;
+      if (neighborIndex < 0 || neighborIndex >= ordered.length) return ordered;
+      const education = ordered[index];
+      const neighbor = ordered[neighborIndex];
+      const now = new Date();
+      await transaction
+        .update(educations)
+        .set({ displayOrder: neighbor.displayOrder, updatedAt: now })
+        .where(eq(educations.id, education.id));
+      await transaction
+        .update(educations)
+        .set({ displayOrder: education.displayOrder, updatedAt: now })
+        .where(eq(educations.id, neighbor.id));
+      return transaction
+        .select(this.adminProjection)
+        .from(educations)
+        .orderBy(asc(educations.displayOrder));
+    });
+  }
+
+  private readonly adminProjection = {
+    id: educations.id,
+    institution: educations.institution,
+    qualification: educations.qualification,
+    summary: educations.summary,
+    startDate: educations.startDate,
+    endDate: educations.endDate,
+    status: educations.status,
+    displayOrder: educations.displayOrder,
+  };
 }

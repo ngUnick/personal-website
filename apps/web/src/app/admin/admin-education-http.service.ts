@@ -8,6 +8,7 @@ import {
   AdminEducationDetail,
   EducationContentUpdate,
   CreateEducationDraft,
+  EducationOrderDirection,
   EducationPublicationStatus,
 } from './admin-education.data-access';
 
@@ -44,5 +45,15 @@ export class AdminEducationHttpService extends AdminEducationDataAccess {
     return this.http.post<AdminEducationDetail>(`${this.apiBaseUrl}/admin/education`, input, {
       withCredentials: true,
     });
+  }
+  moveEducation(
+    id: string,
+    direction: EducationOrderDirection,
+  ): Observable<AdminEducation[]> {
+    return this.http.patch<AdminEducation[]>(
+      `${this.apiBaseUrl}/admin/education/${id}/order`,
+      { direction },
+      { withCredentials: true },
+    );
   }
 }
