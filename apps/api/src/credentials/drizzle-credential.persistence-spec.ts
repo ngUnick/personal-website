@@ -96,4 +96,30 @@ describe('DrizzleCredentialPersistence', () => {
       if (createdId) await moduleFixture.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
     }
   });
+
+  it('swaps adjacent global Credential order without changing record content', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleCredentialPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleCredentialPersistence);
+    const originalId = '00000000-0000-4000-8000-000000000050';
+    let createdId: string | undefined;
+    try {
+      const created = await persistence.createDraft({ name: 'Ordering Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' });
+      createdId = created.id;
+      await persistence.updateStatus(createdId, 'published');
+      await expect(persistence.moveCredential(createdId, 'up')).resolves.toEqual([
+        { ...created, status: 'published', displayOrder: 0 },
+        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 1 },
+      ]);
+      await expect(persistence.moveCredential(createdId, 'up')).resolves.toEqual([
+        { ...created, status: 'published', displayOrder: 0 },
+        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 1 },
+      ]);
+      await expect(persistence.moveCredential('00000000-0000-4000-8000-000000000099', 'up')).resolves.toBeUndefined();
+    } finally {
+      if (createdId) {
+        await persistence.moveCredential(createdId, 'down');
+        await moduleFixture.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
+      }
+    }
+  });
 });

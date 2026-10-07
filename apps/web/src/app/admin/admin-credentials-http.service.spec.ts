@@ -50,6 +50,12 @@ describe('AdminCredentialsHttpService', () => {
     expect(status.request.withCredentials).toBe(true);
     expect(status.request.body).toEqual({ status: 'published' });
     status.flush({});
+    service.moveCredential(id, 'up').subscribe();
+    const order = http.expectOne(`/api/admin/credentials/${id}/order`);
+    expect(order.request.method).toBe('PATCH');
+    expect(order.request.withCredentials).toBe(true);
+    expect(order.request.body).toEqual({ direction: 'up' });
+    order.flush([]);
     http.verify();
   });
 });

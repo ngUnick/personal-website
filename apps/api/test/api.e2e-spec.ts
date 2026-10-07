@@ -127,6 +127,31 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('reorders private Credentials through a guarded compact list boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    await request(app.getHttpServer()).patch(`/api/admin/credentials/${id}/order`).send({ direction: 'down' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/credentials/${id}/order`).send({ direction: 'down' }).expect(403);
+    await agent.patch(`/api/admin/credentials/${id}/order`).set('Origin', 'https://untrusted.example').send({ direction: 'down' }).expect(403);
+    await agent.patch('/api/admin/credentials/not-a-uuid/order').set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(400);
+    await agent.patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/order').set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(404);
+    await agent.patch(`/api/admin/credentials/${id}/order`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/credentials/${id}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'sideways' }).expect(400);
+    let createdId: string | undefined;
+    try {
+      const created = await agent.post('/api/admin/credentials').set('Origin', 'http://localhost:4200').send({ name: 'Ordering Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' }).expect(201);
+      createdId = created.body.id;
+      await agent.patch(`/api/admin/credentials/${createdId}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
+      await agent.patch(`/api/admin/credentials/${createdId}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect([{ id: createdId, name: 'Ordering Credential', issuer: 'Test Provider', status: 'published' }, { id, name: 'Example Draft Credential', issuer: 'Example Learning Provider', status: 'draft' }]);
+      await agent.patch(`/api/admin/credentials/${createdId}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect([{ id: createdId, name: 'Ordering Credential', issuer: 'Test Provider', status: 'published' }, { id, name: 'Example Draft Credential', issuer: 'Example Learning Provider', status: 'draft' }]);
+    } finally {
+      if (createdId) {
+        await agent.patch(`/api/admin/credentials/${createdId}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(200);
+        await app.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
+      }
+    }
+  });
+
   it('keeps singleton Profile authoring private, exact, and reflected publicly', async () => {
     const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' };
     await request(app.getHttpServer()).get('/api/admin/profile').expect(401);
