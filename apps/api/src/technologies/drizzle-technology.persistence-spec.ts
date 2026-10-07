@@ -46,4 +46,17 @@ describe('DrizzleTechnologyPersistence', () => {
       await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
     } finally { if (original) await persistence.updateStatus(id, original.status); }
   });
+
+  it('creates a server-owned Draft after the current global order', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleTechnologyPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleTechnologyPersistence);
+    const database = moduleFixture.get(DatabaseService);
+    let id: string | undefined;
+    try {
+      const created = await persistence.createDraft({ name: 'Created Technology', category: 'Testing' });
+      id = created.id;
+      expect(created).toEqual({ id: expect.any(String), name: 'Created Technology', category: 'Testing', status: 'draft', displayOrder: 3 });
+      await expect(persistence.findPublished()).resolves.not.toContainEqual({ name: 'Created Technology', category: 'Testing' });
+    } finally { if (id) await database.db.delete(technologies).where(eq(technologies.id, id)); }
+  });
 });

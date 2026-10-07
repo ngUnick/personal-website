@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions, educations, experiences, profiles, projects } from '../src/database/schema.js';
+import { adminSessions, educations, experiences, profiles, projects, technologies } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -128,6 +128,21 @@ describe('API (e2e)', () => {
       await agent.patch(`/api/admin/technologies/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'archived' }).expect(200).expect({ ...original, status: 'archived' });
       await request(app.getHttpServer()).get('/api/technologies').expect(200).expect([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]);
     } finally { await agent.patch(`/api/admin/technologies/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: original.status }).expect(200); }
+  });
+
+  it('creates a private Technology Draft with server-owned lifecycle fields', async () => {
+    await request(app.getHttpServer()).post('/api/admin/technologies').send({ name: 'Created', category: 'Testing' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.post('/api/admin/technologies').send({ name: 'Created', category: 'Testing' }).expect(403);
+    await agent.post('/api/admin/technologies').set('Origin', 'https://untrusted.example').send({ name: 'Created', category: 'Testing' }).expect(403);
+    await agent.post('/api/admin/technologies').set('Origin', 'http://localhost:4200').send({ name: ' ', category: 'Testing' }).expect(400);
+    let created: { id: string; name: string; category: string; status: string } | undefined;
+    try {
+      const response = await agent.post('/api/admin/technologies').set('Origin', 'http://localhost:4200').send({ name: ' Created Technology ', category: ' Testing ', status: 'published', displayOrder: 0 }).expect(201);
+      created = response.body;
+      expect(created).toEqual({ id: expect.stringMatching(/^[0-9a-f-]{36}$/), name: 'Created Technology', category: 'Testing', status: 'draft' });
+      await request(app.getHttpServer()).get('/api/technologies').expect(200).expect([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]);
+    } finally { if (created) await app.get(DatabaseService).db.delete(technologies).where(eq(technologies.id, created.id)); }
   });
 
   it('returns the featured published placeholder project', () =>

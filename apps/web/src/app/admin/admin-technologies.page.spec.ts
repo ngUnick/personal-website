@@ -1,7 +1,7 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AdminAuthDataAccess } from '../admin-auth/admin-auth.data-access';
 import { AdminTechnologiesDataAccess } from './admin-technologies.data-access';
 import { AdminTechnologiesPage } from './admin-technologies.page';
@@ -83,9 +83,32 @@ describe('AdminTechnologiesPage', () => {
     expect(reads).toBe(0);
   });
 
+  it('creates a Draft only from valid content and navigates with the server identity', async () => {
+    let created: unknown;
+    const navigation: string[] = [];
+    await TestBed.configureTestingModule({ imports: [AdminTechnologiesPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: Router, useValue: { navigateByUrl: (url: string) => { navigation.push(url); return Promise.resolve(true); } } }, { provide: ActivatedRoute, useValue: {} }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => of([]), createDraft: (input: unknown) => { created = input; return of({ id: 'server-id', name: 'Created', category: 'Testing', status: 'draft' }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminTechnologiesPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.createDraft();
+    expect(created).toBeUndefined();
+    component.createForm.setValue({ name: 'Created', category: 'Testing' });
+    component.createDraft();
+    expect(created).toEqual({ name: 'Created', category: 'Testing' });
+    expect(navigation).toEqual(['/admin/technologies/server-id/edit']);
+  });
+
+  it('renders an accessible creation error', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminTechnologiesPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: ActivatedRoute, useValue: {} }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => of([]), createDraft: () => throwError(() => new Error('failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminTechnologiesPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.createForm.setValue({ name: 'Created', category: 'Testing' }); component.createDraft(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to create the technology draft');
+  });
+
   it('makes no private calls during SSR', async () => {
     let sessions = 0;
     let reads = 0;
+    let creates = 0;
     await TestBed.configureTestingModule({
       imports: [AdminTechnologiesPage],
       providers: [
@@ -108,6 +131,7 @@ describe('AdminTechnologiesPage', () => {
               reads++;
               return of([]);
             },
+            createDraft: () => { creates++; return of({}); },
           },
         },
       ],
@@ -117,6 +141,6 @@ describe('AdminTechnologiesPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect({ sessions, reads }).toEqual({ sessions: 0, reads: 0 });
+    expect({ sessions, reads, creates }).toEqual({ sessions: 0, reads: 0, creates: 0 });
   });
 });
