@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
-import { adminUsers, educations, experiences, profiles, projects, technologies } from './schema.js';
+import { adminUsers, credentials, educations, experiences, profiles, projects, technologies } from './schema.js';
 import { hashPassword } from '../admin-auth/password.js';
 
 if (process.env.NODE_ENV === 'production') {
@@ -12,6 +12,7 @@ const pool = new Pool({ connectionString: getDatabaseUrl() });
 const db = drizzle({ client: pool });
 
 try {
+  await db.insert(credentials).values({ id: '00000000-0000-4000-8000-000000000050', name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 0 }).onConflictDoUpdate({ target: credentials.id, set: { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 0 } });
   for (const technology of [
     { id: '00000000-0000-4000-8000-000000000040', name: 'Example TypeScript', category: 'Languages', status: 'published' as const, displayOrder: 0 },
     { id: '00000000-0000-4000-8000-000000000041', name: 'Example PostgreSQL', category: 'Data', status: 'published' as const, displayOrder: 1 },

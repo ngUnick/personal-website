@@ -29,6 +29,10 @@ export const technologyPublicationStatus = pgEnum(
   'technology_publication_status',
   ['draft', 'published', 'archived'],
 );
+export const credentialPublicationStatus = pgEnum(
+  'credential_publication_status',
+  ['draft', 'published', 'archived'],
+);
 
 export const projects = pgTable(
   'projects',
@@ -135,6 +139,23 @@ export const technologies = pgTable(
   },
   (table) => [
     check('technologies_display_order_non_negative', sql`${table.displayOrder} >= 0`),
+  ],
+);
+
+export const credentials = pgTable(
+  'credentials',
+  {
+    id: uuid('id').primaryKey(),
+    name: text('name').notNull(),
+    issuer: text('issuer').notNull(),
+    issuedOn: date('issued_on').notNull(),
+    status: credentialPublicationStatus('status').notNull().default('draft'),
+    displayOrder: integer('display_order').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check('credentials_display_order_non_negative', sql`${table.displayOrder} >= 0`),
   ],
 );
 

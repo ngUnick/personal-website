@@ -5,6 +5,8 @@ import { ExperienceModule } from '../experience/experience.module.js';
 import { EducationModule } from '../education/education.module.js';
 import { ProfileModule } from '../profile/profile.module.js';
 import { TechnologyModule } from '../technologies/technology.module.js';
+import { CredentialModule } from '../credentials/credential.module.js';
+import { AdminCredentialsController } from './admin-credentials.controller.js';
 import { AdminEducationController } from './admin-education.controller.js';
 import { AdminExperienceController } from './admin-experience.controller.js';
 import { AdminProjectsController } from './admin-projects.controller.js';
@@ -21,6 +23,7 @@ import { AdminSessionGuard } from './admin-session.guard.js';
     EducationModule,
     ProfileModule,
     TechnologyModule,
+    CredentialModule,
   ],
   controllers: [
     AdminProjectsController,
@@ -28,6 +31,7 @@ import { AdminSessionGuard } from './admin-session.guard.js';
     AdminEducationController,
     AdminProfileController,
     AdminTechnologiesController,
+    AdminCredentialsController,
   ],
   providers: [AdminSessionGuard, TrustedOriginGuard],
 })

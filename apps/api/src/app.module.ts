@@ -8,6 +8,7 @@ import { AdminModule } from './admin/admin.module.js';
 import { EducationModule } from './education/education.module.js';
 import { ProfileModule } from './profile/profile.module.js';
 import { TechnologyModule } from './technologies/technology.module.js';
+import { CredentialModule } from './credentials/credential.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TechnologyModule } from './technologies/technology.module.js';
     EducationModule,
     ProfileModule,
     TechnologyModule,
+    CredentialModule,
   ],
 })
 export class AppModule {}

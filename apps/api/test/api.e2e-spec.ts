@@ -7,7 +7,7 @@ import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { sessionCookieName } from '../src/admin-auth/admin-auth.service.js';
 import { DatabaseService } from '../src/database/database.service.js';
-import { adminSessions, educations, experiences, profiles, projects, technologies } from '../src/database/schema.js';
+import { adminSessions, credentials, educations, experiences, profiles, projects, technologies } from '../src/database/schema.js';
 
 describe('API (e2e)', () => {
   let app: INestApplication<App>;
@@ -56,6 +56,31 @@ describe('API (e2e)', () => {
 
   it('returns exactly the fictional public Profile projection', () =>
     request(app.getHttpServer()).get('/api/profile').expect(200).expect({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }));
+
+  it('keeps Credential review and editing private and content-only', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01' };
+    await request(app.getHttpServer()).get('/api/admin/credentials').expect(401);
+    await request(app.getHttpServer()).get(`/api/admin/credentials/${id}`).expect(401);
+    await request(app.getHttpServer()).patch(`/api/admin/credentials/${id}/content`).send(original).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.get('/api/admin/credentials/not-a-uuid').expect(400);
+    await agent.get('/api/admin/credentials/00000000-0000-4000-8000-000000000099').expect(404);
+    await agent.patch(`/api/admin/credentials/${id}/content`).send(original).expect(403);
+    await agent.patch(`/api/admin/credentials/${id}/content`).set('Origin', 'https://untrusted.example').send(original).expect(403);
+    await agent.patch(`/api/admin/credentials/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...original, issuedOn: '2025-02-30' }).expect(400);
+    await agent.patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/content').set('Origin', 'http://localhost:4200').send(original).expect(404);
+    const edited = { name: 'Edited Draft Credential', issuer: 'Edited Learning Provider', issuedOn: '2025-02-01' };
+    try {
+      await agent.get('/api/admin/credentials').expect(200).expect([{ id, name: original.name, issuer: original.issuer, status: 'draft' }]);
+      await agent.get(`/api/admin/credentials/${id}`).expect(200).expect({ id, ...original, status: 'draft' });
+      await agent.patch(`/api/admin/credentials/${id}/content`).set('Origin', 'http://localhost:4200').send({ ...edited, status: 'published', displayOrder: 99, createdAt: 'never', updatedAt: 'never' }).expect(200).expect({ id, ...edited, status: 'draft' });
+      const [stored] = await app.get(DatabaseService).db.select().from(credentials);
+      expect(stored).toMatchObject({ id, ...edited, status: 'draft', displayOrder: 0 });
+    } finally {
+      await agent.patch(`/api/admin/credentials/${id}/content`).set('Origin', 'http://localhost:4200').send(original).expect(200);
+    }
+  });
 
   it('keeps singleton Profile authoring private, exact, and reflected publicly', async () => {
     const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' };
