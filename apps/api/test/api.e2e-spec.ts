@@ -82,6 +82,30 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('creates a private Credential Draft with server-owned lifecycle and order', async () => {
+    const input = { name: 'Created Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' };
+    await request(app.getHttpServer()).post('/api/admin/credentials').send(input).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.post('/api/admin/credentials').send(input).expect(403);
+    await agent.post('/api/admin/credentials').set('Origin', 'https://untrusted.example').send(input).expect(403);
+    await agent.post('/api/admin/credentials').set('Origin', 'http://localhost:4200').send({ ...input, name: '   ' }).expect(400);
+    await agent.post('/api/admin/credentials').set('Origin', 'http://localhost:4200').send({ ...input, issuedOn: '2026-02-30' }).expect(400);
+    let createdId: string | undefined;
+    try {
+      const response = await agent.post('/api/admin/credentials').set('Origin', 'http://localhost:4200').send({ ...input, id: '00000000-0000-4000-8000-000000000099', status: 'published', displayOrder: 99, createdAt: 'never' }).expect(201);
+      createdId = response.body.id;
+      expect(response.body).toEqual({
+        id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+        ...input,
+        status: 'draft',
+      });
+      const [stored] = await app.get(DatabaseService).db.select().from(credentials).where(eq(credentials.id, createdId));
+      expect(stored).toMatchObject({ id: createdId, ...input, status: 'draft', displayOrder: 1 });
+    } finally {
+      if (createdId) await app.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
+    }
+  });
+
   it('changes Credential publication status through a separate protected boundary', async () => {
     const id = '00000000-0000-4000-8000-000000000050';
     const original = { id, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft' };

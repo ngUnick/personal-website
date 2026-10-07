@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseModule } from '../database/database.module.js';
+import { DatabaseService } from '../database/database.service.js';
+import { credentials } from '../database/schema.js';
+import { eq } from 'drizzle-orm';
 import { DrizzleCredentialPersistence } from './drizzle-credential.persistence.js';
 
 describe('DrizzleCredentialPersistence', () => {
@@ -69,6 +72,28 @@ describe('DrizzleCredentialPersistence', () => {
       await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
     } finally {
       if (original) await persistence.updateStatus(id, original.status);
+    }
+  });
+
+  it('creates a generated Draft after the existing global order and removes it', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleCredentialPersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleCredentialPersistence);
+    let createdId: string | undefined;
+
+    try {
+      const created = await persistence.createDraft({ name: 'Created Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' });
+      createdId = created.id;
+      expect(created).toMatchObject({ name: 'Created Credential', issuer: 'Test Provider', issuedOn: '2026-01-01', status: 'draft', displayOrder: 1 });
+      expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
+      await expect(persistence.findForAdmin()).resolves.toEqual([
+        { id: '00000000-0000-4000-8000-000000000050', name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 0 },
+        created,
+      ]);
+    } finally {
+      if (createdId) await moduleFixture.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
     }
   });
 });

@@ -25,6 +25,13 @@ describe('AdminCredentialsHttpService', () => {
     expect(list.request.withCredentials).toBe(true);
     list.flush([]);
 
+    service.createDraft(content).subscribe();
+    const create = http.expectOne('/api/admin/credentials');
+    expect(create.request.method).toBe('POST');
+    expect(create.request.withCredentials).toBe(true);
+    expect(create.request.body).toEqual(content);
+    create.flush({});
+
     service.getCredential(id).subscribe();
     const detail = http.expectOne(`/api/admin/credentials/${id}`);
     expect(detail.request.method).toBe('GET');

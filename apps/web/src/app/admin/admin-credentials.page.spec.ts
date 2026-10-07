@@ -50,17 +50,54 @@ describe('AdminCredentialsPage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to load credentials.');
   });
 
+  it('creates a valid Draft with the server identity and reports creation failures accessibly', async () => {
+    let created: unknown;
+    const navigation: string[] = [];
+    await TestBed.configureTestingModule({
+      imports: [AdminCredentialsPage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ActivatedRoute, useValue: {} },
+        { provide: Router, useValue: { navigateByUrl: (url: string) => { navigation.push(url); return Promise.resolve(true); } } },
+        { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
+        { provide: AdminCredentialsDataAccess, useValue: { getCredentials: () => of([]), createDraft: (input: unknown) => { created = input; return of({ id: 'server-id', name: 'Created', issuer: 'Provider', issuedOn: '2026-01-01', status: 'draft' }); } } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialsPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.createDraft();
+    expect(created).toBeUndefined();
+    component.createForm.setValue({ name: 'Created', issuer: 'Provider', issuedOn: '2026-01-01' }); component.createDraft();
+    expect(created).toEqual({ name: 'Created', issuer: 'Provider', issuedOn: '2026-01-01' });
+    expect(navigation).toEqual(['/admin/credentials/server-id/edit']);
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [AdminCredentialsPage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ActivatedRoute, useValue: {} },
+        { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+        { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
+        { provide: AdminCredentialsDataAccess, useValue: { getCredentials: () => of([]), createDraft: () => throwError(() => new Error('failed')) } },
+      ],
+    }).compileComponents();
+    const failed = TestBed.createComponent(AdminCredentialsPage); failed.detectChanges(); await failed.whenStable();
+    (failed.componentInstance as any).createForm.setValue({ name: 'Created', issuer: 'Provider', issuedOn: '2026-01-01' }); (failed.componentInstance as any).createDraft(); failed.detectChanges();
+    expect(failed.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to create the credential draft.');
+  });
+
   it('makes no private calls during SSR', async () => {
-    let sessions = 0; let reads = 0;
+    let sessions = 0; let reads = 0; let creates = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialsPage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: ActivatedRoute, useValue: {} },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions++; return of({ authenticated: true }); } } },
-      { provide: AdminCredentialsDataAccess, useValue: { getCredentials: () => { reads++; return of([]); } } },
+      { provide: AdminCredentialsDataAccess, useValue: { getCredentials: () => { reads++; return of([]); }, createDraft: () => { creates++; return of({}); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialsPage);
     fixture.detectChanges(); await fixture.whenStable();
-    expect({ sessions, reads }).toEqual({ sessions: 0, reads: 0 });
+    expect({ sessions, reads, creates }).toEqual({ sessions: 0, reads: 0, creates: 0 });
   });
 });
