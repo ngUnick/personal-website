@@ -59,4 +59,21 @@ describe('DrizzleTechnologyPersistence', () => {
       await expect(persistence.findPublished()).resolves.not.toContainEqual({ name: 'Created Technology', category: 'Testing' });
     } finally { if (id) await database.db.delete(technologies).where(eq(technologies.id, id)); }
   });
+
+  it('swaps adjacent global positions across statuses and preserves record data', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleTechnologyPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleTechnologyPersistence);
+    const first = '00000000-0000-4000-8000-000000000040';
+    const second = '00000000-0000-4000-8000-000000000041';
+    try {
+      await expect(persistence.moveTechnology(second, 'up')).resolves.toEqual([{ id: second, name: 'Example PostgreSQL', category: 'Data', status: 'published', displayOrder: 0 }, { id: first, name: 'Example TypeScript', category: 'Languages', status: 'published', displayOrder: 1 }, { id: '00000000-0000-4000-8000-000000000042', name: 'Example Draft Tool', category: 'Tools', status: 'draft', displayOrder: 2 }]);
+      await expect(persistence.findPublished()).resolves.toEqual([{ name: 'Example PostgreSQL', category: 'Data' }, { name: 'Example TypeScript', category: 'Languages' }]);
+      await expect(persistence.moveTechnology(second, 'up')).resolves.toHaveLength(3);
+      await expect(persistence.moveTechnology('00000000-0000-4000-8000-000000000099', 'down')).resolves.toBeUndefined();
+      await persistence.moveTechnology(first, 'up');
+      await expect(persistence.moveTechnology('00000000-0000-4000-8000-000000000042', 'up')).resolves.toEqual([{ id: first, name: 'Example TypeScript', category: 'Languages', status: 'published', displayOrder: 0 }, { id: '00000000-0000-4000-8000-000000000042', name: 'Example Draft Tool', category: 'Tools', status: 'draft', displayOrder: 1 }, { id: second, name: 'Example PostgreSQL', category: 'Data', status: 'published', displayOrder: 2 }]);
+      await expect(persistence.findPublished()).resolves.toEqual([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]);
+      await persistence.moveTechnology('00000000-0000-4000-8000-000000000042', 'down');
+    } finally { await persistence.moveTechnology(first, 'up'); }
+  });
 });

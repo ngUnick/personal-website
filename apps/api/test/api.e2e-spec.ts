@@ -145,6 +145,26 @@ describe('API (e2e)', () => {
     } finally { if (created) await app.get(DatabaseService).db.delete(technologies).where(eq(technologies.id, created.id)); }
   });
 
+  it('moves Technologies through a protected adjacent global order', async () => {
+    const first = '00000000-0000-4000-8000-000000000040';
+    const second = '00000000-0000-4000-8000-000000000041';
+    await request(app.getHttpServer()).patch(`/api/admin/technologies/${second}/order`).send({ direction: 'up' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/technologies/${second}/order`).send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/technologies/${second}/order`).set('Origin', 'https://untrusted.example').send({ direction: 'up' }).expect(403);
+    await agent.patch(`/api/admin/technologies/${second}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'sideways' }).expect(400);
+    await agent.patch('/api/admin/technologies/00000000-0000-4000-8000-000000000099/order').set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(404);
+    try {
+      await agent.patch(`/api/admin/technologies/${second}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect([{ id: second, name: 'Example PostgreSQL', category: 'Data', status: 'published' }, { id: first, name: 'Example TypeScript', category: 'Languages', status: 'published' }, { id: '00000000-0000-4000-8000-000000000042', name: 'Example Draft Tool', category: 'Tools', status: 'draft' }]);
+      await request(app.getHttpServer()).get('/api/technologies').expect(200).expect([{ name: 'Example PostgreSQL', category: 'Data' }, { name: 'Example TypeScript', category: 'Languages' }]);
+      await agent.patch(`/api/admin/technologies/${second}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200);
+      await agent.patch(`/api/admin/technologies/${first}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200);
+      await agent.patch(`/api/admin/technologies/00000000-0000-4000-8000-000000000042/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200).expect([{ id: first, name: 'Example TypeScript', category: 'Languages', status: 'published' }, { id: '00000000-0000-4000-8000-000000000042', name: 'Example Draft Tool', category: 'Tools', status: 'draft' }, { id: second, name: 'Example PostgreSQL', category: 'Data', status: 'published' }]);
+      await request(app.getHttpServer()).get('/api/technologies').expect(200).expect([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]);
+      await agent.patch('/api/admin/technologies/00000000-0000-4000-8000-000000000042/order').set('Origin', 'http://localhost:4200').send({ direction: 'down' }).expect(200);
+    } finally { await agent.patch(`/api/admin/technologies/${first}/order`).set('Origin', 'http://localhost:4200').send({ direction: 'up' }).expect(200); }
+  });
+
   it('returns the featured published placeholder project', () =>
     request(app.getHttpServer())
       .get('/api/projects?featured=true')

@@ -105,10 +105,28 @@ describe('AdminTechnologiesPage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to create the technology draft');
   });
 
+  it('uses the authoritative ordered result and exposes disabled boundaries', async () => {
+    let moved: unknown;
+    const entries = [{ id: 'first', name: 'First', category: 'Tools', status: 'published' as const }, { id: 'second', name: 'Second', category: 'Data', status: 'draft' as const }];
+    await TestBed.configureTestingModule({ imports: [AdminTechnologiesPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: ActivatedRoute, useValue: {} }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => of(entries), moveTechnology: (id: string, direction: string) => { moved = { id, direction }; return of([entries[1], entries[0]]); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminTechnologiesPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    expect(fixture.nativeElement.querySelector('[aria-label="Move First up"]')?.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('[aria-label="Move Second down"]')?.disabled).toBe(true);
+    component.moveTechnology(component.technologies[1], 'up'); fixture.detectChanges();
+    expect(moved).toEqual({ id: 'second', direction: 'up' }); expect(component.technologies.map((technology: { id: string }) => technology.id)).toEqual(['second', 'first']);
+  });
+
+  it('renders an accessible ordering error', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminTechnologiesPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: ActivatedRoute, useValue: {} }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => of(technologies), moveTechnology: () => throwError(() => new Error('failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminTechnologiesPage); fixture.detectChanges(); await fixture.whenStable(); (fixture.componentInstance as any).moveTechnology(technologies[0], 'down'); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to update technology order');
+  });
+
   it('makes no private calls during SSR', async () => {
     let sessions = 0;
     let reads = 0;
     let creates = 0;
+    let orders = 0;
     await TestBed.configureTestingModule({
       imports: [AdminTechnologiesPage],
       providers: [
@@ -132,6 +150,7 @@ describe('AdminTechnologiesPage', () => {
               return of([]);
             },
             createDraft: () => { creates++; return of({}); },
+            moveTechnology: () => { orders++; return of([]); },
           },
         },
       ],
@@ -141,6 +160,6 @@ describe('AdminTechnologiesPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect({ sessions, reads, creates }).toEqual({ sessions: 0, reads: 0, creates: 0 });
+    expect({ sessions, reads, creates, orders }).toEqual({ sessions: 0, reads: 0, creates: 0, orders: 0 });
   });
 });
