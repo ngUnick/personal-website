@@ -53,4 +53,22 @@ describe('DrizzleCredentialPersistence', () => {
       if (original) await persistence.updateContent(id, original);
     }
   });
+
+  it('changes only the lifecycle status and restores the Draft', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleCredentialPersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleCredentialPersistence);
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = await persistence.findForAdminById(id);
+
+    try {
+      await expect(persistence.updateStatus(id, 'published')).resolves.toEqual({ ...original, status: 'published' });
+      await expect(persistence.updateStatus(id, 'archived')).resolves.toEqual({ ...original, status: 'archived' });
+      await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
+    } finally {
+      if (original) await persistence.updateStatus(id, original.status);
+    }
+  });
 });

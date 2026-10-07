@@ -37,6 +37,12 @@ describe('AdminCredentialsHttpService', () => {
     expect(update.request.withCredentials).toBe(true);
     expect(update.request.body).toEqual(content);
     update.flush({});
+    service.updateStatus(id, 'published').subscribe();
+    const status = http.expectOne(`/api/admin/credentials/${id}/status`);
+    expect(status.request.method).toBe('PATCH');
+    expect(status.request.withCredentials).toBe(true);
+    expect(status.request.body).toEqual({ status: 'published' });
+    status.flush({});
     http.verify();
   });
 });

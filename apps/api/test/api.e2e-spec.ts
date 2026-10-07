@@ -82,6 +82,27 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('changes Credential publication status through a separate protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = { id, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft' };
+    await request(app.getHttpServer()).patch(`/api/admin/credentials/${id}/status`).send({ status: 'published' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/credentials/${id}/status`).send({ status: 'published' }).expect(403);
+    await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'https://untrusted.example').send({ status: 'published' }).expect(403);
+    await agent.patch('/api/admin/credentials/not-a-uuid/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(400);
+    await agent.patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/status').set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(404);
+    await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({}).expect(400);
+    await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'invalid' }).expect(400);
+    try {
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published', name: 'Malicious', displayOrder: 99 }).expect(200).expect({ ...original, status: 'published' });
+      const [stored] = await app.get(DatabaseService).db.select().from(credentials);
+      expect(stored).toMatchObject({ ...original, status: 'published', displayOrder: 0 });
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'archived' }).expect(200).expect({ ...original, status: 'archived' });
+    } finally {
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
   it('keeps singleton Profile authoring private, exact, and reflected publicly', async () => {
     const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' };
     await request(app.getHttpServer()).get('/api/admin/profile').expect(401);

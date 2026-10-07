@@ -33,6 +33,22 @@ describe('AdminCredentialEditorPage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential changes.');
   });
 
+  it('keeps publication changes separate and renders an accessible status error', async () => {
+    let contentCalls = 0; let statusCalls = 0;
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => { contentCalls++; return of(item); }, updateStatus: (_id: string, status: string) => { statusCalls++; return of({ ...item, status }); } }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.changeStatus('published');
+    expect({ contentCalls, statusCalls }).toEqual({ contentCalls: 0, statusCalls: 1 });
+    expect(component.status()).toBe('published');
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => of(item), updateStatus: () => throwError(() => new Error('status failed')) }) }).compileComponents();
+    const failed = TestBed.createComponent(AdminCredentialEditorPage); failed.detectChanges(); await failed.whenStable();
+    (failed.componentInstance as any).changeStatus('published'); failed.detectChanges();
+    expect(failed.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to change credential publication status.');
+  });
+
   it('redirects an unauthenticated browser without reading the credential', async () => {
     const navigation: string[] = []; let reads = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item) }, of({ authenticated: false }), (url?: string) => { navigation.push(url ?? ''); return Promise.resolve(true); }) }).compileComponents();
@@ -41,15 +57,15 @@ describe('AdminCredentialEditorPage', () => {
   });
 
   it('makes no private calls during SSR', async () => {
-    let sessions = 0; let reads = 0;
+    let sessions = 0; let reads = 0; let statusUpdates = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions++; return of({ authenticated: true }); } } },
-      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item) } },
+      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
-    expect({ sessions, reads }).toEqual({ sessions: 0, reads: 0 });
+    expect({ sessions, reads, statusUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0 });
   });
 });
