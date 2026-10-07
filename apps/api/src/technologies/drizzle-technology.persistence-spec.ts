@@ -32,4 +32,18 @@ describe('DrizzleTechnologyPersistence', () => {
       await expect(persistence.updateContent('00000000-0000-4000-8000-000000000099', { name: 'Missing', category: 'Missing' })).resolves.toBeUndefined();
     } finally { if (original) await persistence.updateContent(id, original); }
   });
+
+  it('changes only status and makes visibility transitions explicit', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleTechnologyPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleTechnologyPersistence);
+    const id = '00000000-0000-4000-8000-000000000042';
+    const original = await persistence.findForAdminById(id);
+    try {
+      await expect(persistence.updateStatus(id, 'published')).resolves.toEqual({ ...original, status: 'published' });
+      await expect(persistence.findPublished()).resolves.toContainEqual({ name: original?.name, category: original?.category });
+      await expect(persistence.updateStatus(id, 'archived')).resolves.toEqual({ ...original, status: 'archived' });
+      await expect(persistence.findPublished()).resolves.not.toContainEqual({ name: original?.name, category: original?.category });
+      await expect(persistence.updateStatus('00000000-0000-4000-8000-000000000099', 'published')).resolves.toBeUndefined();
+    } finally { if (original) await persistence.updateStatus(id, original.status); }
+  });
 });

@@ -72,6 +72,55 @@ describe('AdminTechnologyEditorPage', () => {
     );
   });
 
+  it('keeps the publication action separate and uses the authoritative status response', async () => {
+    let contentCalls = 0;
+    let statusCalls = 0;
+    await TestBed.configureTestingModule({
+      imports: [AdminTechnologyEditorPage],
+      providers: providers('browser', {
+        getTechnology: () => of(item),
+        updateContent: () => {
+          contentCalls++;
+          return of(item);
+        },
+        updateStatus: (_id: string, status: string) => {
+          statusCalls++;
+          return of({ ...item, status });
+        },
+      }),
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AdminTechnologyEditorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.changeStatus('published');
+
+    expect({ contentCalls, statusCalls }).toEqual({ contentCalls: 0, statusCalls: 1 });
+    expect(component.status()).toBe('published');
+  });
+
+  it('renders an accessible status error independently', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminTechnologyEditorPage],
+      providers: providers('browser', {
+        getTechnology: () => of(item),
+        updateContent: () => of(item),
+        updateStatus: () => throwError(() => new Error('status failed')),
+      }),
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AdminTechnologyEditorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (fixture.componentInstance as any).changeStatus('published');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Unable to change technology publication status.',
+    );
+  });
+
   it('redirects an unauthenticated browser request without reading the technology', async () => {
     const navigation: string[] = [];
     let reads = 0;
@@ -105,6 +154,7 @@ describe('AdminTechnologyEditorPage', () => {
   it('makes no private calls during SSR', async () => {
     let sessions = 0;
     let reads = 0;
+    let statusUpdates = 0;
     await TestBed.configureTestingModule({
       imports: [AdminTechnologyEditorPage],
       providers: [
@@ -128,6 +178,10 @@ describe('AdminTechnologyEditorPage', () => {
               return throwError(() => new Error('should not read'));
             },
             updateContent: () => of(item),
+            updateStatus: () => {
+              statusUpdates++;
+              return of(item);
+            },
           },
         },
       ],
@@ -137,6 +191,10 @@ describe('AdminTechnologyEditorPage', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect({ sessions, reads }).toEqual({ sessions: 0, reads: 0 });
+    expect({ sessions, reads, statusUpdates }).toEqual({
+      sessions: 0,
+      reads: 0,
+      statusUpdates: 0,
+    });
   });
 });
