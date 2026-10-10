@@ -75,6 +75,30 @@ describe('DrizzleCredentialPersistence', () => {
     }
   });
 
+  it('reads only published Credentials in global display order through the public projection', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleCredentialPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleCredentialPersistence);
+    const originalId = '00000000-0000-4000-8000-000000000050';
+    let createdId: string | undefined;
+    try {
+      const created = await persistence.createDraft({ name: 'Published Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' });
+      createdId = created.id;
+      await persistence.updateStatus(originalId, 'published');
+      await persistence.updateStatus(createdId, 'published');
+      await expect(persistence.findPublished()).resolves.toEqual([
+        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01' },
+        { name: 'Published Credential', issuer: 'Test Provider', issuedOn: '2026-01-01' },
+      ]);
+      await persistence.updateStatus(createdId, 'archived');
+      await expect(persistence.findPublished()).resolves.toEqual([
+        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01' },
+      ]);
+    } finally {
+      await persistence.updateStatus(originalId, 'draft');
+      if (createdId) await moduleFixture.get(DatabaseService).db.delete(credentials).where(eq(credentials.id, createdId));
+    }
+  });
+
   it('creates a generated Draft after the existing global order and removes it', async () => {
     moduleFixture = await Test.createTestingModule({
       imports: [DatabaseModule],

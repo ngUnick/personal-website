@@ -57,6 +57,21 @@ describe('API (e2e)', () => {
   it('returns exactly the fictional public Profile projection', () =>
     request(app.getHttpServer()).get('/api/profile').expect(200).expect({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' }));
 
+  it('returns only published Credential data through the public projection', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    const publicCredential = { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01' };
+    const agent = await authenticatedAgent();
+    try {
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([publicCredential]);
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'archived' }).expect(200);
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
+    } finally {
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
   it('keeps Credential review and editing private and content-only', async () => {
     const id = '00000000-0000-4000-8000-000000000050';
     const original = { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01' };
