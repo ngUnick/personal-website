@@ -34,7 +34,7 @@ describe('HomePage', () => {
           },
         },
         { provide: EducationDataAccess, useValue: { getEducation: () => of([{ institution: 'Example Technical Institute', qualification: 'Example Software Engineering Diploma', summary: 'Fictional education fixture used to validate the public homepage path.', startDate: '2020-01-01', endDate: '2023-01-01' }]) } },
-        { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }) } },
+        { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' }) } },
         { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([{ name: 'Example TypeScript', category: 'Languages' }]) } },
       ],
     }).compileComponents();
@@ -50,9 +50,16 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
     expect(fixture.nativeElement.textContent).toContain('Technical Toolkit');
     expect(fixture.nativeElement.textContent).toContain('Example TypeScript');
+    expect(fixture.nativeElement.querySelector('a[href="mailto:portfolio@example.invalid"]')?.textContent).toContain('portfolio@example.invalid');
     const projectLink = fixture.nativeElement.querySelector(
       'a[href="/projects/placeholder-project"]',
     );
     expect(projectLink?.getAttribute('aria-label')).toBe('View Placeholder Project');
+  });
+
+  it('omits Contact when the public Profile has no email', async () => {
+    await TestBed.configureTestingModule({ imports: [HomePage], providers: [provideRouter([]), { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) } }, { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } }, { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } }, { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example', summary: 'Summary', about: 'About', contactEmail: null }) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(HomePage); fixture.detectChanges(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 });

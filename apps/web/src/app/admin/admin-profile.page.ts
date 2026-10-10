@@ -25,9 +25,20 @@ import {
         <label>About <textarea formControlName="about"></textarea></label>
         <button type="submit" [disabled]="form.invalid">Save</button>
       </form>
+      <section aria-label="Contact email">
+        <h2>Contact email</h2>
+        <form [formGroup]="contactForm" (ngSubmit)="saveContact()">
+          <label>Email <input type="email" formControlName="contactEmail" /></label>
+          <button type="submit" [disabled]="contactForm.invalid">Save contact email</button>
+          <button type="button" (click)="clearContact()">Clear contact email</button>
+        </form>
+      </section>
     }
     @if (saveError()) {
       <p role="alert">Unable to save profile changes. Please try again.</p>
+    }
+    @if (contactError()) {
+      <p role="alert">Unable to save contact email. Please try again.</p>
     }
   </main>`,
 })
@@ -38,6 +49,7 @@ export class AdminProfilePage {
   private readonly platformId = inject(PLATFORM_ID);
   protected readonly profileLoaded = signal(false);
   protected readonly saveError = signal(false);
+  protected readonly contactError = signal(false);
   protected readonly form = new FormGroup({
     headline: new FormControl('', {
       nonNullable: true,
@@ -50,6 +62,12 @@ export class AdminProfilePage {
     about: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required],
+    }),
+  });
+  protected readonly contactForm = new FormGroup({
+    contactEmail: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.email],
     }),
   });
 
@@ -73,6 +91,24 @@ export class AdminProfilePage {
     });
   }
 
+  protected saveContact() {
+    if (this.contactForm.invalid) return;
+    this.contactError.set(false);
+    const contactEmail = this.contactForm.controls.contactEmail.value.trim();
+    this.data.updateContact(contactEmail || null).subscribe({
+      next: (profile) => this.apply(profile),
+      error: () => this.contactError.set(true),
+    });
+  }
+
+  protected clearContact() {
+    this.contactError.set(false);
+    this.data.updateContact(null).subscribe({
+      next: (profile) => this.apply(profile),
+      error: () => this.contactError.set(true),
+    });
+  }
+
   private load() {
     this.data.getProfile().subscribe({
       next: (profile) => this.apply(profile),
@@ -81,7 +117,8 @@ export class AdminProfilePage {
   }
 
   private apply(profile: AdminProfile) {
-    this.form.setValue(profile);
+    this.form.setValue({ headline: profile.headline, summary: profile.summary, about: profile.about });
+    this.contactForm.setValue({ contactEmail: profile.contactEmail ?? '' });
     this.profileLoaded.set(true);
   }
 }

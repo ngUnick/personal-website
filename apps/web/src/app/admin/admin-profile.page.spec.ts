@@ -7,7 +7,7 @@ import { AdminProfileDataAccess } from './admin-profile.data-access';
 import { AdminProfilePage } from './admin-profile.page';
 
 describe('AdminProfilePage', () => {
-  const profile = { headline: 'Example headline', summary: 'Example summary', about: 'Example about' };
+  const profile = { headline: 'Example headline', summary: 'Example summary', about: 'Example about', contactEmail: 'portfolio@example.invalid' };
 
   it('uses the authoritative saved response and does not submit an invalid form', async () => {
     let calls = 0;
@@ -16,7 +16,7 @@ describe('AdminProfilePage', () => {
       { provide: PLATFORM_ID, useValue: 'browser' },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
-      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: (value: unknown) => { calls += 1; saved = value; return of({ ...profile, headline: 'Canonical saved headline' }); } } },
+      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: (value: unknown) => { calls += 1; saved = value; return of({ ...profile, headline: 'Canonical saved headline' }); }, updateContact: () => of(profile) } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProfilePage);
     fixture.detectChanges();
@@ -27,7 +27,7 @@ describe('AdminProfilePage', () => {
     expect(calls).toBe(0);
     component.form.patchValue({ headline: profile.headline });
     component.save();
-    expect(saved).toEqual(profile);
+    expect(saved).toEqual({ headline: profile.headline, summary: profile.summary, about: profile.about });
     expect(component.form.getRawValue().headline).toBe('Canonical saved headline');
   });
 
@@ -37,7 +37,7 @@ describe('AdminProfilePage', () => {
       { provide: PLATFORM_ID, useValue: 'browser' },
       { provide: Router, useValue: { navigateByUrl: (url: string) => { navigations.push(url); return Promise.resolve(true); } } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: false }) } },
-      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => of(profile) } },
+      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => of(profile), updateContact: () => of(profile) } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProfilePage);
     fixture.detectChanges();
@@ -50,7 +50,7 @@ describe('AdminProfilePage', () => {
       { provide: PLATFORM_ID, useValue: 'browser' },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
-      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => throwError(() => new Error('failed')) } },
+      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => throwError(() => new Error('failed')), updateContact: () => of(profile) } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProfilePage);
     fixture.detectChanges();
@@ -60,19 +60,41 @@ describe('AdminProfilePage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save profile changes');
   });
 
+  it('saves and clears contact email separately with an accessible failure', async () => {
+    let contact: string | null | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminProfilePage], providers: [
+      { provide: PLATFORM_ID, useValue: 'browser' },
+      { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+      { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
+      { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => of(profile), updateContact: (value: string | null) => { contact = value; return of({ ...profile, contactEmail: value }); } } },
+    ] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProfilePage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.contactForm.setValue({ contactEmail: 'updated@example.invalid' }); component.saveContact();
+    expect(contact).toBe('updated@example.invalid');
+    component.clearContact(); expect(contact).toBeNull();
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [AdminProfilePage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProfileDataAccess, useValue: { getProfile: () => of(profile), updateContent: () => of(profile), updateContact: () => throwError(() => new Error('failed')) } }] }).compileComponents();
+    const failed = TestBed.createComponent(AdminProfilePage); failed.detectChanges(); await failed.whenStable();
+    (failed.componentInstance as any).clearContact(); failed.detectChanges();
+    expect(failed.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save contact email');
+  });
+
   it('makes no session or private Profile calls during SSR', async () => {
     let sessions = 0;
     let reads = 0;
     let writes = 0;
+    let contactWrites = 0;
     await TestBed.configureTestingModule({ imports: [AdminProfilePage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: true }); } } },
-      { provide: AdminProfileDataAccess, useValue: { getProfile: () => { reads += 1; return of(profile); }, updateContent: () => { writes += 1; return of(profile); } } },
+      { provide: AdminProfileDataAccess, useValue: { getProfile: () => { reads += 1; return of(profile); }, updateContent: () => { writes += 1; return of(profile); }, updateContact: () => { contactWrites += 1; return of(profile); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProfilePage);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect({ sessions, reads, writes }).toEqual({ sessions: 0, reads: 0, writes: 0 });
+    expect({ sessions, reads, writes, contactWrites }).toEqual({ sessions: 0, reads: 0, writes: 0, contactWrites: 0 });
   });
 });

@@ -20,7 +20,7 @@ try {
   ]) {
     await db.insert(technologies).values(technology).onConflictDoUpdate({ target: technologies.id, set: { name: technology.name, category: technology.category, status: technology.status, displayOrder: technology.displayOrder } });
   }
-  await db.insert(profiles).values({ id: 1, headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }).onConflictDoUpdate({ target: profiles.id, set: { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' } });
+  await db.insert(profiles).values({ id: 1, headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' }).onConflictDoUpdate({ target: profiles.id, set: { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' } });
   const fakeAdminPasswordHash = await hashPassword('development-only-password');
   await db
     .insert(educations)

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../core/api-base-url';
-import { AdminProfile, AdminProfileDataAccess } from './admin-profile.data-access';
+import { AdminProfile, AdminProfileDataAccess, ProfileContent } from './admin-profile.data-access';
 
 @Injectable({ providedIn: 'root' })
 export class AdminProfileHttpService extends AdminProfileDataAccess {
@@ -15,10 +15,18 @@ export class AdminProfileHttpService extends AdminProfileDataAccess {
     });
   }
 
-  updateContent(content: AdminProfile): Observable<AdminProfile> {
+  updateContent(content: ProfileContent): Observable<AdminProfile> {
     return this.http.patch<AdminProfile>(
       `${this.apiBaseUrl}/admin/profile/content`,
       content,
+      { withCredentials: true },
+    );
+  }
+
+  updateContact(contactEmail: string | null): Observable<AdminProfile> {
+    return this.http.patch<AdminProfile>(
+      `${this.apiBaseUrl}/admin/profile/contact`,
+      { contactEmail },
       { withCredentials: true },
     );
   }

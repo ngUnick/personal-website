@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PROFILE_PERSISTENCE } from './profile.persistence.js';
 import type {
   ProfileContentUpdate,
+  ProfileContactUpdate,
   ProfilePersistence,
 } from './profile.persistence.js';
 
@@ -19,6 +20,12 @@ export class ProfileService {
 
   async updateContent(content: ProfileContentUpdate) {
     const profile = await this.persistence.updateContent(content);
+    if (!profile) throw new NotFoundException('Profile not found.');
+    return profile;
+  }
+
+  async updateContact(contact: ProfileContactUpdate) {
+    const profile = await this.persistence.updateContact(contact);
     if (!profile) throw new NotFoundException('Profile not found.');
     return profile;
   }

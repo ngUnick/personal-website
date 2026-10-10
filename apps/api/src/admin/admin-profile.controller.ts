@@ -18,6 +18,7 @@ import { ProfileService } from '../profile/profile.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateProfileContentDto } from './update-profile-content.dto.js';
+import { UpdateProfileContactDto } from './update-profile-contact.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/profile')
@@ -42,6 +43,16 @@ export class AdminProfileController {
     return this.profile.updateContent(this.validContent(body));
   }
 
+  @Patch('contact')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProfileContactDto })
+  @ApiOkResponse({ type: ProfileResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  updateContact(@Body() body: UpdateProfileContactDto) {
+    return this.profile.updateContact(this.validContact(body));
+  }
+
   private validContent(body: UpdateProfileContentDto) {
     const headline = typeof body?.headline === 'string' ? body.headline.trim() : '';
     const summary = typeof body?.summary === 'string' ? body.summary.trim() : '';
@@ -50,5 +61,14 @@ export class AdminProfileController {
       throw new BadRequestException('Headline, summary, and about content are required.');
     }
     return { headline, summary, about };
+  }
+
+  private validContact(body: UpdateProfileContactDto) {
+    if (body?.contactEmail === null) return { contactEmail: null };
+    const contactEmail = typeof body?.contactEmail === 'string' ? body.contactEmail.trim() : '';
+    if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      throw new BadRequestException('A valid contact email or null is required.');
+    }
+    return { contactEmail };
   }
 }

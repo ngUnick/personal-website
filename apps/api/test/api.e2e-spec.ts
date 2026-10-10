@@ -55,7 +55,7 @@ describe('API (e2e)', () => {
       ]));
 
   it('returns exactly the fictional public Profile projection', () =>
-    request(app.getHttpServer()).get('/api/profile').expect(200).expect({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' }));
+    request(app.getHttpServer()).get('/api/profile').expect(200).expect({ headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' }));
 
   it('keeps Credential review and editing private and content-only', async () => {
     const id = '00000000-0000-4000-8000-000000000050';
@@ -153,7 +153,7 @@ describe('API (e2e)', () => {
   });
 
   it('keeps singleton Profile authoring private, exact, and reflected publicly', async () => {
-    const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.' };
+    const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' };
     await request(app.getHttpServer()).get('/api/admin/profile').expect(401);
     await request(app.getHttpServer()).patch('/api/admin/profile/content').send(original).expect(401);
     const agent = await authenticatedAgent();
@@ -163,7 +163,7 @@ describe('API (e2e)', () => {
     await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, headline: '   ' }).expect(400);
     await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, summary: 1 }).expect(400);
     await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ ...original, about: undefined }).expect(400);
-    const expected = { headline: 'Edited fictional headline', summary: 'Edited fictional profile summary', about: 'Edited fictional profile about text' };
+    const expected = { headline: 'Edited fictional headline', summary: 'Edited fictional profile summary', about: 'Edited fictional profile about text', contactEmail: original.contactEmail };
     try {
       await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send({ headline: ` ${expected.headline} `, summary: ` ${expected.summary} `, about: ` ${expected.about} `, id: 99, createdAt: 'never', updatedAt: 'never' }).expect(200).expect(expected);
       await agent.get('/api/admin/profile').expect(200).expect(expected);
@@ -173,6 +173,24 @@ describe('API (e2e)', () => {
       expect(stored).toMatchObject(expected);
     } finally {
       await agent.patch('/api/admin/profile/content').set('Origin', 'http://localhost:4200').send(original).expect(200);
+    }
+  });
+
+  it('updates or clears singleton Profile contact email through a separate protected boundary', async () => {
+    const original = { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' };
+    await request(app.getHttpServer()).patch('/api/admin/profile/contact').send({ contactEmail: 'new@example.invalid' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch('/api/admin/profile/contact').send({ contactEmail: 'new@example.invalid' }).expect(403);
+    await agent.patch('/api/admin/profile/contact').set('Origin', 'https://untrusted.example').send({ contactEmail: 'new@example.invalid' }).expect(403);
+    await agent.patch('/api/admin/profile/contact').set('Origin', 'http://localhost:4200').send({ contactEmail: '' }).expect(400);
+    await agent.patch('/api/admin/profile/contact').set('Origin', 'http://localhost:4200').send({ contactEmail: 'not-an-email' }).expect(400);
+    try {
+      const updated = { ...original, contactEmail: 'new@example.invalid' };
+      await agent.patch('/api/admin/profile/contact').set('Origin', 'http://localhost:4200').send({ contactEmail: ` ${updated.contactEmail} `, headline: 'ignored' }).expect(200).expect(updated);
+      await request(app.getHttpServer()).get('/api/profile').expect(200).expect(updated);
+      await agent.patch('/api/admin/profile/contact').set('Origin', 'http://localhost:4200').send({ contactEmail: null }).expect(200).expect({ ...original, contactEmail: null });
+    } finally {
+      await agent.patch('/api/admin/profile/contact').set('Origin', 'http://localhost:4200').send({ contactEmail: original.contactEmail }).expect(200);
     }
   });
 

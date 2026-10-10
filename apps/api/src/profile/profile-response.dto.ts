@@ -9,4 +9,7 @@ export class ProfileResponseDto {
 
   @ApiProperty()
   about!: string;
+
+  @ApiProperty({ nullable: true })
+  contactEmail!: string | null;
 }

@@ -118,6 +118,7 @@ export const profiles = pgTable('profiles', {
   headline: text('headline').notNull(),
   summary: text('summary').notNull(),
   about: text('about').notNull(),
+  contactEmail: text('contact_email'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
