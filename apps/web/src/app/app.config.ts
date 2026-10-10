@@ -28,6 +28,8 @@ import { AdminTechnologiesDataAccess } from './admin/admin-technologies.data-acc
 import { AdminTechnologiesHttpService } from './admin/admin-technologies-http.service';
 import { AdminCredentialsDataAccess } from './admin/admin-credentials.data-access';
 import { AdminCredentialsHttpService } from './admin/admin-credentials-http.service';
+import { CredentialDataAccess } from './credentials/credential.data-access';
+import { CredentialHttpService } from './credentials/credential-http.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -48,5 +50,6 @@ export const appConfig: ApplicationConfig = {
     { provide: TechnologyDataAccess, useClass: TechnologyHttpService },
     { provide: AdminTechnologiesDataAccess, useClass: AdminTechnologiesHttpService },
     { provide: AdminCredentialsDataAccess, useClass: AdminCredentialsHttpService },
+    { provide: CredentialDataAccess, useClass: CredentialHttpService },
   ],
 };
