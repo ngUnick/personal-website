@@ -1,7 +1,10 @@
 <main class="home-page">
   <header>
     <p class="eyebrow">Software engineering portfolio</p>
-    @if (profile(); as profile) { <h1>{{ profile.headline }}</h1><p class="intro">{{ profile.summary }}</p> }
+    @if (profile(); as profile) {
+      <h1>{{ profile.headline }}</h1>
+      <p class="intro">{{ profile.summary }}</p>
+    }
     <a routerLink="/experience">View experience</a>
   </header>
 
@@ -33,7 +36,32 @@
   <section aria-labelledby="technical-toolkit-heading">
     <h2 id="technical-toolkit-heading">Technical Toolkit</h2>
     @for (technology of technologies(); track $index) {
-      <article><h3>{{ technology.name }}</h3><p>{{ technology.category }}</p></article>
+      <article>
+        <h3>{{ technology.name }}</h3>
+        <p>{{ technology.category }}</p>
+      </article>
+    }
+  </section>
+
+  <section aria-labelledby="experience-heading">
+    <div class="section-heading">
+      <h2 id="experience-heading">Experience</h2>
+      <a routerLink="/experience">View all experience</a>
+    </div>
+    @for (item of experience(); track item.organization + item.role) {
+      <article>
+        <h3>{{ item.role }}</h3>
+        <p>{{ item.organization }}</p>
+        <p>{{ item.summary }}</p>
+        <p>
+          <time [attr.datetime]="item.startDate">{{ item.startDate }}</time> —
+          @if (item.endDate) {
+            <time [attr.datetime]="item.endDate">{{ item.endDate }}</time>
+          } @else {
+            Present
+          }
+        </p>
+      </article>
     }
   </section>
 
