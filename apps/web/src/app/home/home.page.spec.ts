@@ -95,6 +95,12 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
     expect(fixture.nativeElement.textContent).toContain('Example Technical Institute');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Fictional profile about text used to validate the public about path.',
+    );
+    expect(fixture.nativeElement.querySelector('a[href="/about"]')?.textContent).toContain(
+      'Read more about me',
+    );
     expect(fixture.nativeElement.textContent).toContain('Technical Toolkit');
     expect(fixture.nativeElement.textContent).toContain('Example TypeScript');
     expect(fixture.nativeElement.textContent).toContain('Experience');

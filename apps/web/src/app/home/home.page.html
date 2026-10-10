@@ -15,6 +15,16 @@
     </section>
   }
 
+  @if (profile(); as profile) {
+    <section aria-labelledby="about-heading">
+      <div class="section-heading">
+        <h2 id="about-heading">About</h2>
+        <a routerLink="/about">Read more about me</a>
+      </div>
+      <p>{{ profile.about }}</p>
+    </section>
+  }
+
   <section aria-labelledby="featured-projects-heading">
     <div class="section-heading">
       <h2 id="featured-projects-heading">Featured projects</h2>
