@@ -7,6 +7,7 @@
       <h1>{{ project.title }}</h1>
       <p class="summary">{{ project.summary }}</p>
       <section aria-label="Case study"><h2>Case study</h2><p class="case-study">{{ project.caseStudy }}</p></section>
+      @if (project.repositoryUrl || project.liveUrl) { <section aria-label="Project links"><h2>Project links</h2>@if (project.repositoryUrl) { <a [href]="project.repositoryUrl">Repository</a> } @if (project.liveUrl) { <a [href]="project.liveUrl">Live project</a> }</section> }
     </article>
   }
 </main>

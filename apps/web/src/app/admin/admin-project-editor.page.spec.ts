@@ -87,6 +87,24 @@ describe('AdminProjectEditorPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Status: published');
   });
 
+  it('normalizes blank links and refreshes them from the authoritative response', async () => {
+    let saved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', repositoryUrl: null, liveUrl: null, status: 'draft', featured: false }), updateLinks: (_slug: string, links: unknown) => { saved = links; return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', repositoryUrl: 'https://github.com/example/project', liveUrl: null, status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.linksForm.setValue({ repositoryUrl: ' https://github.com/example/project ', liveUrl: '  ' }); component.saveLinks(); fixture.detectChanges();
+    expect(saved).toEqual({ repositoryUrl: 'https://github.com/example/project', liveUrl: null });
+    expect(component.project.repositoryUrl).toBe('https://github.com/example/project');
+  });
+
+  it('shows an accessible alert when saving project links fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', caseStudy: '', repositoryUrl: null, liveUrl: null, status: 'draft', featured: false }), updateLinks: () => throwError(() => new Error('links failed')) } }]}).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    const component = fixture.componentInstance as any; component.linksForm.setValue({ repositoryUrl: 'https://example.test', liveUrl: '' }); component.saveLinks(); await fixture.whenStable(); fixture.detectChanges();
+    expect(component.linksError()).toBe(true);
+    expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to save project links. Please try again.');
+  });
+
   it('shows an accessible alert when a publication update fails', async () => {
     await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), updateStatus: () => throwError(() => new Error('status failed')) } }]}).compileComponents();
     const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();

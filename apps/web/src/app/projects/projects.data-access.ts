@@ -5,7 +5,7 @@ export interface Project {
   title: string;
   summary: string;
 }
-export interface ProjectDetail extends Project { caseStudy: string; }
+export interface ProjectDetail extends Project { caseStudy: string; repositoryUrl: string | null; liveUrl: string | null; }
 
 export abstract class ProjectsDataAccess {
   abstract getProjects(): Observable<Project[]>;

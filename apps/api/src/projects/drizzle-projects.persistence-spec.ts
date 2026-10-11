@@ -45,6 +45,8 @@ describe('DrizzleProjectsPersistence', () => {
       summary:
         'Temporary sample content used to validate the application path.',
       caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      repositoryUrl: null,
+      liveUrl: null,
     });
   });
 
@@ -123,6 +125,29 @@ describe('DrizzleProjectsPersistence', () => {
         .delete(projects)
         .where(eq(projects.slug, 'draft-project'));
     }
+  });
+
+  it('updates only project links while list queries stay compact', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+
+    await expect(persistence.updateLinks('placeholder-project', {
+      repositoryUrl: 'https://github.com/example/project',
+      liveUrl: 'https://example.test/project',
+    })).resolves.toMatchObject({
+      slug: 'placeholder-project',
+      repositoryUrl: 'https://github.com/example/project',
+      liveUrl: 'https://example.test/project',
+    });
+    await expect(persistence.findPublished()).resolves.toEqual([{
+      slug: 'placeholder-project',
+      title: 'Placeholder Project',
+      summary: 'Temporary sample content used to validate the application path.',
+    }]);
+    await expect(persistence.updateLinks('placeholder-project', {
+      repositoryUrl: null,
+      liveUrl: null,
+    })).resolves.toMatchObject({ repositoryUrl: null, liveUrl: null });
   });
 
   it('creates an unfeatured draft after existing projects and handles duplicate slugs', async () => {

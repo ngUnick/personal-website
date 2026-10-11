@@ -10,6 +10,7 @@ import { UpdateProjectContentDto } from './update-project-content.dto.js';
 import { UpdateProjectStatusDto } from './update-project-status.dto.js';
 import { CreateProjectDraftDto } from './create-project-draft.dto.js';
 import { UpdateProjectOrderDto } from './update-project-order.dto.js';
+import { UpdateProjectLinksDto } from './update-project-links.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -62,6 +63,21 @@ export class AdminProjectsController {
     return this.projects.updateContent(slug, title, summary, body.caseStudy.trim());
   }
 
+  @Patch(':slug/links')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectLinksDto })
+  @ApiOkResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  async updateLinks(@Param('slug') slug: string, @Body() body: UpdateProjectLinksDto) {
+    return this.projects.updateLinks(
+      slug,
+      this.validUrl(body?.repositoryUrl),
+      this.validUrl(body?.liveUrl),
+    );
+  }
+
   @Patch(':slug/status')
   @UseGuards(AdminSessionGuard, TrustedOriginGuard)
   @ApiBody({ type: UpdateProjectStatusDto })
@@ -98,5 +114,19 @@ export class AdminProjectsController {
   async updateFeatured(@Param('slug') slug: string, @Body() body: UpdateProjectFeaturedDto) {
     if (typeof body.featured !== 'boolean') throw new BadRequestException('A boolean featured value is required.');
     return this.projects.updateFeatured(slug, body.featured);
+  }
+
+  private validUrl(value: unknown): string | null {
+    if (value === null) return null;
+    if (typeof value !== 'string' || !value.trim()) {
+      throw new BadRequestException('Project links must be absolute HTTPS URLs or null.');
+    }
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== 'https:') throw new Error();
+      return url.href;
+    } catch {
+      throw new BadRequestException('Project links must be absolute HTTPS URLs or null.');
+    }
   }
 }

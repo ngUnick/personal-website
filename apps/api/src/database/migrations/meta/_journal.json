@@ -71,6 +71,13 @@
       "when": 1791667816127,
       "tag": "0009_quiet_doomsday",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791683926765,
+      "tag": "0010_big_otto_octavius",
+      "breakpoints": true
     }
   ]
 }

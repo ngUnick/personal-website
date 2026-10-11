@@ -1207,6 +1207,8 @@ describe('API (e2e)', () => {
           'Temporary sample content used to validate the application path.',
         caseStudy:
           'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+        repositoryUrl: null,
+        liveUrl: null,
       }));
 
   it('returns 404 when a project slug is not public', () =>
@@ -1393,6 +1395,8 @@ describe('API (e2e)', () => {
             'Fictional draft content used only to validate private project authoring.',
           caseStudy:
             'Fictional draft narrative used only to validate private case-study authoring.',
+          repositoryUrl: null,
+          liveUrl: null,
           status: 'draft',
           featured: false,
         });
@@ -1432,6 +1436,8 @@ describe('API (e2e)', () => {
             title: 'Edited Draft',
             summary: 'Edited fictional draft content.',
             caseStudy: 'Edited fictional narrative.',
+            repositoryUrl: null,
+            liveUrl: null,
             status: 'draft',
             featured: false,
           });
@@ -1451,6 +1457,54 @@ describe('API (e2e)', () => {
             'Fictional draft narrative used only to validate private case-study authoring.',
         })
         .expect(200);
+    }
+  });
+
+  it('updates only project links through the protected CMS boundary', async () => {
+    const slug = 'placeholder-project';
+    await request(app.getHttpServer())
+      .patch(`/api/admin/projects/${slug}/links`)
+      .set('Origin', 'https://untrusted.example')
+      .send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/projects/${slug}/links`).send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null }).expect(403);
+    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'https://untrusted.example').send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null }).expect(403);
+    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'http://example.test', liveUrl: null }).expect(400);
+    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: '', liveUrl: null }).expect(400);
+    try {
+      await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'https://github.com/example/project', liveUrl: 'https://example.test/live', title: 'Ignored' }).expect(200).expect(({ body }) => {
+        expect(body).toEqual({
+          slug,
+          title: 'Placeholder Project',
+          summary: 'Temporary sample content used to validate the application path.',
+          caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+          repositoryUrl: 'https://github.com/example/project',
+          liveUrl: 'https://example.test/live',
+          status: 'published',
+          featured: true,
+        });
+      });
+      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => {
+        expect(body).toEqual({
+          slug,
+          title: 'Placeholder Project',
+          summary: 'Temporary sample content used to validate the application path.',
+          caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+          repositoryUrl: 'https://github.com/example/project',
+          liveUrl: 'https://example.test/live',
+        });
+      });
+      await request(app.getHttpServer()).get('/api/projects').expect(200).expect([{
+        slug,
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+      }]);
+      await agent.patch('/api/admin/projects/draft-placeholder-project/links').set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'https://example.test/draft', liveUrl: null }).expect(200);
+      await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+    } finally {
+      await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
+      await agent.patch('/api/admin/projects/draft-placeholder-project/links').set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
     }
   });
 
@@ -1507,6 +1561,8 @@ describe('API (e2e)', () => {
               'Fictional draft content used only to validate private project authoring.',
             caseStudy:
               'Fictional draft narrative used only to validate private case-study authoring.',
+            repositoryUrl: null,
+            liveUrl: null,
             status: 'published',
             featured: false,
           });
@@ -1619,6 +1675,8 @@ describe('API (e2e)', () => {
           expect(body).toEqual({
             ...input,
             caseStudy: '',
+            repositoryUrl: null,
+            liveUrl: null,
             status: 'draft',
             featured: false,
           });
@@ -1631,7 +1689,7 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/projects/${slug}`)
         .expect(200)
-        .expect({ ...input, caseStudy: '', status: 'draft', featured: false });
+        .expect({ ...input, caseStudy: '', repositoryUrl: null, liveUrl: null, status: 'draft', featured: false });
       await request(app.getHttpServer())
         .get('/api/projects')
         .expect(200)

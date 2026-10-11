@@ -179,6 +179,8 @@ try {
         'Temporary sample content used to validate the application path.',
       caseStudy:
         'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      repositoryUrl: null,
+      liveUrl: null,
       status: 'published',
       featured: true,
       displayOrder: 0,
@@ -191,6 +193,8 @@ try {
           'Temporary sample content used to validate the application path.',
         caseStudy:
           'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+        repositoryUrl: null,
+        liveUrl: null,
         status: 'published',
         featured: true,
         displayOrder: 0,
@@ -207,6 +211,8 @@ try {
         'Fictional draft content used only to validate private project authoring.',
       caseStudy:
         'Fictional draft narrative used only to validate private case-study authoring.',
+      repositoryUrl: null,
+      liveUrl: null,
       status: 'draft',
       featured: false,
       displayOrder: 1,
@@ -219,6 +225,8 @@ try {
           'Fictional draft content used only to validate private project authoring.',
         caseStudy:
           'Fictional draft narrative used only to validate private case-study authoring.',
+        repositoryUrl: null,
+        liveUrl: null,
         status: 'draft',
         featured: false,
         displayOrder: 1,

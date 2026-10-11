@@ -11,7 +11,7 @@ export type AdminProject = Pick<
 >;
 export type AdminProjectDetail = Pick<
   AdminPersistedProject,
-  'slug' | 'title' | 'summary' | 'caseStudy' | 'status' | 'featured'
+  'slug' | 'title' | 'summary' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured'
 >;
 
 @Injectable()
@@ -62,6 +62,12 @@ export class ProjectsService {
     return this.toAdminProjectDetail(project);
   }
 
+  async updateLinks(slug: string, repositoryUrl: string | null, liveUrl: string | null): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateLinks(slug, { repositoryUrl, liveUrl });
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
   async updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminProjectDetail> {
     const project = await this.projectsPersistence.updateStatus(slug, status);
     if (!project) throw new NotFoundException('Project not found.');
@@ -86,7 +92,7 @@ export class ProjectsService {
   }
 
   private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
-    const { slug, title, summary, caseStudy, status, featured } = project;
-    return { slug, title, summary, caseStudy, status, featured };
+    const { slug, title, summary, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
+    return { slug, title, summary, caseStudy, repositoryUrl, liveUrl, status, featured };
   }
 }
