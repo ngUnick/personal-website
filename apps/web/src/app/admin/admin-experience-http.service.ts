@@ -11,6 +11,7 @@ export class AdminExperienceHttpService extends AdminExperienceDataAccess {
   getExperience(id: string): Observable<AdminExperienceDetail> { return this.http.get<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}`, { withCredentials: true }); }
   updateContent(id: string, content: ExperienceContentUpdate): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/content`, content, { withCredentials: true }); }
   updateStatus(id: string, status: ExperiencePublicationStatus): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/status`, { status }, { withCredentials: true }); }
+  updateFeatured(id: string, featured: boolean): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/featured`, { featured }, { withCredentials: true }); }
   createDraft(input: CreateExperienceDraft): Observable<AdminExperienceDetail> { return this.http.post<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience`, input, { withCredentials: true }); }
   moveExperience(id: string, direction: ExperienceOrderDirection): Observable<AdminExperience[]> { return this.http.patch<AdminExperience[]>(`${this.apiBaseUrl}/admin/experience/${id}/order`, { direction }, { withCredentials: true }); }
 }

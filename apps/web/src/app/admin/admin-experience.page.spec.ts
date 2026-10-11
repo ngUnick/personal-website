@@ -47,6 +47,14 @@ describe('AdminExperiencePage', () => {
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to update experience order');
   });
 
+  it('uses the authoritative response when toggling featured state and isolates its failure', async () => {
+    let updated: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: {} }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => of([{ id: 'id', organization: 'Featured Studio', role: 'Engineer', status: 'published', featured: false }]), updateFeatured: (id: string, featured: boolean) => { updated = { id, featured }; return of({ id, organization: 'Featured Studio', role: 'Engineer', summary: 'Fake', startDate: '2025-01-01', endDate: null, status: 'published', featured: true }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperiencePage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    component.updateFeatured(component.experiences[0]); fixture.detectChanges();
+    expect(updated).toEqual({ id: 'id', featured: true }); expect(component.experiences[0].featured).toBe(true);
+  });
+
   it('makes no SSR requests', async () => {
     let sessions = 0; let dataCalls = 0; let createCalls = 0; let moveCalls = 0;
     await TestBed.configureTestingModule({ imports: [AdminExperiencePage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: false }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperiences: () => { dataCalls += 1; return of([]); }, createDraft: () => { createCalls += 1; return of({}); }, moveExperience: () => { moveCalls += 1; return of([]); } } }] }).compileComponents();

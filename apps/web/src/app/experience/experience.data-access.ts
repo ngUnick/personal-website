@@ -10,4 +10,5 @@ export interface Experience {
 
 export abstract class ExperienceDataAccess {
   abstract getExperience(): Observable<Experience[]>;
+  abstract getFeaturedExperience(): Observable<Experience[]>;
 }

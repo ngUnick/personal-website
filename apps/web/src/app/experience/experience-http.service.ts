@@ -12,4 +12,5 @@ export class ExperienceHttpService extends ExperienceDataAccess {
   getExperience(): Observable<Experience[]> {
     return this.http.get<Experience[]>(`${this.apiBaseUrl}/experience`);
   }
+  getFeaturedExperience(): Observable<Experience[]> { return this.http.get<Experience[]>(`${this.apiBaseUrl}/experience?featured=true`); }
 }

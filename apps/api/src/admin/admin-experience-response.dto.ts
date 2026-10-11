@@ -6,4 +6,5 @@ export class AdminExperienceResponseDto implements AdminExperience {
   @ApiProperty() organization!: string;
   @ApiProperty() role!: string;
   @ApiProperty({ enum: ['draft', 'published', 'archived'] }) status!: 'draft' | 'published' | 'archived';
+  @ApiProperty() featured!: boolean;
 }

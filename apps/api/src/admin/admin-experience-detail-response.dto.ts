@@ -9,4 +9,5 @@ export class AdminExperienceDetailResponseDto implements AdminExperienceDetail {
   @ApiProperty({ example: '2025-01-01' }) startDate!: string;
   @ApiProperty({ example: '2025-12-31', nullable: true }) endDate!: string | null;
   @ApiProperty({ enum: ['draft', 'published', 'archived'] }) status!: 'draft' | 'published' | 'archived';
+  @ApiProperty() featured!: boolean;
 }

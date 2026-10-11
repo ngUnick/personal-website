@@ -3,7 +3,7 @@ import { ExperienceResponseDto } from './experience-response.dto.js';
 import { EXPERIENCE_PERSISTENCE } from './experience.persistence.js';
 import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience, ExperiencePublicationStatus, CreateExperienceDraft, ExperienceOrderDirection } from './experience.persistence.js';
 
-export type AdminExperience = Pick<AdminPersistedExperience, 'id' | 'organization' | 'role' | 'status'>;
+export type AdminExperience = Pick<AdminPersistedExperience, 'id' | 'organization' | 'role' | 'status' | 'featured'>;
 export type AdminExperienceDetail = Omit<AdminPersistedExperience, 'displayOrder'>;
 
 @Injectable()
@@ -17,8 +17,10 @@ export class ExperienceService {
     return this.experiencePersistence.findPublished();
   }
 
+  async getFeaturedExperience(): Promise<ExperienceResponseDto[]> { return this.experiencePersistence.findFeaturedPublished(); }
+
   async getAdminExperiences(): Promise<AdminExperience[]> {
-    return (await this.experiencePersistence.findForAdmin()).map(({ id, organization, role, status }) => ({ id, organization, role, status }));
+    return (await this.experiencePersistence.findForAdmin()).map(({ id, organization, role, status, featured }) => ({ id, organization, role, status, featured }));
   }
 
   async getAdminExperience(id: string): Promise<AdminExperienceDetail> {
@@ -38,6 +40,7 @@ export class ExperienceService {
     if (!experience) throw new NotFoundException('Experience not found.');
     return this.toAdminDetail(experience);
   }
+  async updateFeatured(id: string, featured: boolean): Promise<AdminExperienceDetail> { const experience = await this.experiencePersistence.updateFeatured(id, featured); if (!experience) throw new NotFoundException('Experience not found.'); return this.toAdminDetail(experience); }
 
   async createDraft(input: CreateExperienceDraft): Promise<AdminExperienceDetail> {
     return this.toAdminDetail(await this.experiencePersistence.createDraft(input));
@@ -46,11 +49,11 @@ export class ExperienceService {
   async moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminExperience[]> {
     const experiences = await this.experiencePersistence.moveExperience(id, direction);
     if (!experiences) throw new NotFoundException('Experience not found.');
-    return experiences.map(({ id, organization, role, status }) => ({ id, organization, role, status }));
+    return experiences.map(({ id, organization, role, status, featured }) => ({ id, organization, role, status, featured }));
   }
 
   private toAdminDetail(experience: AdminPersistedExperience): AdminExperienceDetail {
-    const { id, organization, role, summary, startDate, endDate, status } = experience;
-    return { id, organization, role, summary, startDate, endDate, status };
+    const { id, organization, role, summary, startDate, endDate, status, featured } = experience;
+    return { id, organization, role, summary, startDate, endDate, status, featured };
   }
 }

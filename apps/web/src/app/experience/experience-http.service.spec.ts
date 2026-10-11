@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { ExperienceHttpService } from './experience-http.service';
 
 describe('ExperienceHttpService', () => {
-  it('requests experience from the API boundary', () => {
+  it('requests complete and featured experience from the API boundary', () => {
     TestBed.configureTestingModule({
       providers: [
         ExperienceHttpService,
@@ -20,6 +20,10 @@ describe('ExperienceHttpService', () => {
     const request = http.expectOne('/api/experience');
     expect(request.request.method).toBe('GET');
     request.flush([]);
+    service.getFeaturedExperience().subscribe();
+    const featuredRequest = http.expectOne('/api/experience?featured=true');
+    expect(featuredRequest.request.method).toBe('GET');
+    featuredRequest.flush([]);
     http.verify();
   });
 });

@@ -83,6 +83,54 @@ describe('DrizzleExperiencePersistence', () => {
     }
   });
 
+  it('returns only featured published experience and changes no other fields when featured changes', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleExperiencePersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const publishedId = '00000000-0000-4000-8000-000000000010';
+    const draftId = '00000000-0000-4000-8000-000000000014';
+    const originalPublished = await persistence.findForAdminById(publishedId);
+    const originalDraft = await persistence.findForAdminById(draftId);
+
+    try {
+      await expect(persistence.findFeaturedPublished()).resolves.toEqual([
+        {
+          organization: 'Example Software Studio',
+          role: 'Example Software Engineer',
+          summary:
+            'Fictional development fixture used to validate the public experience path.',
+          startDate: '2024-01-01',
+          endDate: null,
+        },
+      ]);
+      await expect(persistence.updateFeatured(draftId, true)).resolves.toEqual({
+        ...originalDraft,
+        featured: true,
+      });
+      await expect(persistence.findFeaturedPublished()).resolves.toEqual([
+        {
+          organization: 'Example Software Studio',
+          role: 'Example Software Engineer',
+          summary:
+            'Fictional development fixture used to validate the public experience path.',
+          startDate: '2024-01-01',
+          endDate: null,
+        },
+      ]);
+      await expect(persistence.updateFeatured(publishedId, false)).resolves.toEqual({
+        ...originalPublished,
+        featured: false,
+      });
+      await expect(persistence.findFeaturedPublished()).resolves.toEqual([]);
+      await expect(persistence.updateFeatured('00000000-0000-4000-8000-000000000099', true)).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateFeatured(publishedId, originalPublished!.featured);
+      await persistence.updateFeatured(draftId, originalDraft!.featured);
+    }
+  });
+
   it('supports private draft authoring without changing publication or order', async () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleExperiencePersistence);
@@ -95,14 +143,15 @@ describe('DrizzleExperiencePersistence', () => {
     ]);
     await expect(persistence.findForAdminById(draftId)).resolves.toEqual({
       id: draftId,
-      ...original,
+        ...original,
+        featured: false,
       status: 'draft',
       displayOrder: 1,
     });
     await expect(persistence.findForAdminById('00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined();
     try {
       const updated = await persistence.updateContent(draftId, { organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31' });
-      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', displayOrder: 1 });
+      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', featured: false, displayOrder: 1 });
       await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: 'Edited Draft Studio' }));
     } finally {
       await persistence.updateContent(draftId, original);

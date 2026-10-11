@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
 import { experiences } from '../database/schema.js';
@@ -31,6 +31,10 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
       .orderBy(asc(experiences.displayOrder));
   }
 
+  async findFeaturedPublished(): Promise<PersistedExperience[]> {
+    return this.database.db.select({ organization: experiences.organization, role: experiences.role, summary: experiences.summary, startDate: experiences.startDate, endDate: experiences.endDate }).from(experiences).where(and(eq(experiences.status, 'published'), eq(experiences.featured, true))).orderBy(asc(experiences.displayOrder));
+  }
+
   async findForAdmin(): Promise<AdminPersistedExperience[]> {
     return this.database.db.select(this.adminProjection).from(experiences).orderBy(asc(experiences.displayOrder));
   }
@@ -46,6 +50,11 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
 
   async updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined> {
     await this.database.db.update(experiences).set({ status, updatedAt: new Date() }).where(eq(experiences.id, id));
+    return this.findForAdminById(id);
+  }
+
+  async updateFeatured(id: string, featured: boolean): Promise<AdminPersistedExperience | undefined> {
+    await this.database.db.update(experiences).set({ featured, updatedAt: new Date() }).where(eq(experiences.id, id));
     return this.findForAdminById(id);
   }
 
@@ -79,6 +88,7 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
     startDate: experiences.startDate,
     endDate: experiences.endDate,
     status: experiences.status,
+    featured: experiences.featured,
     displayOrder: experiences.displayOrder,
   };
 }

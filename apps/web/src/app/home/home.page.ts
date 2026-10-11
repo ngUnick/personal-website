@@ -26,7 +26,7 @@ export class HomePage {
   protected readonly education = toSignal(this.educationDataAccess.getEducation(), {
     initialValue: [],
   });
-  protected readonly experience = toSignal(this.experienceDataAccess.getExperience(), {
+  protected readonly experience = toSignal(this.experienceDataAccess.getFeaturedExperience(), {
     initialValue: [],
   });
   protected readonly profile = toSignal(this.profileDataAccess.getProfile());

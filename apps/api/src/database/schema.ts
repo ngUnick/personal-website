@@ -74,6 +74,7 @@ export const experiences = pgTable(
     startDate: date('start_date').notNull(),
     endDate: date('end_date'),
     status: experiencePublicationStatus('status').notNull().default('draft'),
+    featured: boolean('featured').notNull().default(false),
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

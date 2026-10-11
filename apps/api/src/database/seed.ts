@@ -244,6 +244,7 @@ try {
       startDate: '2024-01-01',
       endDate: null,
       status: 'published',
+      featured: true,
       displayOrder: 0,
     })
     .onConflictDoUpdate({
@@ -256,6 +257,7 @@ try {
         startDate: '2024-01-01',
         endDate: null,
         status: 'published',
+        featured: true,
         displayOrder: 0,
       },
     });
@@ -271,6 +273,7 @@ try {
       startDate: '2025-01-01',
       endDate: null,
       status: 'draft',
+      featured: false,
       displayOrder: 1,
     })
     .onConflictDoUpdate({
@@ -283,6 +286,7 @@ try {
         startDate: '2025-01-01',
         endDate: null,
         status: 'draft',
+        featured: false,
         displayOrder: 1,
       },
     });

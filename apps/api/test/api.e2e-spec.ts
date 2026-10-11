@@ -1880,7 +1880,7 @@ describe('API (e2e)', () => {
         .get(`/api/admin/experience/${id}`)
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toEqual({ id, ...original, status: 'draft' });
+          expect(body).toEqual({ id, ...original, status: 'draft', featured: false });
           expect(body).not.toHaveProperty('displayOrder');
           expect(body).not.toHaveProperty('createdAt');
           expect(body).not.toHaveProperty('updatedAt');
@@ -1994,6 +1994,7 @@ describe('API (e2e)', () => {
             startDate: '2025-01-01',
             endDate: null,
             status: 'published',
+            featured: false,
           }),
         );
       await request(app.getHttpServer())
@@ -2026,6 +2027,89 @@ describe('API (e2e)', () => {
         .patch(`/api/admin/experience/${id}/status`)
         .set('Origin', 'http://localhost:4200')
         .send({ status: 'draft' })
+        .expect(200);
+    }
+  });
+
+  it('changes Experience featured state through the protected boundary without exposing drafts publicly', async () => {
+    const publishedId = '00000000-0000-4000-8000-000000000010';
+    const draftId = '00000000-0000-4000-8000-000000000014';
+    const featuredFixture = [
+      {
+        organization: 'Example Software Studio',
+        role: 'Example Software Engineer',
+        summary:
+          'Fictional development fixture used to validate the public experience path.',
+        startDate: '2024-01-01',
+        endDate: null,
+      },
+    ];
+
+    await request(app.getHttpServer())
+      .patch(`/api/admin/experience/${publishedId}/featured`)
+      .send({ featured: false })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent
+      .patch(`/api/admin/experience/${publishedId}/featured`)
+      .send({ featured: false })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/experience/${publishedId}/featured`)
+      .set('Origin', 'https://untrusted.example')
+      .send({ featured: false })
+      .expect(403);
+    await agent
+      .patch('/api/admin/experience/not-a-uuid/featured')
+      .set('Origin', 'http://localhost:4200')
+      .send({ featured: false })
+      .expect(400);
+    await agent
+      .patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/featured')
+      .set('Origin', 'http://localhost:4200')
+      .send({ featured: false })
+      .expect(404);
+    await agent
+      .patch(`/api/admin/experience/${publishedId}/featured`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ featured: 'true' })
+      .expect(400);
+
+    try {
+      await agent
+        .patch(`/api/admin/experience/${draftId}/featured`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ featured: true })
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ id: draftId, status: 'draft', featured: true }));
+      await request(app.getHttpServer())
+        .get('/api/experience?featured=true')
+        .expect(200)
+        .expect(featuredFixture);
+      await agent
+        .patch(`/api/admin/experience/${publishedId}/featured`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ featured: false })
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ id: publishedId, status: 'published', featured: false }));
+      await request(app.getHttpServer())
+        .get('/api/experience?featured=true')
+        .expect(200)
+        .expect([]);
+      await request(app.getHttpServer())
+        .get('/api/experience')
+        .expect(200)
+        .expect(({ body }) => expect(body).toEqual(featuredFixture));
+    } finally {
+      await agent
+        .patch(`/api/admin/experience/${publishedId}/featured`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ featured: true })
+        .expect(200);
+      await agent
+        .patch(`/api/admin/experience/${draftId}/featured`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ featured: false })
         .expect(200);
     }
   });
@@ -2089,12 +2173,14 @@ describe('API (e2e)', () => {
               organization: 'Example Draft Studio',
               role: 'Example Draft Engineer',
               status: 'published',
+              featured: false,
             },
             {
               id: '00000000-0000-4000-8000-000000000010',
               organization: 'Example Software Studio',
               role: 'Example Software Engineer',
               status: 'published',
+              featured: true,
             },
           ]);
           expect(body[0]).not.toHaveProperty('displayOrder');
@@ -2227,13 +2313,14 @@ describe('API (e2e)', () => {
             id: expect.any(String),
             ...input,
             status: 'draft',
+            featured: false,
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
         });
       await agent
         .get(`/api/admin/experience/${id}`)
         .expect(200)
-        .expect({ id, ...input, status: 'draft' });
+        .expect({ id, ...input, status: 'draft', featured: false });
       await agent
         .get('/api/admin/experience')
         .expect(200)
@@ -2243,6 +2330,7 @@ describe('API (e2e)', () => {
             organization: input.organization,
             role: input.role,
             status: 'draft',
+            featured: false,
           }),
         );
       await request(app.getHttpServer())

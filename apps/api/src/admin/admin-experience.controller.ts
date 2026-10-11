@@ -9,6 +9,7 @@ import { UpdateExperienceContentDto } from './update-experience-content.dto.js';
 import { UpdateExperienceStatusDto } from './update-experience-status.dto.js';
 import { CreateExperienceDraftDto } from './create-experience-draft.dto.js';
 import { UpdateExperienceOrderDto } from './update-experience-order.dto.js';
+import { UpdateExperienceFeaturedDto } from './update-experience-featured.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -77,6 +78,15 @@ export class AdminExperienceController {
     const status = body?.status;
     if (!['draft', 'published', 'archived'].includes(status)) throw new BadRequestException('A valid experience publication status is required.');
     return this.experience.updateStatus(id, status);
+  }
+
+  @Patch(':id/featured')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceFeaturedDto })
+  @ApiOkResponse({ type: AdminExperienceDetailResponseDto })
+  async updateFeatured(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceFeaturedDto) {
+    if (typeof body?.featured !== 'boolean') throw new BadRequestException('A boolean featured value is required.');
+    return this.experience.updateFeatured(id, body.featured);
   }
 
   @Patch(':id/order')

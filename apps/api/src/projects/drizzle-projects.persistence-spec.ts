@@ -154,22 +154,34 @@ describe('DrizzleProjectsPersistence', () => {
   it('replaces private technology associations while public detail filters drafts in global order', async () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const slug = 'technology-association-persistence-project';
     const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
+    await database.db.insert(projects).values({
+      id: '00000000-0000-4000-8000-000000000050',
+      slug,
+      title: 'Technology Association Persistence Project',
+      summary: 'Fake content used only for project technology persistence verification.',
+      caseStudy: 'Fake narrative used only for project technology persistence verification.',
+      status: 'published',
+      featured: false,
+      displayOrder: 50,
+    });
     try {
-      await expect(persistence.updateTechnologies('placeholder-project', { technologyIds: ids })).resolves.toMatchObject({ technologyIds: ids });
-      await expect(persistence.updateContent('placeholder-project', {
-        title: 'Placeholder Project',
-        summary: 'Temporary sample content used to validate the application path.',
-        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      await expect(persistence.updateTechnologies(slug, { technologyIds: ids })).resolves.toMatchObject({ technologyIds: ids });
+      await expect(persistence.updateContent(slug, {
+        title: 'Technology Association Persistence Project',
+        summary: 'Fake content used only for project technology persistence verification.',
+        caseStudy: 'Fake narrative used only for project technology persistence verification.',
       })).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
-      await expect(persistence.updateStatus('placeholder-project', 'published')).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
-      await expect(persistence.findPublishedBySlug('placeholder-project')).resolves.toMatchObject({ technologies: [
+      await expect(persistence.updateStatus(slug, 'published')).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
+      await expect(persistence.findPublishedBySlug(slug)).resolves.toMatchObject({ technologies: [
         { name: 'Example TypeScript', category: 'Languages' },
         { name: 'Example PostgreSQL', category: 'Data' },
       ] });
-      await expect(persistence.updateTechnologies('placeholder-project', { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
+      await expect(persistence.updateTechnologies(slug, { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
     } finally {
-      await persistence.updateTechnologies('placeholder-project', { technologyIds: [] });
+      await database.db.delete(projects).where(eq(projects.slug, slug));
     }
   });
 

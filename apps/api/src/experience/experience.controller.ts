@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ExperienceResponseDto } from './experience-response.dto.js';
 import { ExperienceService } from './experience.service.js';
@@ -10,7 +10,7 @@ export class ExperienceController {
 
   @Get()
   @ApiOkResponse({ type: ExperienceResponseDto, isArray: true })
-  async getExperience(): Promise<ExperienceResponseDto[]> {
-    return this.experienceService.getExperience();
+  async getExperience(@Query('featured') featured?: string): Promise<ExperienceResponseDto[]> {
+    return featured === 'true' ? this.experienceService.getFeaturedExperience() : this.experienceService.getExperience();
   }
 }

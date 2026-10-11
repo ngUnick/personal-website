@@ -52,7 +52,8 @@ describe('HomePage', () => {
         {
           provide: ExperienceDataAccess,
           useValue: {
-            getExperience: () =>
+            getExperience: () => of([]),
+            getFeaturedExperience: () =>
               of([
                 {
                   organization: 'Example Engineering Studio',
@@ -140,7 +141,7 @@ describe('HomePage', () => {
           useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) },
         },
         { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } },
-        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]) } },
+        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } },
         { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } },
         {
           provide: ProfileDataAccess,
@@ -179,7 +180,7 @@ describe('HomePage', () => {
           useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) },
         },
         { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } },
-        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]) } },
+        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } },
         { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } },
         {
           provide: ProfileDataAccess,
