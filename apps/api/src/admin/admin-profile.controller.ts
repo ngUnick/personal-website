@@ -19,6 +19,7 @@ import { AdminSessionGuard } from './admin-session.guard.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateProfileContentDto } from './update-profile-content.dto.js';
 import { UpdateProfileContactDto } from './update-profile-contact.dto.js';
+import { UpdateProfileLinksDto } from './update-profile-links.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/profile')
@@ -52,22 +53,60 @@ export class AdminProfileController {
   updateContact(@Body() body: UpdateProfileContactDto) {
     return this.profile.updateContact(this.validContact(body));
   }
+  @Patch('links')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProfileLinksDto })
+  @ApiOkResponse({ type: ProfileResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  updateLinks(@Body() body: UpdateProfileLinksDto) {
+    return this.profile.updateLinks(this.validLinks(body));
+  }
+  private validLinks(body: UpdateProfileLinksDto) {
+    return {
+      githubUrl: this.validUrl(body?.githubUrl),
+      linkedinUrl: this.validUrl(body?.linkedinUrl),
+    };
+  }
+  private validUrl(value: unknown) {
+    if (value === null) return null;
+    if (typeof value !== 'string' || !value.trim())
+      throw new BadRequestException(
+        'Professional links must be absolute HTTPS URLs or null.',
+      );
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== 'https:') throw new Error();
+      return url.href;
+    } catch {
+      throw new BadRequestException(
+        'Professional links must be absolute HTTPS URLs or null.',
+      );
+    }
+  }
 
   private validContent(body: UpdateProfileContentDto) {
-    const headline = typeof body?.headline === 'string' ? body.headline.trim() : '';
-    const summary = typeof body?.summary === 'string' ? body.summary.trim() : '';
+    const headline =
+      typeof body?.headline === 'string' ? body.headline.trim() : '';
+    const summary =
+      typeof body?.summary === 'string' ? body.summary.trim() : '';
     const about = typeof body?.about === 'string' ? body.about.trim() : '';
     if (!headline || !summary || !about) {
-      throw new BadRequestException('Headline, summary, and about content are required.');
+      throw new BadRequestException(
+        'Headline, summary, and about content are required.',
+      );
     }
     return { headline, summary, about };
   }
 
   private validContact(body: UpdateProfileContactDto) {
     if (body?.contactEmail === null) return { contactEmail: null };
-    const contactEmail = typeof body?.contactEmail === 'string' ? body.contactEmail.trim() : '';
+    const contactEmail =
+      typeof body?.contactEmail === 'string' ? body.contactEmail.trim() : '';
     if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-      throw new BadRequestException('A valid contact email or null is required.');
+      throw new BadRequestException(
+        'A valid contact email or null is required.',
+      );
     }
     return { contactEmail };
   }

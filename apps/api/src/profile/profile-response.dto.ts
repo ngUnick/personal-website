@@ -12,4 +12,6 @@ export class ProfileResponseDto {
 
   @ApiProperty({ nullable: true })
   contactEmail!: string | null;
+  @ApiProperty({ nullable: true }) githubUrl!: string | null;
+  @ApiProperty({ nullable: true }) linkedinUrl!: string | null;
 }

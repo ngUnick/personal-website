@@ -1,17 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminAuthDataAccess } from '../admin-auth/admin-auth.data-access';
-import {
-  AdminProfile,
-  AdminProfileDataAccess,
-} from './admin-profile.data-access';
+import { AdminProfile, AdminProfileDataAccess } from './admin-profile.data-access';
 
 @Component({
   selector: 'app-admin-profile-page',
@@ -33,12 +25,23 @@ import {
           <button type="button" (click)="clearContact()">Clear contact email</button>
         </form>
       </section>
+      <section aria-label="Professional links">
+        <h2>Professional links</h2>
+        <form [formGroup]="linksForm" (ngSubmit)="saveLinks()">
+          <label>GitHub <input type="url" formControlName="githubUrl" /></label
+          ><label>LinkedIn <input type="url" formControlName="linkedinUrl" /></label
+          ><button type="submit" [disabled]="linksForm.invalid">Save professional links</button>
+        </form>
+      </section>
     }
     @if (saveError()) {
       <p role="alert">Unable to save profile changes. Please try again.</p>
     }
     @if (contactError()) {
       <p role="alert">Unable to save contact email. Please try again.</p>
+    }
+    @if (linksError()) {
+      <p role="alert">Unable to save professional links. Please try again.</p>
     }
   </main>`,
 })
@@ -50,6 +53,7 @@ export class AdminProfilePage {
   protected readonly profileLoaded = signal(false);
   protected readonly saveError = signal(false);
   protected readonly contactError = signal(false);
+  protected readonly linksError = signal(false);
   protected readonly form = new FormGroup({
     headline: new FormControl('', {
       nonNullable: true,
@@ -70,14 +74,16 @@ export class AdminProfilePage {
       validators: [Validators.email],
     }),
   });
+  protected readonly linksForm = new FormGroup({
+    githubUrl: new FormControl('', { nonNullable: true }),
+    linkedinUrl: new FormControl('', { nonNullable: true }),
+  });
 
   constructor() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.auth.getSession().subscribe({
       next: (session) =>
-        session.authenticated
-          ? this.load()
-          : this.router.navigateByUrl('/admin/login'),
+        session.authenticated ? this.load() : this.router.navigateByUrl('/admin/login'),
       error: () => this.router.navigateByUrl('/admin/login'),
     });
   }
@@ -108,6 +114,20 @@ export class AdminProfilePage {
       error: () => this.contactError.set(true),
     });
   }
+  protected saveLinks() {
+    if (this.linksForm.invalid) return;
+    this.linksError.set(false);
+    const value = this.linksForm.getRawValue();
+    this.data
+      .updateLinks({
+        githubUrl: value.githubUrl.trim() || null,
+        linkedinUrl: value.linkedinUrl.trim() || null,
+      })
+      .subscribe({
+        next: (profile) => this.apply(profile),
+        error: () => this.linksError.set(true),
+      });
+  }
 
   private load() {
     this.data.getProfile().subscribe({
@@ -117,8 +137,16 @@ export class AdminProfilePage {
   }
 
   private apply(profile: AdminProfile) {
-    this.form.setValue({ headline: profile.headline, summary: profile.summary, about: profile.about });
+    this.form.setValue({
+      headline: profile.headline,
+      summary: profile.summary,
+      about: profile.about,
+    });
     this.contactForm.setValue({ contactEmail: profile.contactEmail ?? '' });
+    this.linksForm.setValue({
+      githubUrl: profile.githubUrl ?? '',
+      linkedinUrl: profile.linkedinUrl ?? '',
+    });
     this.profileLoaded.set(true);
   }
 }

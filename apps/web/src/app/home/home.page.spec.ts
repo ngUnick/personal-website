@@ -74,6 +74,8 @@ describe('HomePage', () => {
                 summary: 'Fictional profile summary used to validate the public home path.',
                 about: 'Fictional profile about text used to validate the public about path.',
                 contactEmail: 'portfolio@example.invalid',
+                githubUrl: 'https://github.com/example',
+                linkedinUrl: 'https://www.linkedin.com/in/example',
               }),
           },
         },
@@ -115,6 +117,13 @@ describe('HomePage', () => {
       fixture.nativeElement.querySelector('a[href="mailto:portfolio@example.invalid"]')
         ?.textContent,
     ).toContain('portfolio@example.invalid');
+    expect(
+      fixture.nativeElement.querySelector('a[href="https://github.com/example"]')?.textContent,
+    ).toContain('GitHub');
+    expect(
+      fixture.nativeElement.querySelector('a[href="https://www.linkedin.com/in/example"]')
+        ?.textContent,
+    ).toContain('LinkedIn');
     const projectLink = fixture.nativeElement.querySelector(
       'a[href="/projects/placeholder-project"]',
     );
@@ -137,7 +146,14 @@ describe('HomePage', () => {
           provide: ProfileDataAccess,
           useValue: {
             getProfile: () =>
-              of({ headline: 'Example', summary: 'Summary', about: 'About', contactEmail: null }),
+              of({
+                headline: 'Example',
+                summary: 'Summary',
+                about: 'About',
+                contactEmail: null,
+                githubUrl: null,
+                linkedinUrl: null,
+              }),
           },
         },
       ],
@@ -151,5 +167,42 @@ describe('HomePage', () => {
     ).find((section) => section.querySelector('#experience-heading') !== null);
     expect(experienceSection).toBeDefined();
     expect(experienceSection?.querySelectorAll('article')).toHaveLength(0);
+  });
+
+  it('renders Contact when a professional link exists without an email address', async () => {
+    await TestBed.configureTestingModule({
+      imports: [HomePage],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ProjectsDataAccess,
+          useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) },
+        },
+        { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } },
+        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]) } },
+        { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } },
+        {
+          provide: ProfileDataAccess,
+          useValue: {
+            getProfile: () =>
+              of({
+                headline: 'Example',
+                summary: 'Summary',
+                about: 'About',
+                contactEmail: null,
+                githubUrl: 'https://github.com/example',
+                linkedinUrl: null,
+              }),
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(HomePage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(
+      fixture.nativeElement.querySelector('a[href="https://github.com/example"]')?.textContent,
+    ).toContain('GitHub');
+    expect(fixture.nativeElement.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 });

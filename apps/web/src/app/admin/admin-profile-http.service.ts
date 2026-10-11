@@ -16,11 +16,9 @@ export class AdminProfileHttpService extends AdminProfileDataAccess {
   }
 
   updateContent(content: ProfileContent): Observable<AdminProfile> {
-    return this.http.patch<AdminProfile>(
-      `${this.apiBaseUrl}/admin/profile/content`,
-      content,
-      { withCredentials: true },
-    );
+    return this.http.patch<AdminProfile>(`${this.apiBaseUrl}/admin/profile/content`, content, {
+      withCredentials: true,
+    });
   }
 
   updateContact(contactEmail: string | null): Observable<AdminProfile> {
@@ -29,5 +27,10 @@ export class AdminProfileHttpService extends AdminProfileDataAccess {
       { contactEmail },
       { withCredentials: true },
     );
+  }
+  updateLinks(links: Pick<AdminProfile, 'githubUrl' | 'linkedinUrl'>): Observable<AdminProfile> {
+    return this.http.patch<AdminProfile>(`${this.apiBaseUrl}/admin/profile/links`, links, {
+      withCredentials: true,
+    });
   }
 }

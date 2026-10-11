@@ -1,7 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
-import { adminUsers, credentials, educations, experiences, profiles, projects, technologies } from './schema.js';
+import {
+  adminUsers,
+  credentials,
+  educations,
+  experiences,
+  profiles,
+  projects,
+  technologies,
+} from './schema.js';
 import { hashPassword } from '../admin-auth/password.js';
 
 if (process.env.NODE_ENV === 'production') {
@@ -12,15 +20,88 @@ const pool = new Pool({ connectionString: getDatabaseUrl() });
 const db = drizzle({ client: pool });
 
 try {
-  await db.insert(credentials).values({ id: '00000000-0000-4000-8000-000000000050', name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 0 }).onConflictDoUpdate({ target: credentials.id, set: { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', status: 'draft', displayOrder: 0 } });
+  await db
+    .insert(credentials)
+    .values({
+      id: '00000000-0000-4000-8000-000000000050',
+      name: 'Example Draft Credential',
+      issuer: 'Example Learning Provider',
+      issuedOn: '2025-01-01',
+      status: 'draft',
+      displayOrder: 0,
+    })
+    .onConflictDoUpdate({
+      target: credentials.id,
+      set: {
+        name: 'Example Draft Credential',
+        issuer: 'Example Learning Provider',
+        issuedOn: '2025-01-01',
+        status: 'draft',
+        displayOrder: 0,
+      },
+    });
   for (const technology of [
-    { id: '00000000-0000-4000-8000-000000000040', name: 'Example TypeScript', category: 'Languages', status: 'published' as const, displayOrder: 0 },
-    { id: '00000000-0000-4000-8000-000000000041', name: 'Example PostgreSQL', category: 'Data', status: 'published' as const, displayOrder: 1 },
-    { id: '00000000-0000-4000-8000-000000000042', name: 'Example Draft Tool', category: 'Tools', status: 'draft' as const, displayOrder: 2 },
+    {
+      id: '00000000-0000-4000-8000-000000000040',
+      name: 'Example TypeScript',
+      category: 'Languages',
+      status: 'published' as const,
+      displayOrder: 0,
+    },
+    {
+      id: '00000000-0000-4000-8000-000000000041',
+      name: 'Example PostgreSQL',
+      category: 'Data',
+      status: 'published' as const,
+      displayOrder: 1,
+    },
+    {
+      id: '00000000-0000-4000-8000-000000000042',
+      name: 'Example Draft Tool',
+      category: 'Tools',
+      status: 'draft' as const,
+      displayOrder: 2,
+    },
   ]) {
-    await db.insert(technologies).values(technology).onConflictDoUpdate({ target: technologies.id, set: { name: technology.name, category: technology.category, status: technology.status, displayOrder: technology.displayOrder } });
+    await db
+      .insert(technologies)
+      .values(technology)
+      .onConflictDoUpdate({
+        target: technologies.id,
+        set: {
+          name: technology.name,
+          category: technology.category,
+          status: technology.status,
+          displayOrder: technology.displayOrder,
+        },
+      });
   }
-  await db.insert(profiles).values({ id: 1, headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' }).onConflictDoUpdate({ target: profiles.id, set: { headline: 'Example Software Engineer', summary: 'Fictional profile summary used to validate the public home path.', about: 'Fictional profile about text used to validate the public about path.', contactEmail: 'portfolio@example.invalid' } });
+  await db
+    .insert(profiles)
+    .values({
+      id: 1,
+      headline: 'Example Software Engineer',
+      summary:
+        'Fictional profile summary used to validate the public home path.',
+      about:
+        'Fictional profile about text used to validate the public about path.',
+      contactEmail: 'portfolio@example.invalid',
+      githubUrl: null,
+      linkedinUrl: null,
+    })
+    .onConflictDoUpdate({
+      target: profiles.id,
+      set: {
+        headline: 'Example Software Engineer',
+        summary:
+          'Fictional profile summary used to validate the public home path.',
+        about:
+          'Fictional profile about text used to validate the public about path.',
+        contactEmail: 'portfolio@example.invalid',
+        githubUrl: null,
+        linkedinUrl: null,
+      },
+    });
   const fakeAdminPasswordHash = await hashPassword('development-only-password');
   await db
     .insert(educations)

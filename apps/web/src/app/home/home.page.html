@@ -8,10 +8,18 @@
     <a routerLink="/experience">View experience</a>
   </header>
 
-  @if (profile()?.contactEmail; as contactEmail) {
+  @if (profile()?.contactEmail || profile()?.githubUrl || profile()?.linkedinUrl) {
     <section aria-labelledby="contact-heading">
       <h2 id="contact-heading">Contact</h2>
-      <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+      @if (profile()?.contactEmail; as contactEmail) {
+        <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+      }
+      @if (profile()?.githubUrl; as githubUrl) {
+        <a [href]="githubUrl">GitHub</a>
+      }
+      @if (profile()?.linkedinUrl; as linkedinUrl) {
+        <a [href]="linkedinUrl">LinkedIn</a>
+      }
     </section>
   }
 

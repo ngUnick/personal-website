@@ -4,11 +4,15 @@ import type {
   ProfileContentUpdate,
   ProfileContactUpdate,
   ProfilePersistence,
+  ProfileLinksUpdate,
 } from './profile.persistence.js';
 
 @Injectable()
 export class ProfileService {
-  constructor(@Inject(PROFILE_PERSISTENCE) private readonly persistence: ProfilePersistence) {}
+  constructor(
+    @Inject(PROFILE_PERSISTENCE)
+    private readonly persistence: ProfilePersistence,
+  ) {}
 
   async getProfile() {
     return this.requireProfile();
@@ -26,6 +30,11 @@ export class ProfileService {
 
   async updateContact(contact: ProfileContactUpdate) {
     const profile = await this.persistence.updateContact(contact);
+    if (!profile) throw new NotFoundException('Profile not found.');
+    return profile;
+  }
+  async updateLinks(links: ProfileLinksUpdate) {
+    const profile = await this.persistence.updateLinks(links);
     if (!profile) throw new NotFoundException('Profile not found.');
     return profile;
   }

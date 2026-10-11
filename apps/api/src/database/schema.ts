@@ -119,6 +119,8 @@ export const profiles = pgTable('profiles', {
   summary: text('summary').notNull(),
   about: text('about').notNull(),
   contactEmail: text('contact_email'),
+  githubUrl: text('github_url'),
+  linkedinUrl: text('linkedin_url'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -135,11 +137,18 @@ export const technologies = pgTable(
     category: text('category').notNull(),
     status: technologyPublicationStatus('status').notNull().default('draft'),
     displayOrder: integer('display_order').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    check('technologies_display_order_non_negative', sql`${table.displayOrder} >= 0`),
+    check(
+      'technologies_display_order_non_negative',
+      sql`${table.displayOrder} >= 0`,
+    ),
   ],
 );
 
@@ -152,11 +161,18 @@ export const credentials = pgTable(
     issuedOn: date('issued_on').notNull(),
     status: credentialPublicationStatus('status').notNull().default('draft'),
     displayOrder: integer('display_order').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    check('credentials_display_order_non_negative', sql`${table.displayOrder} >= 0`),
+    check(
+      'credentials_display_order_non_negative',
+      sql`${table.displayOrder} >= 0`,
+    ),
   ],
 );
 
