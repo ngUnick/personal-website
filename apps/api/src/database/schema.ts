@@ -176,6 +176,7 @@ export const credentials = pgTable(
     name: text('name').notNull(),
     issuer: text('issuer').notNull(),
     issuedOn: date('issued_on').notNull(),
+    verificationUrl: text('verification_url'),
     status: credentialPublicationStatus('status').notNull().default('draft'),
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })

@@ -7,7 +7,7 @@ import { AdminCredentialsDataAccess } from './admin-credentials.data-access';
 import { AdminCredentialEditorPage } from './admin-credential-editor.page';
 
 describe('AdminCredentialEditorPage', () => {
-  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', status: 'draft' as const };
+  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', verificationUrl: null, status: 'draft' as const };
   const providers = (platform: string, data: unknown, auth = of({ authenticated: true }), navigateByUrl = () => Promise.resolve(true)) => [
     { provide: PLATFORM_ID, useValue: platform },
     { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
@@ -26,11 +26,34 @@ describe('AdminCredentialEditorPage', () => {
     expect(component.form.getRawValue().name).toBe('Canonical Credential');
   });
 
+  it('keeps verification mutation separate, trims input, and applies the authoritative response', async () => {
+    let contentCalls = 0; let verificationCalls = 0; let received: string | null = 'unexpected';
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', {
+      getCredential: () => of({ ...item, verificationUrl: 'https://before.example' }),
+      updateContent: () => { contentCalls++; return of(item); },
+      updateVerification: (_id: string, verificationUrl: string | null) => { verificationCalls++; received = verificationUrl; return of({ ...item, verificationUrl: 'https://canonical.example' }); },
+    }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.verificationForm.setValue({ verificationUrl: ' https://requested.example ' }); component.saveVerification();
+    expect({ contentCalls, verificationCalls, received }).toEqual({ contentCalls: 0, verificationCalls: 1, received: 'https://requested.example' });
+    expect(component.verificationForm.getRawValue()).toEqual({ verificationUrl: 'https://canonical.example' });
+    component.verificationForm.setValue({ verificationUrl: '   ' }); component.saveVerification();
+    expect(received).toBeNull();
+  });
+
   it('renders an accessible save error', async () => {
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => throwError(() => new Error('save failed')) }) }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
     (fixture.componentInstance as any).save(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential changes.');
+  });
+
+  it('renders an accessible verification error without affecting content or status', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => of(item), updateVerification: () => throwError(() => new Error('verification failed')), updateStatus: () => of(item) }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    (fixture.componentInstance as any).saveVerification(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential verification URL.');
   });
 
   it('keeps publication changes separate and renders an accessible status error', async () => {
@@ -57,15 +80,15 @@ describe('AdminCredentialEditorPage', () => {
   });
 
   it('makes no private calls during SSR', async () => {
-    let sessions = 0; let reads = 0; let statusUpdates = 0;
+    let sessions = 0; let reads = 0; let statusUpdates = 0; let verificationUpdates = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions++; return of({ authenticated: true }); } } },
-      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); } } },
+      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); }, updateVerification: () => { verificationUpdates++; return of(item); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
-    expect({ sessions, reads, statusUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0 });
+    expect({ sessions, reads, statusUpdates, verificationUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0, verificationUpdates: 0 });
   });
 });

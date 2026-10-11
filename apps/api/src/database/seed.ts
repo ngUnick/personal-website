@@ -27,6 +27,7 @@ try {
       name: 'Example Draft Credential',
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
+      verificationUrl: null,
       status: 'draft',
       displayOrder: 0,
     })
@@ -36,6 +37,7 @@ try {
         name: 'Example Draft Credential',
         issuer: 'Example Learning Provider',
         issuedOn: '2025-01-01',
+        verificationUrl: null,
         status: 'draft',
         displayOrder: 0,
       },

@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseModule } from '../database/database.module.js';
 import { DatabaseService } from '../database/database.service.js';
-import { projects } from '../database/schema.js';
+import { projects, technologies } from '../database/schema.js';
 import { DrizzleProjectsPersistence } from './drizzle-projects.persistence.js';
 
 describe('DrizzleProjectsPersistence', () => {
@@ -157,6 +157,10 @@ describe('DrizzleProjectsPersistence', () => {
     const database = moduleFixture.get(DatabaseService);
     const slug = 'technology-association-persistence-project';
     const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
+    const readSelectedTechnologyIdsInGlobalOrder = async () =>
+      (await database.db.select({ id: technologies.id }).from(technologies).orderBy(asc(technologies.displayOrder)))
+        .map(({ id }) => id)
+        .filter((id) => ids.includes(id));
     await database.db.insert(projects).values({
       id: '00000000-0000-4000-8000-000000000050',
       slug,
@@ -169,12 +173,14 @@ describe('DrizzleProjectsPersistence', () => {
     });
     try {
       await expect(persistence.updateTechnologies(slug, { technologyIds: ids })).resolves.toMatchObject({ technologyIds: ids });
-      await expect(persistence.updateContent(slug, {
+      const afterContent = await persistence.updateContent(slug, {
         title: 'Technology Association Persistence Project',
         summary: 'Fake content used only for project technology persistence verification.',
         caseStudy: 'Fake narrative used only for project technology persistence verification.',
-      })).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
-      await expect(persistence.updateStatus(slug, 'published')).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
+      });
+      expect(afterContent).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
+      const afterStatus = await persistence.updateStatus(slug, 'published');
+      expect(afterStatus).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
       await expect(persistence.findPublishedBySlug(slug)).resolves.toMatchObject({ technologies: [
         { name: 'Example TypeScript', category: 'Languages' },
         { name: 'Example PostgreSQL', category: 'Data' },

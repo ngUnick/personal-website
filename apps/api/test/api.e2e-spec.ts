@@ -98,6 +98,7 @@ describe('API (e2e)', () => {
       name: 'Example Draft Credential',
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
+      verificationUrl: null,
     };
     const agent = await authenticatedAgent();
     try {
@@ -138,6 +139,7 @@ describe('API (e2e)', () => {
       name: 'Example Draft Credential',
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
+      verificationUrl: null,
     };
     await request(app.getHttpServer())
       .get('/api/admin/credentials')
@@ -202,7 +204,7 @@ describe('API (e2e)', () => {
           updatedAt: 'never',
         })
         .expect(200)
-        .expect({ id, ...edited, status: 'draft' });
+        .expect({ id, ...edited, verificationUrl: null, status: 'draft' });
       const [stored] = await app
         .get(DatabaseService)
         .db.select()
@@ -210,7 +212,7 @@ describe('API (e2e)', () => {
       expect(stored).toMatchObject({
         id,
         ...edited,
-        status: 'draft',
+        status: 'draft', verificationUrl: null,
         displayOrder: 0,
       });
     } finally {
@@ -218,6 +220,82 @@ describe('API (e2e)', () => {
         .patch(`/api/admin/credentials/${id}/content`)
         .set('Origin', 'http://localhost:4200')
         .send(original)
+        .expect(200);
+    }
+  });
+
+  it('changes only a Credential verification URL through its protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = {
+      id,
+      name: 'Example Draft Credential',
+      issuer: 'Example Learning Provider',
+      issuedOn: '2025-01-01',
+      verificationUrl: null,
+      status: 'draft',
+    };
+    await request(app.getHttpServer())
+      .patch(`/api/admin/credentials/${id}/verification`)
+      .send({ verificationUrl: 'https://verify.example/credential' })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent
+      .patch(`/api/admin/credentials/${id}/verification`)
+      .send({ verificationUrl: 'https://verify.example/credential' })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/credentials/${id}/verification`)
+      .set('Origin', 'https://untrusted.example')
+      .send({ verificationUrl: 'https://verify.example/credential' })
+      .expect(403);
+    await agent
+      .patch('/api/admin/credentials/not-a-uuid/verification')
+      .set('Origin', 'http://localhost:4200')
+      .send({ verificationUrl: 'https://verify.example/credential' })
+      .expect(400);
+    await agent
+      .patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/verification')
+      .set('Origin', 'http://localhost:4200')
+      .send({ verificationUrl: null })
+      .expect(404);
+    for (const verificationUrl of [undefined, '', '  ', 'http://verify.example/credential', 'not a url', 1]) {
+      await agent
+        .patch(`/api/admin/credentials/${id}/verification`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ verificationUrl })
+        .expect(400);
+    }
+    try {
+      await agent
+        .patch(`/api/admin/credentials/${id}/verification`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ verificationUrl: ' https://verify.example/credential ', name: 'Ignored', status: 'published', displayOrder: 99 })
+        .expect(200)
+        .expect({ ...original, verificationUrl: 'https://verify.example/credential' });
+      await agent
+        .get(`/api/admin/credentials/${id}`)
+        .expect(200)
+        .expect({ ...original, verificationUrl: 'https://verify.example/credential' });
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
+      await agent
+        .patch(`/api/admin/credentials/${id}/status`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ status: 'published' })
+        .expect(200);
+      await request(app.getHttpServer())
+        .get('/api/credentials')
+        .expect(200)
+        .expect([{ name: original.name, issuer: original.issuer, issuedOn: original.issuedOn, verificationUrl: 'https://verify.example/credential' }]);
+    } finally {
+      await agent
+        .patch(`/api/admin/credentials/${id}/verification`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ verificationUrl: null })
+        .expect(200);
+      await agent
+        .patch(`/api/admin/credentials/${id}/status`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ status: 'draft' })
         .expect(200);
     }
   });
@@ -266,7 +344,7 @@ describe('API (e2e)', () => {
       expect(response.body).toEqual({
         id: expect.stringMatching(/^[0-9a-f-]{36}$/),
         ...input,
-        status: 'draft',
+        status: 'draft', verificationUrl: null,
       });
       const [stored] = await app
         .get(DatabaseService)
@@ -295,6 +373,7 @@ describe('API (e2e)', () => {
       name: 'Example Draft Credential',
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
+      verificationUrl: null,
       status: 'draft',
     };
     await request(app.getHttpServer())

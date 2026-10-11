@@ -9,4 +9,7 @@ export class CredentialResponseDto {
 
   @ApiProperty({ example: '2025-01-01' })
   issuedOn!: string;
+
+  @ApiProperty({ nullable: true })
+  verificationUrl!: string | null;
 }
