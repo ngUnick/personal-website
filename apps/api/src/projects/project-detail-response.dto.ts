@@ -10,4 +10,7 @@ export class ProjectDetailResponseDto extends ProjectResponseDto {
 
   @ApiProperty({ nullable: true, example: 'https://example.invalid/project' })
   liveUrl!: string | null;
+
+  @ApiProperty({ type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, category: { type: 'string' } } } })
+  technologies!: { name: string; category: string }[];
 }

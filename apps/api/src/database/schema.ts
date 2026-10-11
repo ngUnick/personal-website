@@ -4,6 +4,7 @@ import {
   date,
   integer,
   pgEnum,
+  primaryKey,
   pgTable,
   text,
   timestamp,
@@ -152,6 +153,19 @@ export const technologies = pgTable(
       sql`${table.displayOrder} >= 0`,
     ),
   ],
+);
+
+export const projectTechnologies = pgTable(
+  'project_technologies',
+  {
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    technologyId: uuid('technology_id')
+      .notNull()
+      .references(() => technologies.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.technologyId] })],
 );
 
 export const credentials = pgTable(

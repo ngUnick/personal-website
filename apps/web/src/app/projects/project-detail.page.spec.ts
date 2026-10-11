@@ -26,6 +26,7 @@ describe('ProjectDetailPage', () => {
                 caseStudy: 'Fictional plain-text case-study narrative.',
                 repositoryUrl: 'https://github.com/example/project',
                 liveUrl: 'https://example.test/project',
+                technologies: [{ name: 'Example TypeScript', category: 'Languages' }],
               }),
           },
         },
@@ -43,6 +44,7 @@ describe('ProjectDetailPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Fictional plain-text case-study narrative.');
     expect(fixture.nativeElement.querySelector('a[href="https://github.com/example/project"]')?.textContent).toContain('Repository');
     expect(fixture.nativeElement.querySelector('a[href="https://example.test/project"]')?.textContent).toContain('Live project');
+    expect(fixture.nativeElement.querySelector('[aria-label="Technologies"]')?.textContent).toContain('Example TypeScript — Languages');
   });
 
   it('omits the project links section when both links are absent', async () => {

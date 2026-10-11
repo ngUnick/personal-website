@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service.js';
-import { projects } from '../database/schema.js';
+import { projectTechnologies, projects, technologies } from '../database/schema.js';
 import {
   PersistedProject,
   PersistedProjectDetail,
+  PublicPersistedProjectDetail,
   ProjectOrderDirection,
   ProjectsPersistence,
 } from './projects.persistence.js';
@@ -41,7 +42,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
 
   async findPublishedBySlug(
     slug: string,
-  ): Promise<PersistedProjectDetail | undefined> {
+  ): Promise<PublicPersistedProjectDetail | undefined> {
     const [project] = await this.database.db
       .select({
         slug: projects.slug,
@@ -55,7 +56,8 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .where(and(eq(projects.slug, slug), eq(projects.status, 'published')))
       .limit(1);
 
-    return project;
+    if (!project) return undefined;
+    return { ...project, technologies: await this.findPublishedTechnologies(slug) };
   }
 
   async findForAdmin() {
@@ -71,7 +73,8 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .from(projects)
       .where(eq(projects.slug, slug))
       .limit(1);
-    return project;
+    if (!project) return undefined;
+    return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
 
   async updateFeatured(slug: string, featured: boolean) {
@@ -89,7 +92,8 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .set({ ...content, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
-    return project;
+    if (!project) return undefined;
+    return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
 
   async updateLinks(slug: string, links: { repositoryUrl: string | null; liveUrl: string | null }) {
@@ -98,7 +102,23 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .set({ ...links, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
-    return project;
+    if (!project) return undefined;
+    return { ...project, technologyIds: await this.findTechnologyIds(slug) };
+  }
+
+  async updateTechnologies(slug: string, { technologyIds }: { technologyIds: string[] }) {
+    return this.database.db.transaction(async (transaction) => {
+      const [project] = await transaction.select({ id: projects.id }).from(projects).where(eq(projects.slug, slug)).limit(1);
+      if (!project) return undefined;
+      if (technologyIds.length) {
+        const known = await transaction.select({ id: technologies.id }).from(technologies).where(inArray(technologies.id, technologyIds));
+        if (known.length !== technologyIds.length) return undefined;
+      }
+      await transaction.delete(projectTechnologies).where(eq(projectTechnologies.projectId, project.id));
+      if (technologyIds.length) await transaction.insert(projectTechnologies).values(technologyIds.map(technologyId => ({ projectId: project.id, technologyId })));
+      const [updated] = await transaction.select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder }).from(projects).where(eq(projects.id, project.id));
+      return { ...updated!, technologyIds };
+    });
   }
 
   async updateStatus(slug: string, status: 'draft' | 'published' | 'archived') {
@@ -107,7 +127,8 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .set({ status, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
       .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
-    return project;
+    if (!project) return undefined;
+    return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
 
   async moveProject(slug: string, direction: ProjectOrderDirection) {
@@ -144,5 +165,14 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
       return project;
     });
+  }
+
+  private async findTechnologyIds(slug: string): Promise<string[]> {
+    const rows = await this.database.db.select({ id: technologies.id }).from(projectTechnologies).innerJoin(projects, eq(projectTechnologies.projectId, projects.id)).innerJoin(technologies, eq(projectTechnologies.technologyId, technologies.id)).where(eq(projects.slug, slug)).orderBy(asc(technologies.displayOrder));
+    return rows.map(row => row.id);
+  }
+
+  private async findPublishedTechnologies(slug: string) {
+    return this.database.db.select({ name: technologies.name, category: technologies.category }).from(projectTechnologies).innerJoin(projects, eq(projectTechnologies.projectId, projects.id)).innerJoin(technologies, eq(projectTechnologies.technologyId, technologies.id)).where(and(eq(projects.slug, slug), eq(technologies.status, 'published'))).orderBy(asc(technologies.displayOrder));
   }
 }

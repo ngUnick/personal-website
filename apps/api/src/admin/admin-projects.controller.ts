@@ -11,6 +11,7 @@ import { UpdateProjectStatusDto } from './update-project-status.dto.js';
 import { CreateProjectDraftDto } from './create-project-draft.dto.js';
 import { UpdateProjectOrderDto } from './update-project-order.dto.js';
 import { UpdateProjectLinksDto } from './update-project-links.dto.js';
+import { UpdateProjectTechnologiesDto } from './update-project-technologies.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -76,6 +77,19 @@ export class AdminProjectsController {
       this.validUrl(body?.repositoryUrl),
       this.validUrl(body?.liveUrl),
     );
+  }
+
+  @Patch(':slug/technologies')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectTechnologiesDto })
+  @ApiOkResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project or technology not found.' })
+  async updateTechnologies(@Param('slug') slug: string, @Body() body: UpdateProjectTechnologiesDto) {
+    const technologyIds = body?.technologyIds;
+    if (!Array.isArray(technologyIds) || technologyIds.some((id) => typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) || new Set(technologyIds).size !== technologyIds.length) throw new BadRequestException('Technology IDs must be unique UUIDs.');
+    return this.projects.updateTechnologies(slug, technologyIds);
   }
 
   @Patch(':slug/status')

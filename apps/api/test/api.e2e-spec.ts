@@ -1209,6 +1209,7 @@ describe('API (e2e)', () => {
           'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
         repositoryUrl: null,
         liveUrl: null,
+        technologies: [],
       }));
 
   it('returns 404 when a project slug is not public', () =>
@@ -1397,6 +1398,7 @@ describe('API (e2e)', () => {
             'Fictional draft narrative used only to validate private case-study authoring.',
           repositoryUrl: null,
           liveUrl: null,
+          technologyIds: [],
           status: 'draft',
           featured: false,
         });
@@ -1438,6 +1440,7 @@ describe('API (e2e)', () => {
             caseStudy: 'Edited fictional narrative.',
             repositoryUrl: null,
             liveUrl: null,
+            technologyIds: [],
             status: 'draft',
             featured: false,
           });
@@ -1481,6 +1484,7 @@ describe('API (e2e)', () => {
           caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
           repositoryUrl: 'https://github.com/example/project',
           liveUrl: 'https://example.test/live',
+          technologyIds: [],
           status: 'published',
           featured: true,
         });
@@ -1493,6 +1497,7 @@ describe('API (e2e)', () => {
           caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
           repositoryUrl: 'https://github.com/example/project',
           liveUrl: 'https://example.test/live',
+          technologies: [],
         });
       });
       await request(app.getHttpServer()).get('/api/projects').expect(200).expect([{
@@ -1505,6 +1510,35 @@ describe('API (e2e)', () => {
     } finally {
       await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
       await agent.patch('/api/admin/projects/draft-placeholder-project/links').set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
+    }
+  });
+
+  it('replaces project technology associations through the protected CMS boundary', async () => {
+    const slug = 'placeholder-project';
+    const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
+    await request(app.getHttpServer()).patch(`/api/admin/projects/${slug}/technologies`).send({ technologyIds: ids }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/projects/${slug}/technologies`).send({ technologyIds: ids }).expect(403);
+    await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0], ids[0]] }).expect(400);
+    await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ['00000000-0000-4000-8000-000000000099'] }).expect(404);
+    try {
+      await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ids }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(ids));
+      await agent.patch(`/api/admin/projects/${slug}/content`).set('Origin', 'http://localhost:4200').send({
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042']));
+      await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042']));
+      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body.technologies).toEqual([
+        { name: 'Example TypeScript', category: 'Languages' },
+        { name: 'Example PostgreSQL', category: 'Data' },
+      ]));
+      await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body[0]).not.toHaveProperty('technologies'));
+      await agent.patch('/api/admin/projects/draft-placeholder-project/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0]] }).expect(200);
+      await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+    } finally {
+      await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
+      await agent.patch('/api/admin/projects/draft-placeholder-project/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
     }
   });
 
@@ -1563,6 +1597,7 @@ describe('API (e2e)', () => {
               'Fictional draft narrative used only to validate private case-study authoring.',
             repositoryUrl: null,
             liveUrl: null,
+            technologyIds: [],
             status: 'published',
             featured: false,
           });
@@ -1677,6 +1712,7 @@ describe('API (e2e)', () => {
             caseStudy: '',
             repositoryUrl: null,
             liveUrl: null,
+            technologyIds: [],
             status: 'draft',
             featured: false,
           });
@@ -1689,7 +1725,7 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/projects/${slug}`)
         .expect(200)
-        .expect({ ...input, caseStudy: '', repositoryUrl: null, liveUrl: null, status: 'draft', featured: false });
+        .expect({ ...input, caseStudy: '', repositoryUrl: null, liveUrl: null, technologyIds: [], status: 'draft', featured: false });
       await request(app.getHttpServer())
         .get('/api/projects')
         .expect(200)

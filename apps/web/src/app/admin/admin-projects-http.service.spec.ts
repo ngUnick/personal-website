@@ -33,6 +33,12 @@ describe('AdminProjectsHttpService', () => {
     expect(update.request.withCredentials).toBe(true);
     expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary', caseStudy: 'Edited narrative' });
     update.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'draft', featured: false });
+    service.updateTechnologies('draft-placeholder-project', ['00000000-0000-4000-8000-000000000040']).subscribe();
+    const technologies = http.expectOne('/api/admin/projects/draft-placeholder-project/technologies');
+    expect(technologies.request.method).toBe('PATCH');
+    expect(technologies.request.withCredentials).toBe(true);
+    expect(technologies.request.body).toEqual({ technologyIds: ['00000000-0000-4000-8000-000000000040'] });
+    technologies.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', caseStudy: '', repositoryUrl: null, liveUrl: null, technologyIds: ['00000000-0000-4000-8000-000000000040'], status: 'draft', featured: false });
     service.updateLinks('draft-placeholder-project', { repositoryUrl: 'https://github.com/example/project', liveUrl: null }).subscribe();
     const links = http.expectOne('/api/admin/projects/draft-placeholder-project/links');
     expect(links.request.method).toBe('PATCH');

@@ -47,6 +47,7 @@ describe('DrizzleProjectsPersistence', () => {
       caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       repositoryUrl: null,
       liveUrl: null,
+      technologies: [],
     });
   });
 
@@ -148,6 +149,28 @@ describe('DrizzleProjectsPersistence', () => {
       repositoryUrl: null,
       liveUrl: null,
     })).resolves.toMatchObject({ repositoryUrl: null, liveUrl: null });
+  });
+
+  it('replaces private technology associations while public detail filters drafts in global order', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+    const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
+    try {
+      await expect(persistence.updateTechnologies('placeholder-project', { technologyIds: ids })).resolves.toMatchObject({ technologyIds: ids });
+      await expect(persistence.updateContent('placeholder-project', {
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      })).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
+      await expect(persistence.updateStatus('placeholder-project', 'published')).resolves.toMatchObject({ technologyIds: ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'] });
+      await expect(persistence.findPublishedBySlug('placeholder-project')).resolves.toMatchObject({ technologies: [
+        { name: 'Example TypeScript', category: 'Languages' },
+        { name: 'Example PostgreSQL', category: 'Data' },
+      ] });
+      await expect(persistence.updateTechnologies('placeholder-project', { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateTechnologies('placeholder-project', { technologyIds: [] });
+    }
   });
 
   it('creates an unfeatured draft after existing projects and handles duplicate slugs', async () => {

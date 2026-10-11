@@ -8,6 +8,7 @@ export class AdminProjectDetailResponseDto implements AdminProjectDetail {
   @ApiProperty() caseStudy!: string;
   @ApiProperty({ nullable: true }) repositoryUrl!: string | null;
   @ApiProperty({ nullable: true }) liveUrl!: string | null;
+  @ApiProperty({ type: [String] }) technologyIds!: string[];
   @ApiProperty({ enum: ['draft', 'published', 'archived'] }) status!: 'draft' | 'published' | 'archived';
   @ApiProperty() featured!: boolean;
 }
