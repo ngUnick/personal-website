@@ -2,6 +2,7 @@ export type PersistedExperience = {
   organization: string;
   role: string;
   summary: string;
+  location: string | null;
   startDate: string;
   endDate: string | null;
 };
@@ -30,6 +31,7 @@ export interface ExperiencePersistence {
   updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminPersistedExperience | undefined>;
   updateStatus(id: string, status: ExperiencePublicationStatus): Promise<AdminPersistedExperience | undefined>;
   updateFeatured(id: string, featured: boolean): Promise<AdminPersistedExperience | undefined>;
+  updateLocation(id: string, location: string | null): Promise<AdminPersistedExperience | undefined>;
   createDraft(input: CreateExperienceDraft): Promise<AdminPersistedExperience>;
   moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined>;
 }

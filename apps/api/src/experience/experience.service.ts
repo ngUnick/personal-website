@@ -42,6 +42,12 @@ export class ExperienceService {
   }
   async updateFeatured(id: string, featured: boolean): Promise<AdminExperienceDetail> { const experience = await this.experiencePersistence.updateFeatured(id, featured); if (!experience) throw new NotFoundException('Experience not found.'); return this.toAdminDetail(experience); }
 
+  async updateLocation(id: string, location: string | null): Promise<AdminExperienceDetail> {
+    const experience = await this.experiencePersistence.updateLocation(id, location);
+    if (!experience) throw new NotFoundException('Experience not found.');
+    return this.toAdminDetail(experience);
+  }
+
   async createDraft(input: CreateExperienceDraft): Promise<AdminExperienceDetail> {
     return this.toAdminDetail(await this.experiencePersistence.createDraft(input));
   }
@@ -53,7 +59,7 @@ export class ExperienceService {
   }
 
   private toAdminDetail(experience: AdminPersistedExperience): AdminExperienceDetail {
-    const { id, organization, role, summary, startDate, endDate, status, featured } = experience;
-    return { id, organization, role, summary, startDate, endDate, status, featured };
+    const { id, organization, role, summary, location, startDate, endDate, status, featured } = experience;
+    return { id, organization, role, summary, location, startDate, endDate, status, featured };
   }
 }

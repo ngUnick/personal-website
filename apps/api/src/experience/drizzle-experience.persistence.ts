@@ -23,6 +23,7 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
         organization: experiences.organization,
         role: experiences.role,
         summary: experiences.summary,
+        location: experiences.location,
         startDate: experiences.startDate,
         endDate: experiences.endDate,
       })
@@ -32,7 +33,7 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
   }
 
   async findFeaturedPublished(): Promise<PersistedExperience[]> {
-    return this.database.db.select({ organization: experiences.organization, role: experiences.role, summary: experiences.summary, startDate: experiences.startDate, endDate: experiences.endDate }).from(experiences).where(and(eq(experiences.status, 'published'), eq(experiences.featured, true))).orderBy(asc(experiences.displayOrder));
+    return this.database.db.select({ organization: experiences.organization, role: experiences.role, summary: experiences.summary, location: experiences.location, startDate: experiences.startDate, endDate: experiences.endDate }).from(experiences).where(and(eq(experiences.status, 'published'), eq(experiences.featured, true))).orderBy(asc(experiences.displayOrder));
   }
 
   async findForAdmin(): Promise<AdminPersistedExperience[]> {
@@ -55,6 +56,11 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
 
   async updateFeatured(id: string, featured: boolean): Promise<AdminPersistedExperience | undefined> {
     await this.database.db.update(experiences).set({ featured, updatedAt: new Date() }).where(eq(experiences.id, id));
+    return this.findForAdminById(id);
+  }
+
+  async updateLocation(id: string, location: string | null): Promise<AdminPersistedExperience | undefined> {
+    await this.database.db.update(experiences).set({ location, updatedAt: new Date() }).where(eq(experiences.id, id));
     return this.findForAdminById(id);
   }
 
@@ -85,6 +91,7 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
     organization: experiences.organization,
     role: experiences.role,
     summary: experiences.summary,
+    location: experiences.location,
     startDate: experiences.startDate,
     endDate: experiences.endDate,
     status: experiences.status,

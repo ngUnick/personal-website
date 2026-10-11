@@ -18,6 +18,7 @@ describe('ExperiencePage', () => {
                   role: 'Example Software Engineer',
                   summary:
                     'Fictional development fixture used to validate the public experience path.',
+                  location: 'Remote',
                   startDate: '2024-01-01',
                   endDate: null,
                 },
@@ -31,5 +32,6 @@ describe('ExperiencePage', () => {
     await fixture.whenStable();
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
     expect(fixture.nativeElement.textContent).toContain('Example Software Studio');
+    expect(fixture.nativeElement.textContent).toContain('Remote');
   });
 });

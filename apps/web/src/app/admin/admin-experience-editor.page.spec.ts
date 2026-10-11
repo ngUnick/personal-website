@@ -7,12 +7,20 @@ import { AdminExperienceDataAccess } from './admin-experience.data-access';
 import { AdminExperienceEditorPage } from './admin-experience-editor.page';
 
 describe('AdminExperienceEditorPage', () => {
-  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', startDate: '2025-01-01', endDate: null, status: 'draft' as const };
+  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', location: null, startDate: '2025-01-01', endDate: null, status: 'draft' as const };
   it('maps blank end dates to null and updates the private preview', async () => {
     let saved: unknown;
     await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: (_id: string, value: unknown) => { saved = value; return of({ ...experience, organization: 'Edited Studio' }); } } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
     expect(component.form.getRawValue().endDate).toBe(''); component.save(); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); expect(saved).toEqual({ organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', startDate: '2025-01-01', endDate: null }); expect(component.experience.organization).toBe('Edited Studio');
+  });
+
+  it('saves and clears location separately from content', async () => {
+    let saved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateLocation: (_id: string, location: unknown) => { saved = location; return of({ ...experience, location }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    component.locationForm.setValue({ location: ' Remote ' }); component.updateLocation(); expect(saved).toBe('Remote');
+    component.locationForm.setValue({ location: ' ' }); component.updateLocation(); expect(saved).toBeNull();
   });
 
   it('does not save invalid forms and renders failures accessibly', async () => {

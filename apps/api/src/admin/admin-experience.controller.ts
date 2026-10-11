@@ -10,6 +10,7 @@ import { UpdateExperienceStatusDto } from './update-experience-status.dto.js';
 import { CreateExperienceDraftDto } from './create-experience-draft.dto.js';
 import { UpdateExperienceOrderDto } from './update-experience-order.dto.js';
 import { UpdateExperienceFeaturedDto } from './update-experience-featured.dto.js';
+import { UpdateExperienceLocationDto } from './update-experience-location.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -87,6 +88,19 @@ export class AdminExperienceController {
   async updateFeatured(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceFeaturedDto) {
     if (typeof body?.featured !== 'boolean') throw new BadRequestException('A boolean featured value is required.');
     return this.experience.updateFeatured(id, body.featured);
+  }
+
+  @Patch(':id/location')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceLocationDto })
+  @ApiOkResponse({ type: AdminExperienceDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async updateLocation(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceLocationDto) {
+    const location = body?.location === null ? null : typeof body?.location === 'string' ? body.location.trim() : undefined;
+    if (location === undefined || location === '') throw new BadRequestException('A non-empty location or null is required.');
+    return this.experience.updateLocation(id, location);
   }
 
   @Patch(':id/order')

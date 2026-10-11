@@ -1168,6 +1168,7 @@ describe('API (e2e)', () => {
           role: 'Example Software Engineer',
           summary:
             'Fictional development fixture used to validate the public experience path.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -1839,6 +1840,7 @@ describe('API (e2e)', () => {
       role: 'Example Draft Engineer',
       summary:
         'Fictional draft experience used only to validate private CMS authoring.',
+      location: null,
       startDate: '2025-01-01',
       endDate: null,
     };
@@ -1851,6 +1853,7 @@ describe('API (e2e)', () => {
           role: 'Example Software Engineer',
           summary:
             'Fictional development fixture used to validate the public experience path.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -2012,6 +2015,7 @@ describe('API (e2e)', () => {
         role: 'Example Software Engineer',
         summary:
           'Fictional development fixture used to validate the public experience path.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
       },
@@ -2070,6 +2074,7 @@ describe('API (e2e)', () => {
             role: 'Example Draft Engineer',
             summary:
               'Fictional draft experience used only to validate private CMS authoring.',
+            location: null,
             startDate: '2025-01-01',
             endDate: null,
             status: 'published',
@@ -2087,6 +2092,8 @@ describe('API (e2e)', () => {
               role: 'Example Draft Engineer',
               summary:
                 'Fictional draft experience used only to validate private CMS authoring.',
+              location: null,
+              location: null,
               startDate: '2025-01-01',
               endDate: null,
             },
@@ -2119,6 +2126,7 @@ describe('API (e2e)', () => {
         role: 'Example Software Engineer',
         summary:
           'Fictional development fixture used to validate the public experience path.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
       },
@@ -2190,6 +2198,24 @@ describe('API (e2e)', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ featured: false })
         .expect(200);
+    }
+  });
+
+  it('changes only an Experience location through its protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000014';
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/location`).send({ location: 'Remote' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/experience/${id}/location`).send({ location: 'Remote' }).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'https://untrusted.example').send({ location: 'Remote' }).expect(403);
+    await agent.patch('/api/admin/experience/not-a-uuid/location').set('Origin', 'http://localhost:4200').send({ location: null }).expect(400);
+    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/location').set('Origin', 'http://localhost:4200').send({ location: null }).expect(404);
+    for (const location of [undefined, '', '  ', 1]) await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location }).expect(400);
+    try {
+      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: ' Remote ', status: 'published', displayOrder: 99 }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, location: 'Remote', status: 'draft', featured: false }));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: 'Example Draft Studio' })));
+      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: null }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, location: null }));
+    } finally {
+      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: null }).expect(200);
     }
   });
 
@@ -2393,13 +2419,14 @@ describe('API (e2e)', () => {
             ...input,
             status: 'draft',
             featured: false,
+            location: null,
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
         });
       await agent
         .get(`/api/admin/experience/${id}`)
         .expect(200)
-        .expect({ id, ...input, status: 'draft', featured: false });
+        .expect({ id, ...input, location: null, status: 'draft', featured: false });
       await agent
         .get('/api/admin/experience')
         .expect(200)

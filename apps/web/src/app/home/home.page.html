@@ -70,6 +70,7 @@
       <article>
         <h3>{{ item.role }}</h3>
         <p>{{ item.organization }}</p>
+        @if (item.location) { <p>{{ item.location }}</p> }
         <p>{{ item.summary }}</p>
         <p>
           <time [attr.datetime]="item.startDate">{{ item.startDate }}</time> —

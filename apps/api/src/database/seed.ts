@@ -243,6 +243,7 @@ try {
       role: 'Example Software Engineer',
       summary:
         'Fictional development fixture used to validate the public experience path.',
+      location: null,
       startDate: '2024-01-01',
       endDate: null,
       status: 'published',
@@ -256,6 +257,7 @@ try {
         role: 'Example Software Engineer',
         summary:
           'Fictional development fixture used to validate the public experience path.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'published',
@@ -272,6 +274,7 @@ try {
       role: 'Example Draft Engineer',
       summary:
         'Fictional draft experience used only to validate private CMS authoring.',
+      location: null,
       startDate: '2025-01-01',
       endDate: null,
       status: 'draft',
@@ -285,6 +288,7 @@ try {
         role: 'Example Draft Engineer',
         summary:
           'Fictional draft experience used only to validate private CMS authoring.',
+        location: null,
         startDate: '2025-01-01',
         endDate: null,
         status: 'draft',

@@ -4,6 +4,7 @@ export interface Experience {
   organization: string;
   role: string;
   summary: string;
+  location: string | null;
   startDate: string;
   endDate: string | null;
 }

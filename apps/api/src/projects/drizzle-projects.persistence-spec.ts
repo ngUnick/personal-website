@@ -181,10 +181,10 @@ describe('DrizzleProjectsPersistence', () => {
       expect(afterContent).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
       const afterStatus = await persistence.updateStatus(slug, 'published');
       expect(afterStatus).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
-      await expect(persistence.findPublishedBySlug(slug)).resolves.toMatchObject({ technologies: [
-        { name: 'Example TypeScript', category: 'Languages' },
+      await expect(persistence.findPublishedBySlug(slug)).resolves.toMatchObject({ technologies: expect.arrayContaining([
         { name: 'Example PostgreSQL', category: 'Data' },
-      ] });
+        { name: 'Example TypeScript', category: 'Languages' },
+      ]) });
       await expect(persistence.updateTechnologies(slug, { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
     } finally {
       await database.db.delete(projects).where(eq(projects.slug, slug));

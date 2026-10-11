@@ -25,6 +25,7 @@ describe('DrizzleExperiencePersistence', () => {
         organization: 'Second Example Studio',
         role: 'Second Example Role',
         summary: 'Fake published content used for ordering verification.',
+        location: null,
         startDate: '2025-01-01',
         endDate: null,
         status: 'published',
@@ -35,6 +36,7 @@ describe('DrizzleExperiencePersistence', () => {
         organization: 'Draft Studio',
         role: 'Draft Role',
         summary: 'Fake draft.',
+        location: null,
         startDate: '2023-01-01',
         endDate: null,
         status: 'draft',
@@ -45,6 +47,7 @@ describe('DrizzleExperiencePersistence', () => {
         organization: 'Archived Studio',
         role: 'Archived Role',
         summary: 'Fake archive.',
+        location: null,
         startDate: '2022-01-01',
         endDate: '2022-12-31',
         status: 'archived',
@@ -59,6 +62,7 @@ describe('DrizzleExperiencePersistence', () => {
           role: 'Example Software Engineer',
           summary:
             'Fictional development fixture used to validate the public experience path.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -66,6 +70,7 @@ describe('DrizzleExperiencePersistence', () => {
           organization: 'Second Example Studio',
           role: 'Second Example Role',
           summary: 'Fake published content used for ordering verification.',
+          location: null,
           startDate: '2025-01-01',
           endDate: null,
         },
@@ -101,6 +106,7 @@ describe('DrizzleExperiencePersistence', () => {
           role: 'Example Software Engineer',
           summary:
             'Fictional development fixture used to validate the public experience path.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -115,6 +121,7 @@ describe('DrizzleExperiencePersistence', () => {
           role: 'Example Software Engineer',
           summary:
             'Fictional development fixture used to validate the public experience path.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -135,7 +142,7 @@ describe('DrizzleExperiencePersistence', () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleExperiencePersistence);
     const draftId = '00000000-0000-4000-8000-000000000014';
-    const original = { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', startDate: '2025-01-01', endDate: null };
+    const original = { organization: 'Example Draft Studio', role: 'Example Draft Engineer', summary: 'Fictional draft experience used only to validate private CMS authoring.', location: null, startDate: '2025-01-01', endDate: null };
     const before = await persistence.findForAdmin();
     expect(before.map((experience) => experience.id).slice(0, 2)).toEqual([
       '00000000-0000-4000-8000-000000000010',
@@ -151,10 +158,23 @@ describe('DrizzleExperiencePersistence', () => {
     await expect(persistence.findForAdminById('00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined();
     try {
       const updated = await persistence.updateContent(draftId, { organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31' });
-      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', featured: false, displayOrder: 1 });
+      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', location: null, startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', featured: false, displayOrder: 1 });
       await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: 'Edited Draft Studio' }));
     } finally {
       await persistence.updateContent(draftId, original);
+    }
+  });
+
+  it('changes only the Experience location', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const id = '00000000-0000-4000-8000-000000000014';
+    const original = await persistence.findForAdminById(id);
+    try {
+      await expect(persistence.updateLocation(id, 'Remote')).resolves.toEqual({ ...original, location: 'Remote' });
+      await expect(persistence.updateLocation('00000000-0000-4000-8000-000000000099', null)).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateLocation(id, original!.location);
     }
   });
 

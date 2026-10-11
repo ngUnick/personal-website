@@ -71,6 +71,7 @@ export const experiences = pgTable(
     organization: text('organization').notNull(),
     role: text('role').notNull(),
     summary: text('summary').notNull(),
+    location: text('location'),
     startDate: date('start_date').notNull(),
     endDate: date('end_date'),
     status: experiencePublicationStatus('status').notNull().default('draft'),

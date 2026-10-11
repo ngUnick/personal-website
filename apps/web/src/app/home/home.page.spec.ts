@@ -60,6 +60,7 @@ describe('HomePage', () => {
                   role: 'Example Software Engineer',
                   summary:
                     'Fictional experience fixture used to validate the public homepage path.',
+                  location: 'Remote',
                   startDate: '2023-01-01',
                   endDate: null,
                 },
@@ -109,6 +110,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Experience');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
     expect(fixture.nativeElement.textContent).toContain('Example Engineering Studio');
+    expect(fixture.nativeElement.textContent).toContain('Remote');
     expect(
       Array.from<HTMLElement>(
         fixture.nativeElement.querySelectorAll('a[href="/experience"]') as ArrayLike<HTMLElement>,
