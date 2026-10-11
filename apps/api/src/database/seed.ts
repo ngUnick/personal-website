@@ -87,6 +87,7 @@ try {
         'Fictional profile summary used to validate the public home path.',
       about:
         'Fictional profile about text used to validate the public about path.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -99,6 +100,7 @@ try {
           'Fictional profile summary used to validate the public home path.',
         about:
           'Fictional profile about text used to validate the public about path.',
+        location: null,
         contactEmail: 'portfolio@example.invalid',
         githubUrl: null,
         linkedinUrl: null,

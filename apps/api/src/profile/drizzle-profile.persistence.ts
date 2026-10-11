@@ -7,6 +7,7 @@ import {
   ProfileContactUpdate,
   ProfilePersistence,
   ProfileLinksUpdate,
+  ProfileLocationUpdate,
   PublicProfile,
 } from './profile.persistence.js';
 
@@ -44,6 +45,16 @@ export class DrizzleProfilePersistence implements ProfilePersistence {
       .returning(this.projection);
     return profile;
   }
+  async updateLocation(
+    location: ProfileLocationUpdate,
+  ): Promise<PublicProfile | undefined> {
+    const [profile] = await this.database.db
+      .update(profiles)
+      .set({ ...location, updatedAt: new Date() })
+      .where(eq(profiles.id, 1))
+      .returning(this.projection);
+    return profile;
+  }
   async updateLinks(
     links: ProfileLinksUpdate,
   ): Promise<PublicProfile | undefined> {
@@ -59,6 +70,7 @@ export class DrizzleProfilePersistence implements ProfilePersistence {
     headline: profiles.headline,
     summary: profiles.summary,
     about: profiles.about,
+    location: profiles.location,
     contactEmail: profiles.contactEmail,
     githubUrl: profiles.githubUrl,
     linkedinUrl: profiles.linkedinUrl,

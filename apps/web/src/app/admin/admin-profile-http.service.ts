@@ -28,6 +28,13 @@ export class AdminProfileHttpService extends AdminProfileDataAccess {
       { withCredentials: true },
     );
   }
+  updateLocation(location: string | null): Observable<AdminProfile> {
+    return this.http.patch<AdminProfile>(
+      `${this.apiBaseUrl}/admin/profile/location`,
+      { location },
+      { withCredentials: true },
+    );
+  }
   updateLinks(links: Pick<AdminProfile, 'githubUrl' | 'linkedinUrl'>): Observable<AdminProfile> {
     return this.http.patch<AdminProfile>(`${this.apiBaseUrl}/admin/profile/links`, links, {
       withCredentials: true,

@@ -23,6 +23,7 @@ describe('AdminProfileHttpService', () => {
     };
     const profile = {
       ...content,
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -44,6 +45,12 @@ describe('AdminProfileHttpService', () => {
     expect(contact.request.withCredentials).toBe(true);
     expect(contact.request.body).toEqual({ contactEmail: null });
     contact.flush({ ...profile, contactEmail: null });
+    service.updateLocation('Remote').subscribe();
+    const location = http.expectOne('/api/admin/profile/location');
+    expect(location.request.method).toBe('PATCH');
+    expect(location.request.withCredentials).toBe(true);
+    expect(location.request.body).toEqual({ location: 'Remote' });
+    location.flush({ ...profile, location: 'Remote' });
     const links = {
       githubUrl: 'https://github.com/example',
       linkedinUrl: 'https://www.linkedin.com/in/example',

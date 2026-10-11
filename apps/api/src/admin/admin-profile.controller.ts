@@ -20,6 +20,7 @@ import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateProfileContentDto } from './update-profile-content.dto.js';
 import { UpdateProfileContactDto } from './update-profile-contact.dto.js';
 import { UpdateProfileLinksDto } from './update-profile-links.dto.js';
+import { UpdateProfileLocationDto } from './update-profile-location.dto.js';
 
 @ApiTags('admin')
 @Controller('admin/profile')
@@ -61,6 +62,28 @@ export class AdminProfileController {
   @ApiForbiddenResponse()
   updateLinks(@Body() body: UpdateProfileLinksDto) {
     return this.profile.updateLinks(this.validLinks(body));
+  }
+
+  @Patch('location')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProfileLocationDto })
+  @ApiOkResponse({ type: ProfileResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  updateLocation(@Body() body: UpdateProfileLocationDto) {
+    return this.profile.updateLocation(this.validLocation(body));
+  }
+
+  private validLocation(body: UpdateProfileLocationDto) {
+    if (body?.location === null) return { location: null };
+    const location =
+      typeof body?.location === 'string' ? body.location.trim() : '';
+    if (!location) {
+      throw new BadRequestException(
+        'A non-empty profile location or null is required.',
+      );
+    }
+    return { location };
   }
   private validLinks(body: UpdateProfileLinksDto) {
     return {

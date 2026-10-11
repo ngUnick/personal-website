@@ -2,6 +2,7 @@ export type PublicProfile = {
   headline: string;
   summary: string;
   about: string;
+  location: string | null;
   contactEmail: string | null;
   githubUrl: string | null;
   linkedinUrl: string | null;
@@ -11,6 +12,7 @@ export type ProfileContentUpdate = Pick<
   'headline' | 'summary' | 'about'
 >;
 export type ProfileContactUpdate = Pick<PublicProfile, 'contactEmail'>;
+export type ProfileLocationUpdate = Pick<PublicProfile, 'location'>;
 export type ProfileLinksUpdate = Pick<
   PublicProfile,
   'githubUrl' | 'linkedinUrl'
@@ -23,6 +25,9 @@ export interface ProfilePersistence {
   ): Promise<PublicProfile | undefined>;
   updateContact(
     contact: ProfileContactUpdate,
+  ): Promise<PublicProfile | undefined>;
+  updateLocation(
+    location: ProfileLocationUpdate,
   ): Promise<PublicProfile | undefined>;
   updateLinks(links: ProfileLinksUpdate): Promise<PublicProfile | undefined>;
 }

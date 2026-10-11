@@ -75,6 +75,7 @@ describe('HomePage', () => {
                 headline: 'Example Software Engineer',
                 summary: 'Fictional profile summary used to validate the public home path.',
                 about: 'Fictional profile about text used to validate the public about path.',
+                location: 'Remote',
                 contactEmail: 'portfolio@example.invalid',
                 githubUrl: 'https://github.com/example',
                 linkedinUrl: 'https://www.linkedin.com/in/example',
@@ -102,6 +103,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Fictional profile about text used to validate the public about path.',
     );
+    expect(fixture.nativeElement.textContent).toContain('Remote');
     expect(fixture.nativeElement.querySelector('a[href="/about"]')?.textContent).toContain(
       'Read more about me',
     );
@@ -143,7 +145,10 @@ describe('HomePage', () => {
           useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) },
         },
         { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } },
-        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } },
+        {
+          provide: ExperienceDataAccess,
+          useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) },
+        },
         { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } },
         {
           provide: ProfileDataAccess,
@@ -153,6 +158,7 @@ describe('HomePage', () => {
                 headline: 'Example',
                 summary: 'Summary',
                 about: 'About',
+                location: null,
                 contactEmail: null,
                 githubUrl: null,
                 linkedinUrl: null,
@@ -182,7 +188,10 @@ describe('HomePage', () => {
           useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) },
         },
         { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } },
-        { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } },
+        {
+          provide: ExperienceDataAccess,
+          useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) },
+        },
         { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } },
         {
           provide: ProfileDataAccess,
@@ -192,6 +201,7 @@ describe('HomePage', () => {
                 headline: 'Example',
                 summary: 'Summary',
                 about: 'About',
+                location: null,
                 contactEmail: null,
                 githubUrl: 'https://github.com/example',
                 linkedinUrl: null,

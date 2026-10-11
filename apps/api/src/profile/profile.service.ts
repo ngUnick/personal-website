@@ -5,6 +5,7 @@ import type {
   ProfileContactUpdate,
   ProfilePersistence,
   ProfileLinksUpdate,
+  ProfileLocationUpdate,
 } from './profile.persistence.js';
 
 @Injectable()
@@ -35,6 +36,12 @@ export class ProfileService {
   }
   async updateLinks(links: ProfileLinksUpdate) {
     const profile = await this.persistence.updateLinks(links);
+    if (!profile) throw new NotFoundException('Profile not found.');
+    return profile;
+  }
+
+  async updateLocation(location: ProfileLocationUpdate) {
+    const profile = await this.persistence.updateLocation(location);
     if (!profile) throw new NotFoundException('Profile not found.');
     return profile;
   }

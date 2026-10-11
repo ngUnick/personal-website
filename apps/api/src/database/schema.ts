@@ -123,6 +123,7 @@ export const profiles = pgTable('profiles', {
   headline: text('headline').notNull(),
   summary: text('summary').notNull(),
   about: text('about').notNull(),
+  location: text('location'),
   contactEmail: text('contact_email'),
   githubUrl: text('github_url'),
   linkedinUrl: text('linkedin_url'),

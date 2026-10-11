@@ -4,6 +4,7 @@ export type AdminProfile = {
   headline: string;
   summary: string;
   about: string;
+  location: string | null;
   contactEmail: string | null;
   githubUrl: string | null;
   linkedinUrl: string | null;
@@ -15,6 +16,7 @@ export abstract class AdminProfileDataAccess {
   abstract getProfile(): Observable<AdminProfile>;
   abstract updateContent(content: ProfileContent): Observable<AdminProfile>;
   abstract updateContact(contactEmail: string | null): Observable<AdminProfile>;
+  abstract updateLocation(location: string | null): Observable<AdminProfile>;
   abstract updateLinks(
     links: Pick<AdminProfile, 'githubUrl' | 'linkedinUrl'>,
   ): Observable<AdminProfile>;

@@ -25,6 +25,14 @@ import { AdminProfile, AdminProfileDataAccess } from './admin-profile.data-acces
           <button type="button" (click)="clearContact()">Clear contact email</button>
         </form>
       </section>
+      <section aria-label="Profile location">
+        <h2>Profile location</h2>
+        <form [formGroup]="locationForm" (ngSubmit)="saveLocation()">
+          <label>Location <input formControlName="location" /></label>
+          <button type="submit">Save location</button>
+          <button type="button" (click)="clearLocation()">Clear location</button>
+        </form>
+      </section>
       <section aria-label="Professional links">
         <h2>Professional links</h2>
         <form [formGroup]="linksForm" (ngSubmit)="saveLinks()">
@@ -43,6 +51,9 @@ import { AdminProfile, AdminProfileDataAccess } from './admin-profile.data-acces
     @if (linksError()) {
       <p role="alert">Unable to save professional links. Please try again.</p>
     }
+    @if (locationError()) {
+      <p role="alert">Unable to save profile location. Please try again.</p>
+    }
   </main>`,
 })
 export class AdminProfilePage {
@@ -54,6 +65,7 @@ export class AdminProfilePage {
   protected readonly saveError = signal(false);
   protected readonly contactError = signal(false);
   protected readonly linksError = signal(false);
+  protected readonly locationError = signal(false);
   protected readonly form = new FormGroup({
     headline: new FormControl('', {
       nonNullable: true,
@@ -77,6 +89,9 @@ export class AdminProfilePage {
   protected readonly linksForm = new FormGroup({
     githubUrl: new FormControl('', { nonNullable: true }),
     linkedinUrl: new FormControl('', { nonNullable: true }),
+  });
+  protected readonly locationForm = new FormGroup({
+    location: new FormControl('', { nonNullable: true }),
   });
 
   constructor() {
@@ -114,6 +129,22 @@ export class AdminProfilePage {
       error: () => this.contactError.set(true),
     });
   }
+  protected saveLocation() {
+    this.locationError.set(false);
+    const location = this.locationForm.controls.location.value.trim() || null;
+    this.data.updateLocation(location).subscribe({
+      next: (profile) => this.apply(profile),
+      error: () => this.locationError.set(true),
+    });
+  }
+
+  protected clearLocation() {
+    this.locationError.set(false);
+    this.data.updateLocation(null).subscribe({
+      next: (profile) => this.apply(profile),
+      error: () => this.locationError.set(true),
+    });
+  }
   protected saveLinks() {
     if (this.linksForm.invalid) return;
     this.linksError.set(false);
@@ -143,6 +174,7 @@ export class AdminProfilePage {
       about: profile.about,
     });
     this.contactForm.setValue({ contactEmail: profile.contactEmail ?? '' });
+    this.locationForm.setValue({ location: profile.location ?? '' });
     this.linksForm.setValue({
       githubUrl: profile.githubUrl ?? '',
       linkedinUrl: profile.linkedinUrl ?? '',

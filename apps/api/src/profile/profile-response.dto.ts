@@ -10,6 +10,8 @@ export class ProfileResponseDto {
   @ApiProperty()
   about!: string;
 
+  @ApiProperty({ nullable: true }) location!: string | null;
+
   @ApiProperty({ nullable: true })
   contactEmail!: string | null;
   @ApiProperty({ nullable: true }) githubUrl!: string | null;

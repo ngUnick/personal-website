@@ -78,19 +78,17 @@ describe('API (e2e)', () => {
       ]));
 
   it('returns exactly the fictional public Profile projection', () =>
-    request(app.getHttpServer())
-      .get('/api/profile')
-      .expect(200)
-      .expect({
-        headline: 'Example Software Engineer',
-        summary:
-          'Fictional profile summary used to validate the public home path.',
-        about:
-          'Fictional profile about text used to validate the public about path.',
-        contactEmail: 'portfolio@example.invalid',
-        githubUrl: null,
-        linkedinUrl: null,
-      }));
+    request(app.getHttpServer()).get('/api/profile').expect(200).expect({
+      headline: 'Example Software Engineer',
+      summary:
+        'Fictional profile summary used to validate the public home path.',
+      about:
+        'Fictional profile about text used to validate the public about path.',
+      location: null,
+      contactEmail: 'portfolio@example.invalid',
+      githubUrl: null,
+      linkedinUrl: null,
+    }));
 
   it('returns only published Credential data through the public projection', async () => {
     const id = '00000000-0000-4000-8000-000000000050';
@@ -212,7 +210,8 @@ describe('API (e2e)', () => {
       expect(stored).toMatchObject({
         id,
         ...edited,
-        status: 'draft', verificationUrl: null,
+        status: 'draft',
+        verificationUrl: null,
         displayOrder: 0,
       });
     } finally {
@@ -254,11 +253,20 @@ describe('API (e2e)', () => {
       .send({ verificationUrl: 'https://verify.example/credential' })
       .expect(400);
     await agent
-      .patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/verification')
+      .patch(
+        '/api/admin/credentials/00000000-0000-4000-8000-000000000099/verification',
+      )
       .set('Origin', 'http://localhost:4200')
       .send({ verificationUrl: null })
       .expect(404);
-    for (const verificationUrl of [undefined, '', '  ', 'http://verify.example/credential', 'not a url', 1]) {
+    for (const verificationUrl of [
+      undefined,
+      '',
+      '  ',
+      'http://verify.example/credential',
+      'not a url',
+      1,
+    ]) {
       await agent
         .patch(`/api/admin/credentials/${id}/verification`)
         .set('Origin', 'http://localhost:4200')
@@ -269,14 +277,28 @@ describe('API (e2e)', () => {
       await agent
         .patch(`/api/admin/credentials/${id}/verification`)
         .set('Origin', 'http://localhost:4200')
-        .send({ verificationUrl: ' https://verify.example/credential ', name: 'Ignored', status: 'published', displayOrder: 99 })
+        .send({
+          verificationUrl: ' https://verify.example/credential ',
+          name: 'Ignored',
+          status: 'published',
+          displayOrder: 99,
+        })
         .expect(200)
-        .expect({ ...original, verificationUrl: 'https://verify.example/credential' });
+        .expect({
+          ...original,
+          verificationUrl: 'https://verify.example/credential',
+        });
       await agent
         .get(`/api/admin/credentials/${id}`)
         .expect(200)
-        .expect({ ...original, verificationUrl: 'https://verify.example/credential' });
-      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
+        .expect({
+          ...original,
+          verificationUrl: 'https://verify.example/credential',
+        });
+      await request(app.getHttpServer())
+        .get('/api/credentials')
+        .expect(200)
+        .expect([]);
       await agent
         .patch(`/api/admin/credentials/${id}/status`)
         .set('Origin', 'http://localhost:4200')
@@ -285,7 +307,14 @@ describe('API (e2e)', () => {
       await request(app.getHttpServer())
         .get('/api/credentials')
         .expect(200)
-        .expect([{ name: original.name, issuer: original.issuer, issuedOn: original.issuedOn, verificationUrl: 'https://verify.example/credential' }]);
+        .expect([
+          {
+            name: original.name,
+            issuer: original.issuer,
+            issuedOn: original.issuedOn,
+            verificationUrl: 'https://verify.example/credential',
+          },
+        ]);
     } finally {
       await agent
         .patch(`/api/admin/credentials/${id}/verification`)
@@ -344,7 +373,8 @@ describe('API (e2e)', () => {
       expect(response.body).toEqual({
         id: expect.stringMatching(/^[0-9a-f-]{36}$/),
         ...input,
-        status: 'draft', verificationUrl: null,
+        status: 'draft',
+        verificationUrl: null,
       });
       const [stored] = await app
         .get(DatabaseService)
@@ -558,6 +588,7 @@ describe('API (e2e)', () => {
         'Fictional profile summary used to validate the public home path.',
       about:
         'Fictional profile about text used to validate the public about path.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -594,6 +625,7 @@ describe('API (e2e)', () => {
       headline: 'Edited fictional headline',
       summary: 'Edited fictional profile summary',
       about: 'Edited fictional profile about text',
+      location: original.location,
       contactEmail: original.contactEmail,
       githubUrl: null,
       linkedinUrl: null,
@@ -639,6 +671,7 @@ describe('API (e2e)', () => {
         'Fictional profile summary used to validate the public home path.',
       about:
         'Fictional profile about text used to validate the public about path.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -697,6 +730,69 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('updates or clears singleton Profile location through a separate protected boundary', async () => {
+    const original = {
+      headline: 'Example Software Engineer',
+      summary:
+        'Fictional profile summary used to validate the public home path.',
+      about:
+        'Fictional profile about text used to validate the public about path.',
+      location: null,
+      contactEmail: 'portfolio@example.invalid',
+      githubUrl: null,
+      linkedinUrl: null,
+    };
+    await request(app.getHttpServer())
+      .patch('/api/admin/profile/location')
+      .send({ location: 'Remote' })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent
+      .patch('/api/admin/profile/location')
+      .send({ location: 'Remote' })
+      .expect(403);
+    await agent
+      .patch('/api/admin/profile/location')
+      .set('Origin', 'https://untrusted.example')
+      .send({ location: 'Remote' })
+      .expect(403);
+    await agent
+      .patch('/api/admin/profile/location')
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: '   ' })
+      .expect(400);
+    await agent
+      .patch('/api/admin/profile/location')
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: 1 })
+      .expect(400);
+    try {
+      const updated = { ...original, location: 'Remote' };
+      await agent
+        .patch('/api/admin/profile/location')
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: ' Remote ', headline: 'ignored' })
+        .expect(200)
+        .expect(updated);
+      await request(app.getHttpServer())
+        .get('/api/profile')
+        .expect(200)
+        .expect(updated);
+      await agent
+        .patch('/api/admin/profile/location')
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: null })
+        .expect(200)
+        .expect(original);
+    } finally {
+      await agent
+        .patch('/api/admin/profile/location')
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: original.location })
+        .expect(200);
+    }
+  });
+
   it('updates or clears singleton Profile professional links through a separate protected boundary', async () => {
     const original = {
       headline: 'Example Software Engineer',
@@ -704,6 +800,7 @@ describe('API (e2e)', () => {
         'Fictional profile summary used to validate the public home path.',
       about:
         'Fictional profile about text used to validate the public about path.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -1548,77 +1645,208 @@ describe('API (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/admin/projects/${slug}/links`)
       .set('Origin', 'https://untrusted.example')
-      .send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null })
+      .send({
+        repositoryUrl: 'https://github.com/example/project',
+        liveUrl: null,
+      })
       .expect(401);
     const agent = await authenticatedAgent();
-    await agent.patch(`/api/admin/projects/${slug}/links`).send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null }).expect(403);
-    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'https://untrusted.example').send({ repositoryUrl: 'https://github.com/example/project', liveUrl: null }).expect(403);
-    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'http://example.test', liveUrl: null }).expect(400);
-    await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: '', liveUrl: null }).expect(400);
+    await agent
+      .patch(`/api/admin/projects/${slug}/links`)
+      .send({
+        repositoryUrl: 'https://github.com/example/project',
+        liveUrl: null,
+      })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/projects/${slug}/links`)
+      .set('Origin', 'https://untrusted.example')
+      .send({
+        repositoryUrl: 'https://github.com/example/project',
+        liveUrl: null,
+      })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/projects/${slug}/links`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ repositoryUrl: 'http://example.test', liveUrl: null })
+      .expect(400);
+    await agent
+      .patch(`/api/admin/projects/${slug}/links`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ repositoryUrl: '', liveUrl: null })
+      .expect(400);
     try {
-      await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'https://github.com/example/project', liveUrl: 'https://example.test/live', title: 'Ignored' }).expect(200).expect(({ body }) => {
-        expect(body).toEqual({
-          slug,
-          title: 'Placeholder Project',
-          summary: 'Temporary sample content used to validate the application path.',
-          caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      await agent
+        .patch(`/api/admin/projects/${slug}/links`)
+        .set('Origin', 'http://localhost:4200')
+        .send({
           repositoryUrl: 'https://github.com/example/project',
           liveUrl: 'https://example.test/live',
-          technologyIds: [],
-          status: 'published',
-          featured: true,
+          title: 'Ignored',
+        })
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            slug,
+            title: 'Placeholder Project',
+            summary:
+              'Temporary sample content used to validate the application path.',
+            caseStudy:
+              'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+            repositoryUrl: 'https://github.com/example/project',
+            liveUrl: 'https://example.test/live',
+            technologyIds: [],
+            status: 'published',
+            featured: true,
+          });
         });
-      });
-      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => {
-        expect(body).toEqual({
-          slug,
-          title: 'Placeholder Project',
-          summary: 'Temporary sample content used to validate the application path.',
-          caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
-          repositoryUrl: 'https://github.com/example/project',
-          liveUrl: 'https://example.test/live',
-          technologies: [],
+      await request(app.getHttpServer())
+        .get(`/api/projects/${slug}`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            slug,
+            title: 'Placeholder Project',
+            summary:
+              'Temporary sample content used to validate the application path.',
+            caseStudy:
+              'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+            repositoryUrl: 'https://github.com/example/project',
+            liveUrl: 'https://example.test/live',
+            technologies: [],
+          });
         });
-      });
-      await request(app.getHttpServer()).get('/api/projects').expect(200).expect([{
-        slug,
-        title: 'Placeholder Project',
-        summary: 'Temporary sample content used to validate the application path.',
-      }]);
-      await agent.patch('/api/admin/projects/draft-placeholder-project/links').set('Origin', 'http://localhost:4200').send({ repositoryUrl: 'https://example.test/draft', liveUrl: null }).expect(200);
-      await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+      await request(app.getHttpServer())
+        .get('/api/projects')
+        .expect(200)
+        .expect([
+          {
+            slug,
+            title: 'Placeholder Project',
+            summary:
+              'Temporary sample content used to validate the application path.',
+          },
+        ]);
+      await agent
+        .patch('/api/admin/projects/draft-placeholder-project/links')
+        .set('Origin', 'http://localhost:4200')
+        .send({ repositoryUrl: 'https://example.test/draft', liveUrl: null })
+        .expect(200);
+      await request(app.getHttpServer())
+        .get('/api/projects/draft-placeholder-project')
+        .expect(404);
     } finally {
-      await agent.patch(`/api/admin/projects/${slug}/links`).set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
-      await agent.patch('/api/admin/projects/draft-placeholder-project/links').set('Origin', 'http://localhost:4200').send({ repositoryUrl: null, liveUrl: null }).expect(200);
+      await agent
+        .patch(`/api/admin/projects/${slug}/links`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ repositoryUrl: null, liveUrl: null })
+        .expect(200);
+      await agent
+        .patch('/api/admin/projects/draft-placeholder-project/links')
+        .set('Origin', 'http://localhost:4200')
+        .send({ repositoryUrl: null, liveUrl: null })
+        .expect(200);
     }
   });
 
   it('replaces project technology associations through the protected CMS boundary', async () => {
     const slug = 'placeholder-project';
-    const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
-    await request(app.getHttpServer()).patch(`/api/admin/projects/${slug}/technologies`).send({ technologyIds: ids }).expect(401);
+    const ids = [
+      '00000000-0000-4000-8000-000000000041',
+      '00000000-0000-4000-8000-000000000040',
+      '00000000-0000-4000-8000-000000000042',
+    ];
+    await request(app.getHttpServer())
+      .patch(`/api/admin/projects/${slug}/technologies`)
+      .send({ technologyIds: ids })
+      .expect(401);
     const agent = await authenticatedAgent();
-    await agent.patch(`/api/admin/projects/${slug}/technologies`).send({ technologyIds: ids }).expect(403);
-    await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0], ids[0]] }).expect(400);
-    await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ['00000000-0000-4000-8000-000000000099'] }).expect(404);
+    await agent
+      .patch(`/api/admin/projects/${slug}/technologies`)
+      .send({ technologyIds: ids })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/projects/${slug}/technologies`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ technologyIds: [ids[0], ids[0]] })
+      .expect(400);
+    await agent
+      .patch(`/api/admin/projects/${slug}/technologies`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ technologyIds: ['00000000-0000-4000-8000-000000000099'] })
+      .expect(404);
     try {
-      await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ids }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(ids));
-      await agent.patch(`/api/admin/projects/${slug}/content`).set('Origin', 'http://localhost:4200').send({
-        title: 'Placeholder Project',
-        summary: 'Temporary sample content used to validate the application path.',
-        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
-      }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042']));
-      await agent.patch(`/api/admin/projects/${slug}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042']));
-      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body.technologies).toEqual([
-        { name: 'Example TypeScript', category: 'Languages' },
-        { name: 'Example PostgreSQL', category: 'Data' },
-      ]));
-      await request(app.getHttpServer()).get('/api/projects').expect(200).expect(({ body }) => expect(body[0]).not.toHaveProperty('technologies'));
-      await agent.patch('/api/admin/projects/draft-placeholder-project/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0]] }).expect(200);
-      await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
+      await agent
+        .patch(`/api/admin/projects/${slug}/technologies`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ technologyIds: ids })
+        .expect(200)
+        .expect(({ body }) => expect(body.technologyIds).toEqual(ids));
+      await agent
+        .patch(`/api/admin/projects/${slug}/content`)
+        .set('Origin', 'http://localhost:4200')
+        .send({
+          title: 'Placeholder Project',
+          summary:
+            'Temporary sample content used to validate the application path.',
+          caseStudy:
+            'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+        })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body.technologyIds).toEqual([
+            '00000000-0000-4000-8000-000000000040',
+            '00000000-0000-4000-8000-000000000041',
+            '00000000-0000-4000-8000-000000000042',
+          ]),
+        );
+      await agent
+        .patch(`/api/admin/projects/${slug}/status`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ status: 'published' })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body.technologyIds).toEqual([
+            '00000000-0000-4000-8000-000000000040',
+            '00000000-0000-4000-8000-000000000041',
+            '00000000-0000-4000-8000-000000000042',
+          ]),
+        );
+      await request(app.getHttpServer())
+        .get(`/api/projects/${slug}`)
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body.technologies).toEqual([
+            { name: 'Example TypeScript', category: 'Languages' },
+            { name: 'Example PostgreSQL', category: 'Data' },
+          ]),
+        );
+      await request(app.getHttpServer())
+        .get('/api/projects')
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body[0]).not.toHaveProperty('technologies'),
+        );
+      await agent
+        .patch('/api/admin/projects/draft-placeholder-project/technologies')
+        .set('Origin', 'http://localhost:4200')
+        .send({ technologyIds: [ids[0]] })
+        .expect(200);
+      await request(app.getHttpServer())
+        .get('/api/projects/draft-placeholder-project')
+        .expect(404);
     } finally {
-      await agent.patch(`/api/admin/projects/${slug}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
-      await agent.patch('/api/admin/projects/draft-placeholder-project/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
+      await agent
+        .patch(`/api/admin/projects/${slug}/technologies`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ technologyIds: [] })
+        .expect(200);
+      await agent
+        .patch('/api/admin/projects/draft-placeholder-project/technologies')
+        .set('Origin', 'http://localhost:4200')
+        .send({ technologyIds: [] })
+        .expect(200);
     }
   });
 
@@ -1805,7 +2033,15 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/projects/${slug}`)
         .expect(200)
-        .expect({ ...input, caseStudy: '', repositoryUrl: null, liveUrl: null, technologyIds: [], status: 'draft', featured: false });
+        .expect({
+          ...input,
+          caseStudy: '',
+          repositoryUrl: null,
+          liveUrl: null,
+          technologyIds: [],
+          status: 'draft',
+          featured: false,
+        });
       await request(app.getHttpServer())
         .get('/api/projects')
         .expect(200)
@@ -1962,7 +2198,12 @@ describe('API (e2e)', () => {
         .get(`/api/admin/experience/${id}`)
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toEqual({ id, ...original, status: 'draft', featured: false });
+          expect(body).toEqual({
+            id,
+            ...original,
+            status: 'draft',
+            featured: false,
+          });
           expect(body).not.toHaveProperty('displayOrder');
           expect(body).not.toHaveProperty('createdAt');
           expect(body).not.toHaveProperty('updatedAt');
@@ -2152,7 +2393,9 @@ describe('API (e2e)', () => {
       .send({ featured: false })
       .expect(400);
     await agent
-      .patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/featured')
+      .patch(
+        '/api/admin/experience/00000000-0000-4000-8000-000000000099/featured',
+      )
       .set('Origin', 'http://localhost:4200')
       .send({ featured: false })
       .expect(404);
@@ -2168,7 +2411,13 @@ describe('API (e2e)', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ featured: true })
         .expect(200)
-        .expect(({ body }) => expect(body).toMatchObject({ id: draftId, status: 'draft', featured: true }));
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            id: draftId,
+            status: 'draft',
+            featured: true,
+          }),
+        );
       await request(app.getHttpServer())
         .get('/api/experience?featured=true')
         .expect(200)
@@ -2178,7 +2427,13 @@ describe('API (e2e)', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ featured: false })
         .expect(200)
-        .expect(({ body }) => expect(body).toMatchObject({ id: publishedId, status: 'published', featured: false }));
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            id: publishedId,
+            status: 'published',
+            featured: false,
+          }),
+        );
       await request(app.getHttpServer())
         .get('/api/experience?featured=true')
         .expect(200)
@@ -2203,19 +2458,74 @@ describe('API (e2e)', () => {
 
   it('changes only an Experience location through its protected boundary', async () => {
     const id = '00000000-0000-4000-8000-000000000014';
-    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/location`).send({ location: 'Remote' }).expect(401);
+    await request(app.getHttpServer())
+      .patch(`/api/admin/experience/${id}/location`)
+      .send({ location: 'Remote' })
+      .expect(401);
     const agent = await authenticatedAgent();
-    await agent.patch(`/api/admin/experience/${id}/location`).send({ location: 'Remote' }).expect(403);
-    await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'https://untrusted.example').send({ location: 'Remote' }).expect(403);
-    await agent.patch('/api/admin/experience/not-a-uuid/location').set('Origin', 'http://localhost:4200').send({ location: null }).expect(400);
-    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/location').set('Origin', 'http://localhost:4200').send({ location: null }).expect(404);
-    for (const location of [undefined, '', '  ', 1]) await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location }).expect(400);
+    await agent
+      .patch(`/api/admin/experience/${id}/location`)
+      .send({ location: 'Remote' })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/experience/${id}/location`)
+      .set('Origin', 'https://untrusted.example')
+      .send({ location: 'Remote' })
+      .expect(403);
+    await agent
+      .patch('/api/admin/experience/not-a-uuid/location')
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: null })
+      .expect(400);
+    await agent
+      .patch(
+        '/api/admin/experience/00000000-0000-4000-8000-000000000099/location',
+      )
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: null })
+      .expect(404);
+    for (const location of [undefined, '', '  ', 1])
+      await agent
+        .patch(`/api/admin/experience/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location })
+        .expect(400);
     try {
-      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: ' Remote ', status: 'published', displayOrder: 99 }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, location: 'Remote', status: 'draft', featured: false }));
-      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: 'Example Draft Studio' })));
-      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: null }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, location: null }));
+      await agent
+        .patch(`/api/admin/experience/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: ' Remote ', status: 'published', displayOrder: 99 })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            id,
+            location: 'Remote',
+            status: 'draft',
+            featured: false,
+          }),
+        );
+      await request(app.getHttpServer())
+        .get('/api/experience')
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).not.toContainEqual(
+            expect.objectContaining({ organization: 'Example Draft Studio' }),
+          ),
+        );
+      await agent
+        .patch(`/api/admin/experience/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: null })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({ id, location: null }),
+        );
     } finally {
-      await agent.patch(`/api/admin/experience/${id}/location`).set('Origin', 'http://localhost:4200').send({ location: null }).expect(200);
+      await agent
+        .patch(`/api/admin/experience/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: null })
+        .expect(200);
     }
   });
 
@@ -2426,7 +2736,13 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/experience/${id}`)
         .expect(200)
-        .expect({ id, ...input, location: null, status: 'draft', featured: false });
+        .expect({
+          id,
+          ...input,
+          location: null,
+          status: 'draft',
+          featured: false,
+        });
       await agent
         .get('/api/admin/experience')
         .expect(200)

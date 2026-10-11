@@ -18,6 +18,7 @@ describe('DrizzleProfilePersistence', () => {
         'Fictional profile summary used to validate the public home path.',
       about:
         'Fictional profile about text used to validate the public about path.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -27,6 +28,7 @@ describe('DrizzleProfilePersistence', () => {
       headline: 'Edited fictional headline',
       summary: 'Edited fictional profile summary.',
       about: 'Edited fictional profile about text.',
+      location: null,
       contactEmail: 'portfolio@example.invalid',
       githubUrl: null,
       linkedinUrl: null,
@@ -57,9 +59,15 @@ describe('DrizzleProfilePersistence', () => {
         }),
       ).resolves.toEqual(linksUpdated);
       await expect(persistence.findPublic()).resolves.toEqual(linksUpdated);
+      const locationUpdated = { ...linksUpdated, location: 'Remote' };
+      await expect(
+        persistence.updateLocation({ location: locationUpdated.location }),
+      ).resolves.toEqual(locationUpdated);
+      await expect(persistence.findPublic()).resolves.toEqual(locationUpdated);
     } finally {
       await persistence.updateContent(original);
       await persistence.updateContact({ contactEmail: original.contactEmail });
+      await persistence.updateLocation({ location: original.location });
       await persistence.updateLinks({
         githubUrl: original.githubUrl,
         linkedinUrl: original.linkedinUrl,

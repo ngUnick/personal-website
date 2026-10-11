@@ -11,6 +11,7 @@ describe('AdminProfilePage', () => {
     headline: 'Example headline',
     summary: 'Example summary',
     about: 'Example about',
+    location: null,
     contactEmail: 'portfolio@example.invalid',
     githubUrl: null,
     linkedinUrl: null,
@@ -38,6 +39,7 @@ describe('AdminProfilePage', () => {
               return of({ ...profile, headline: 'Canonical saved headline' });
             },
             updateContact: () => of(profile),
+            updateLocation: () => of(profile),
             updateLinks: () => of(profile),
           },
         },
@@ -85,6 +87,7 @@ describe('AdminProfilePage', () => {
             getProfile: () => of(profile),
             updateContent: () => of(profile),
             updateContact: () => of(profile),
+            updateLocation: () => of(profile),
             updateLinks: () => of(profile),
           },
         },
@@ -112,6 +115,7 @@ describe('AdminProfilePage', () => {
             getProfile: () => of(profile),
             updateContent: () => throwError(() => new Error('failed')),
             updateContact: () => of(profile),
+            updateLocation: () => of(profile),
             updateLinks: () => of(profile),
           },
         },
@@ -147,6 +151,7 @@ describe('AdminProfilePage', () => {
               contact = value;
               return of({ ...profile, contactEmail: value });
             },
+            updateLocation: () => of(profile),
             updateLinks: () => of(profile),
           },
         },
@@ -178,6 +183,7 @@ describe('AdminProfilePage', () => {
             getProfile: () => of(profile),
             updateContent: () => of(profile),
             updateContact: () => throwError(() => new Error('failed')),
+            updateLocation: () => of(profile),
             updateLinks: () => of(profile),
           },
         },
@@ -190,6 +196,74 @@ describe('AdminProfilePage', () => {
     failed.detectChanges();
     expect(failed.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Unable to save contact email',
+    );
+  });
+
+  it('saves and clears location separately with an accessible failure', async () => {
+    let location: string | null | undefined;
+    await TestBed.configureTestingModule({
+      imports: [AdminProfilePage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+        {
+          provide: AdminAuthDataAccess,
+          useValue: { getSession: () => of({ authenticated: true }) },
+        },
+        {
+          provide: AdminProfileDataAccess,
+          useValue: {
+            getProfile: () => of(profile),
+            updateContent: () => of(profile),
+            updateContact: () => of(profile),
+            updateLinks: () => of(profile),
+            updateLocation: (value: string | null) => {
+              location = value;
+              return of({ ...profile, location: value });
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProfilePage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.locationForm.setValue({ location: ' Remote ' });
+    component.saveLocation();
+    expect(location).toBe('Remote');
+    component.clearLocation();
+    expect(location).toBeNull();
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [AdminProfilePage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+        {
+          provide: AdminAuthDataAccess,
+          useValue: { getSession: () => of({ authenticated: true }) },
+        },
+        {
+          provide: AdminProfileDataAccess,
+          useValue: {
+            getProfile: () => of(profile),
+            updateContent: () => of(profile),
+            updateContact: () => of(profile),
+            updateLinks: () => of(profile),
+            updateLocation: () => throwError(() => new Error('failed')),
+          },
+        },
+      ],
+    }).compileComponents();
+    const failed = TestBed.createComponent(AdminProfilePage);
+    failed.detectChanges();
+    await failed.whenStable();
+    (failed.componentInstance as any).clearLocation();
+    failed.detectChanges();
+    expect(failed.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Unable to save profile location',
     );
   });
 
@@ -210,6 +284,7 @@ describe('AdminProfilePage', () => {
             getProfile: () => of(profile),
             updateContent: () => of(profile),
             updateContact: () => of(profile),
+            updateLocation: () => of(profile),
             updateLinks: (value: unknown) => {
               links = value;
               return of({ ...profile, ...(value as object) });
@@ -251,6 +326,7 @@ describe('AdminProfilePage', () => {
             getProfile: () => of(profile),
             updateContent: () => of(profile),
             updateContact: () => of(profile),
+            updateLocation: () => of(profile),
             updateLinks: () => throwError(() => new Error('failed')),
           },
         },
@@ -272,6 +348,7 @@ describe('AdminProfilePage', () => {
     let writes = 0;
     let contactWrites = 0;
     let linksWrites = 0;
+    let locationWrites = 0;
     await TestBed.configureTestingModule({
       imports: [AdminProfilePage],
       providers: [
@@ -305,6 +382,10 @@ describe('AdminProfilePage', () => {
               linksWrites += 1;
               return of(profile);
             },
+            updateLocation: () => {
+              locationWrites += 1;
+              return of(profile);
+            },
           },
         },
       ],
@@ -312,12 +393,13 @@ describe('AdminProfilePage', () => {
     const fixture = TestBed.createComponent(AdminProfilePage);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect({ sessions, reads, writes, contactWrites, linksWrites }).toEqual({
+    expect({ sessions, reads, writes, contactWrites, linksWrites, locationWrites }).toEqual({
       sessions: 0,
       reads: 0,
       writes: 0,
       contactWrites: 0,
       linksWrites: 0,
+      locationWrites: 0,
     });
   });
 });
