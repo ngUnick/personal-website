@@ -250,6 +250,7 @@ try {
       summary:
         'Fictional development fixture used to validate the public experience path.',
       location: null,
+      organizationUrl: null,
       startDate: '2024-01-01',
       endDate: null,
       status: 'published',
@@ -264,6 +265,7 @@ try {
         summary:
           'Fictional development fixture used to validate the public experience path.',
         location: null,
+        organizationUrl: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'published',
@@ -281,6 +283,7 @@ try {
       summary:
         'Fictional draft experience used only to validate private CMS authoring.',
       location: null,
+      organizationUrl: null,
       startDate: '2025-01-01',
       endDate: null,
       status: 'draft',
@@ -295,6 +298,7 @@ try {
         summary:
           'Fictional draft experience used only to validate private CMS authoring.',
         location: null,
+        organizationUrl: null,
         startDate: '2025-01-01',
         endDate: null,
         status: 'draft',

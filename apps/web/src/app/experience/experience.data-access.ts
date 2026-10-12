@@ -5,6 +5,7 @@ export interface Experience {
   role: string;
   summary: string;
   location: string | null;
+  organizationUrl: string | null;
   startDate: string;
   endDate: string | null;
 }

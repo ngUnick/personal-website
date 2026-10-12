@@ -13,7 +13,11 @@
         <li>
           <article>
             <h3>{{ experience.role }}</h3>
-            <p class="organization">{{ experience.organization }}</p>
+            @if (experience.organizationUrl) {
+              <p class="organization"><a [href]="experience.organizationUrl">{{ experience.organization }}</a></p>
+            } @else {
+              <p class="organization">{{ experience.organization }}</p>
+            }
             @if (experience.location) { <p>{{ experience.location }}</p> }
             <p>{{ experience.summary }}</p>
             <p class="dates">

@@ -11,6 +11,7 @@ import { CreateExperienceDraftDto } from './create-experience-draft.dto.js';
 import { UpdateExperienceOrderDto } from './update-experience-order.dto.js';
 import { UpdateExperienceFeaturedDto } from './update-experience-featured.dto.js';
 import { UpdateExperienceLocationDto } from './update-experience-location.dto.js';
+import { UpdateExperienceOrganizationUrlDto } from './update-experience-organization-url.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -103,6 +104,19 @@ export class AdminExperienceController {
     return this.experience.updateLocation(id, location);
   }
 
+  @Patch(':id/organization-url')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceOrganizationUrlDto })
+  @ApiOkResponse({ type: AdminExperienceDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async updateOrganizationUrl(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceOrganizationUrlDto) {
+    const organizationUrl = body?.organizationUrl === null ? null : typeof body?.organizationUrl === 'string' ? body.organizationUrl.trim() : undefined;
+    if (organizationUrl === undefined || organizationUrl === '' || (organizationUrl !== null && !this.isHttpsUrl(organizationUrl))) throw new BadRequestException('An absolute HTTPS organization URL or null is required.');
+    return this.experience.updateOrganizationUrl(id, organizationUrl);
+  }
+
   @Patch(':id/order')
   @UseGuards(AdminSessionGuard, TrustedOriginGuard)
   @ApiBody({ type: UpdateExperienceOrderDto })
@@ -114,5 +128,13 @@ export class AdminExperienceController {
     const direction = body?.direction;
     if (direction !== 'up' && direction !== 'down') throw new BadRequestException('A valid experience order direction is required.');
     return this.experience.moveExperience(id, direction);
+  }
+
+  private isHttpsUrl(value: string) {
+    try {
+      return new URL(value).protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 }

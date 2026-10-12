@@ -7,7 +7,7 @@ import { AdminExperienceDataAccess } from './admin-experience.data-access';
 import { AdminExperienceEditorPage } from './admin-experience-editor.page';
 
 describe('AdminExperienceEditorPage', () => {
-  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', location: null, startDate: '2025-01-01', endDate: null, status: 'draft' as const };
+  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', location: null, organizationUrl: null, startDate: '2025-01-01', endDate: null, status: 'draft' as const };
   it('maps blank end dates to null and updates the private preview', async () => {
     let saved: unknown;
     await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: (_id: string, value: unknown) => { saved = value; return of({ ...experience, organization: 'Edited Studio' }); } } }] }).compileComponents();
@@ -23,6 +23,19 @@ describe('AdminExperienceEditorPage', () => {
     component.locationForm.setValue({ location: ' ' }); component.updateLocation(); expect(saved).toBeNull();
   });
 
+  it('saves and clears the organization URL separately from content', async () => {
+    let saved: unknown;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateOrganizationUrl: (_id: string, organizationUrl: unknown) => { saved = organizationUrl; return of({ ...experience, organizationUrl }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    component.organizationUrlForm.setValue({ organizationUrl: ' https://example.invalid ' }); component.updateOrganizationUrl(); expect(saved).toBe('https://example.invalid');
+    component.organizationUrlForm.setValue({ organizationUrl: ' ' }); component.updateOrganizationUrl(); expect(saved).toBeNull();
+  });
+
+  it('renders a distinct accessible organization URL failure', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateOrganizationUrl: () => throwError(() => new Error('organization URL failed')) } } ] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); (fixture.componentInstance as any).updateOrganizationUrl(); fixture.detectChanges(); expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save experience organization URL');
+  });
+
   it('does not save invalid forms and renders failures accessibly', async () => {
     let calls = 0;
     await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: () => { calls += 1; return throwError(() => new Error('failed')); } } }] }).compileComponents();
@@ -30,9 +43,9 @@ describe('AdminExperienceEditorPage', () => {
   });
 
   it('makes no session or private data requests during SSR', async () => {
-    let sessions = 0; let dataCalls = 0;
-    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: true }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => { dataCalls += 1; return of(experience); }, updateContent: () => of(experience) } }] }).compileComponents();
-    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0);
+    let sessions = 0; let dataCalls = 0; let organizationUrlUpdates = 0;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: true }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => { dataCalls += 1; return of(experience); }, updateContent: () => of(experience), updateOrganizationUrl: () => { organizationUrlUpdates += 1; return of(experience); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0); expect(organizationUrlUpdates).toBe(0);
   });
 
   it('updates publication separately and renders a status failure accessibly', async () => {

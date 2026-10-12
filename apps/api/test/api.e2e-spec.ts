@@ -1267,6 +1267,7 @@ describe('API (e2e)', () => {
           summary:
             'Fictional development fixture used to validate the public experience path.',
           location: null,
+          organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -2078,6 +2079,7 @@ describe('API (e2e)', () => {
       summary:
         'Fictional draft experience used only to validate private CMS authoring.',
       location: null,
+      organizationUrl: null,
       startDate: '2025-01-01',
       endDate: null,
     };
@@ -2091,6 +2093,7 @@ describe('API (e2e)', () => {
           summary:
             'Fictional development fixture used to validate the public experience path.',
           location: null,
+          organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -2258,6 +2261,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional development fixture used to validate the public experience path.',
         location: null,
+        organizationUrl: null,
         startDate: '2024-01-01',
         endDate: null,
       },
@@ -2317,6 +2321,7 @@ describe('API (e2e)', () => {
             summary:
               'Fictional draft experience used only to validate private CMS authoring.',
             location: null,
+            organizationUrl: null,
             startDate: '2025-01-01',
             endDate: null,
             status: 'published',
@@ -2335,7 +2340,7 @@ describe('API (e2e)', () => {
               summary:
                 'Fictional draft experience used only to validate private CMS authoring.',
               location: null,
-              location: null,
+              organizationUrl: null,
               startDate: '2025-01-01',
               endDate: null,
             },
@@ -2369,6 +2374,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional development fixture used to validate the public experience path.',
         location: null,
+          organizationUrl: null,
         startDate: '2024-01-01',
         endDate: null,
       },
@@ -2528,6 +2534,22 @@ describe('API (e2e)', () => {
         .send({ location: null })
         .expect(200);
     }
+  });
+
+  it('changes only an Experience organization URL through its protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000014';
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/organization-url`).send({ organizationUrl: 'https://example.invalid' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/experience/${id}/organization-url`).send({ organizationUrl: 'https://example.invalid' }).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'https://untrusted.example').send({ organizationUrl: 'https://example.invalid' }).expect(403);
+    await agent.patch('/api/admin/experience/not-a-uuid/organization-url').set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(400);
+    await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000099/organization-url').set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(404);
+    for (const organizationUrl of [undefined, '', '  ', 'http://example.invalid', 'not-a-url', 1]) await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl }).expect(400);
+    try {
+      await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl: ' https://example.invalid ', status: 'published', displayOrder: 0 }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, organizationUrl: 'https://example.invalid', status: 'draft', featured: false }));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: 'Example Draft Studio' })));
+      await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, organizationUrl: null }));
+    } finally { await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(200); }
   });
 
   it('moves Experience through the protected adjacent ordering boundary', async () => {
@@ -2731,6 +2753,7 @@ describe('API (e2e)', () => {
             status: 'draft',
             featured: false,
             location: null,
+            organizationUrl: null,
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
         });
@@ -2741,6 +2764,7 @@ describe('API (e2e)', () => {
           id,
           ...input,
           location: null,
+          organizationUrl: null,
           status: 'draft',
           featured: false,
         });

@@ -13,6 +13,9 @@ export class ExperienceResponseDto {
   @ApiProperty({ nullable: true })
   location!: string | null;
 
+  @ApiProperty({ nullable: true })
+  organizationUrl!: string | null;
+
   @ApiProperty()
   startDate!: string;
 

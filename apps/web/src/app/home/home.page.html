@@ -72,7 +72,11 @@
     @for (item of experience(); track item.organization + item.role) {
       <article>
         <h3>{{ item.role }}</h3>
-        <p>{{ item.organization }}</p>
+        @if (item.organizationUrl) {
+          <p><a [href]="item.organizationUrl">{{ item.organization }}</a></p>
+        } @else {
+          <p>{{ item.organization }}</p>
+        }
         @if (item.location) {
           <p>{{ item.location }}</p>
         }
