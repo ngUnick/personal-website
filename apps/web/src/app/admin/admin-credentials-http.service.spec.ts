@@ -50,6 +50,12 @@ describe('AdminCredentialsHttpService', () => {
     expect(verification.request.withCredentials).toBe(true);
     expect(verification.request.body).toEqual({ verificationUrl: 'https://verify.example/credential' });
     verification.flush({});
+    service.updateExpiration(id, '2027-01-01').subscribe();
+    const expiration = http.expectOne(`/api/admin/credentials/${id}/expiration`);
+    expect(expiration.request.method).toBe('PATCH');
+    expect(expiration.request.withCredentials).toBe(true);
+    expect(expiration.request.body).toEqual({ expiresOn: '2027-01-01' });
+    expiration.flush({});
     service.updateStatus(id, 'published').subscribe();
     const status = http.expectOne(`/api/admin/credentials/${id}/status`);
     expect(status.request.method).toBe('PATCH');

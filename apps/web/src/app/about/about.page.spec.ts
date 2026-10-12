@@ -12,7 +12,7 @@ describe('AboutPage', () => {
     location: 'Remote',
   };
 
-  it('renders Profile About content, public Credentials in API order, and verification links only when present', async () => {
+  it('renders Profile About content, public Credentials in API order, expiration only when present, and verification links only when present', async () => {
     let credentialReads = 0;
     await TestBed.configureTestingModule({
       imports: [AboutPage],
@@ -28,12 +28,14 @@ describe('AboutPage', () => {
                   name: 'First credential',
                   issuer: 'First issuer',
                   issuedOn: '2025-01-01',
+                  expiresOn: '2027-01-01',
                   verificationUrl: 'https://verify.example/first',
                 },
                 {
                   name: 'Second credential',
                   issuer: 'Second issuer',
                   issuedOn: '2026-01-01',
+                  expiresOn: null,
                   verificationUrl: null,
                 },
               ]);
@@ -51,6 +53,7 @@ describe('AboutPage', () => {
     expect(text.indexOf('First credential')).toBeLessThan(text.indexOf('Second credential'));
     expect(text).toContain('First issuer');
     expect(text).toContain('2026-01-01');
+    expect(text).toContain('2027-01-01');
     expect(credentialReads).toBe(1);
     const links = [...fixture.nativeElement.querySelectorAll('a')];
     expect(

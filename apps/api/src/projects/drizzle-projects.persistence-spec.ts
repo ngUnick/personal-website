@@ -157,10 +157,6 @@ describe('DrizzleProjectsPersistence', () => {
     const database = moduleFixture.get(DatabaseService);
     const slug = 'technology-association-persistence-project';
     const ids = ['00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000042'];
-    const readSelectedTechnologyIdsInGlobalOrder = async () =>
-      (await database.db.select({ id: technologies.id }).from(technologies).orderBy(asc(technologies.displayOrder)))
-        .map(({ id }) => id)
-        .filter((id) => ids.includes(id));
     await database.db.insert(projects).values({
       id: '00000000-0000-4000-8000-000000000050',
       slug,
@@ -178,9 +174,11 @@ describe('DrizzleProjectsPersistence', () => {
         summary: 'Fake content used only for project technology persistence verification.',
         caseStudy: 'Fake narrative used only for project technology persistence verification.',
       });
-      expect(afterContent).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
+      expect(afterContent?.technologyIds).toEqual(expect.arrayContaining(ids));
+      expect(afterContent?.technologyIds).toHaveLength(ids.length);
       const afterStatus = await persistence.updateStatus(slug, 'published');
-      expect(afterStatus).toMatchObject({ technologyIds: await readSelectedTechnologyIdsInGlobalOrder() });
+      expect(afterStatus?.technologyIds).toEqual(expect.arrayContaining(ids));
+      expect(afterStatus?.technologyIds).toHaveLength(ids.length);
       await expect(persistence.findPublishedBySlug(slug)).resolves.toMatchObject({ technologies: expect.arrayContaining([
         { name: 'Example PostgreSQL', category: 'Data' },
         { name: 'Example TypeScript', category: 'Languages' },

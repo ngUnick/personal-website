@@ -4,17 +4,117 @@ import { CredentialService } from '../credentials/credential.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 import { AdminCredentialDetailResponseDto } from './admin-credential-detail-response.dto.js';
 import { AdminCredentialResponseDto } from './admin-credential-response.dto.js';
+import { CreateCredentialDraftDto } from './create-credential-draft.dto.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateCredentialContentDto } from './update-credential-content.dto.js';
-import { UpdateCredentialStatusDto } from './update-credential-status.dto.js';
-import { CreateCredentialDraftDto } from './create-credential-draft.dto.js';
+import { UpdateCredentialExpirationDto } from './update-credential-expiration.dto.js';
 import { UpdateCredentialOrderDto } from './update-credential-order.dto.js';
+import { UpdateCredentialStatusDto } from './update-credential-status.dto.js';
 import { UpdateCredentialVerificationDto } from './update-credential-verification.dto.js';
+
 const calendarDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 };
-@ApiTags('admin') @Controller('admin/credentials')
-export class AdminCredentialsController { constructor(private readonly credentials: CredentialService) {} @Get() @UseGuards(AdminSessionGuard) @ApiOkResponse({ type: AdminCredentialResponseDto, isArray: true }) @ApiUnauthorizedResponse() list() { return this.credentials.getAdminCredentials(); } @Post() @UseGuards(AdminSessionGuard, TrustedOriginGuard) @ApiBody({ type: CreateCredentialDraftDto }) @ApiCreatedResponse({ type: AdminCredentialDetailResponseDto }) @ApiUnauthorizedResponse() @ApiForbiddenResponse() createDraft(@Body() body: CreateCredentialDraftDto) { return this.credentials.createDraft(this.validContent(body)); } @Get(':id') @UseGuards(AdminSessionGuard) @ApiOkResponse({ type: AdminCredentialDetailResponseDto }) @ApiUnauthorizedResponse() @ApiNotFoundResponse() detail(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) { return this.credentials.getAdminCredential(id); } @Patch(':id/content') @UseGuards(AdminSessionGuard, TrustedOriginGuard) @ApiBody({ type: UpdateCredentialContentDto }) @ApiOkResponse({ type: AdminCredentialDetailResponseDto }) @ApiUnauthorizedResponse() @ApiForbiddenResponse() @ApiNotFoundResponse() update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialContentDto) { return this.credentials.updateContent(id, this.validContent(body)); } @Patch(':id/status') @UseGuards(AdminSessionGuard, TrustedOriginGuard) @ApiBody({ type: UpdateCredentialStatusDto }) @ApiOkResponse({ type: AdminCredentialDetailResponseDto }) @ApiUnauthorizedResponse() @ApiForbiddenResponse() @ApiNotFoundResponse() updateStatus(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialStatusDto) { if (!['draft', 'published', 'archived'].includes(body?.status)) throw new BadRequestException('Credential status must be draft, published, or archived.'); return this.credentials.updateStatus(id, body.status); } @Patch(':id/verification') @UseGuards(AdminSessionGuard, TrustedOriginGuard) @ApiBody({ type: UpdateCredentialVerificationDto }) @ApiOkResponse({ type: AdminCredentialDetailResponseDto }) updateVerification(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialVerificationDto) { const verificationUrl = body?.verificationUrl; if (verificationUrl === null) return this.credentials.updateVerification(id, null); if (typeof verificationUrl !== 'string') throw new BadRequestException('A verification URL or null is required.'); const trimmed = verificationUrl.trim(); try { const url = new URL(trimmed); if (!trimmed || url.protocol !== 'https:') throw new Error(); } catch { throw new BadRequestException('A valid HTTPS verification URL or null is required.'); } return this.credentials.updateVerification(id, trimmed); } @Patch(':id/order') @UseGuards(AdminSessionGuard, TrustedOriginGuard) @ApiBody({ type: UpdateCredentialOrderDto }) @ApiOkResponse({ type: AdminCredentialResponseDto, isArray: true }) @ApiUnauthorizedResponse() @ApiForbiddenResponse() @ApiNotFoundResponse() updateOrder(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialOrderDto) { if (body?.direction !== 'up' && body?.direction !== 'down') throw new BadRequestException('Credential order direction must be up or down.'); return this.credentials.moveCredential(id, body.direction); } private validContent(body: UpdateCredentialContentDto | CreateCredentialDraftDto) { const name = typeof body?.name === 'string' ? body.name.trim() : ''; const issuer = typeof body?.issuer === 'string' ? body.issuer.trim() : ''; const issuedOn = typeof body?.issuedOn === 'string' ? body.issuedOn : ''; if (!name || !issuer || !calendarDate(issuedOn)) throw new BadRequestException('Credential name, issuer, and a valid issued date are required.'); return { name, issuer, issuedOn }; } }
+
+@ApiTags('admin')
+@Controller('admin/credentials')
+export class AdminCredentialsController {
+  constructor(private readonly credentials: CredentialService) {}
+
+  @Get()
+  @UseGuards(AdminSessionGuard)
+  @ApiOkResponse({ type: AdminCredentialResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  list() { return this.credentials.getAdminCredentials(); }
+
+  @Post()
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: CreateCredentialDraftDto })
+  @ApiCreatedResponse({ type: AdminCredentialDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  createDraft(@Body() body: CreateCredentialDraftDto) { return this.credentials.createDraft(this.validContent(body)); }
+
+  @Get(':id')
+  @UseGuards(AdminSessionGuard)
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiNotFoundResponse()
+  detail(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) { return this.credentials.getAdminCredential(id); }
+
+  @Patch(':id/content')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialContentDto })
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialContentDto) {
+    const content = this.validContent(body);
+    const credential = await this.credentials.getAdminCredential(id);
+    if (credential.expiresOn && content.issuedOn > credential.expiresOn) throw new BadRequestException('Credential issued date cannot be later than its expiration date.');
+    return this.credentials.updateContent(id, content);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialStatusDto })
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  updateStatus(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialStatusDto) {
+    if (!['draft', 'published', 'archived'].includes(body?.status)) throw new BadRequestException('Credential status must be draft, published, or archived.');
+    return this.credentials.updateStatus(id, body.status);
+  }
+
+  @Patch(':id/verification')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialVerificationDto })
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  updateVerification(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialVerificationDto) {
+    const verificationUrl = body?.verificationUrl;
+    if (verificationUrl === null) return this.credentials.updateVerification(id, null);
+    if (typeof verificationUrl !== 'string') throw new BadRequestException('A verification URL or null is required.');
+    const trimmed = verificationUrl.trim();
+    try { const url = new URL(trimmed); if (!trimmed || url.protocol !== 'https:') throw new Error(); }
+    catch { throw new BadRequestException('A valid HTTPS verification URL or null is required.'); }
+    return this.credentials.updateVerification(id, trimmed);
+  }
+
+  @Patch(':id/expiration')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialExpirationDto })
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  async updateExpiration(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialExpirationDto) {
+    const expiresOn = body?.expiresOn;
+    if (expiresOn === null) return this.credentials.updateExpiration(id, null);
+    if (typeof expiresOn !== 'string' || !calendarDate(expiresOn)) throw new BadRequestException('A valid expiration date or null is required.');
+    const credential = await this.credentials.getAdminCredential(id);
+    if (expiresOn < credential.issuedOn) throw new BadRequestException('Credential expiration cannot be earlier than its issued date.');
+    return this.credentials.updateExpiration(id, expiresOn);
+  }
+
+  @Patch(':id/order')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialOrderDto })
+  @ApiOkResponse({ type: AdminCredentialResponseDto, isArray: true })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  updateOrder(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialOrderDto) {
+    if (body?.direction !== 'up' && body?.direction !== 'down') throw new BadRequestException('Credential order direction must be up or down.');
+    return this.credentials.moveCredential(id, body.direction);
+  }
+
+  private validContent(body: UpdateCredentialContentDto | CreateCredentialDraftDto) {
+    const name = typeof body?.name === 'string' ? body.name.trim() : '';
+    const issuer = typeof body?.issuer === 'string' ? body.issuer.trim() : '';
+    const issuedOn = typeof body?.issuedOn === 'string' ? body.issuedOn : '';
+    if (!name || !issuer || !calendarDate(issuedOn)) throw new BadRequestException('Credential name, issuer, and a valid issued date are required.');
+    return { name, issuer, issuedOn };
+  }
+}

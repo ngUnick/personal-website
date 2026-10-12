@@ -7,7 +7,7 @@ import { AdminCredentialsDataAccess } from './admin-credentials.data-access';
 import { AdminCredentialEditorPage } from './admin-credential-editor.page';
 
 describe('AdminCredentialEditorPage', () => {
-  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', verificationUrl: null, status: 'draft' as const };
+  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null, status: 'draft' as const };
   const providers = (platform: string, data: unknown, auth = of({ authenticated: true }), navigateByUrl = () => Promise.resolve(true)) => [
     { provide: PLATFORM_ID, useValue: platform },
     { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
@@ -42,6 +42,22 @@ describe('AdminCredentialEditorPage', () => {
     expect(received).toBeNull();
   });
 
+  it('keeps expiration mutation separate, clears it, and applies the authoritative response', async () => {
+    let contentCalls = 0; let expirationCalls = 0; let received: string | null = 'unexpected';
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', {
+      getCredential: () => of({ ...item, expiresOn: '2026-01-01' }),
+      updateContent: () => { contentCalls++; return of(item); },
+      updateExpiration: (_id: string, expiresOn: string | null) => { expirationCalls++; received = expiresOn; return of({ ...item, expiresOn: '2027-01-01' }); },
+    }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.expirationForm.setValue({ expiresOn: '2026-12-31' }); component.saveExpiration();
+    expect({ contentCalls, expirationCalls, received }).toEqual({ contentCalls: 0, expirationCalls: 1, received: '2026-12-31' });
+    expect(component.expirationForm.getRawValue()).toEqual({ expiresOn: '2027-01-01' });
+    component.expirationForm.setValue({ expiresOn: '' }); component.saveExpiration();
+    expect(received).toBeNull();
+  });
+
   it('renders an accessible save error', async () => {
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => throwError(() => new Error('save failed')) }) }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
@@ -54,6 +70,13 @@ describe('AdminCredentialEditorPage', () => {
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
     (fixture.componentInstance as any).saveVerification(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential verification URL.');
+  });
+
+  it('renders an accessible expiration error without affecting content or status', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => of(item), updateExpiration: () => throwError(() => new Error('expiration failed')), updateStatus: () => of(item) }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    (fixture.componentInstance as any).saveExpiration(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential expiration date.');
   });
 
   it('keeps publication changes separate and renders an accessible status error', async () => {
@@ -80,15 +103,15 @@ describe('AdminCredentialEditorPage', () => {
   });
 
   it('makes no private calls during SSR', async () => {
-    let sessions = 0; let reads = 0; let statusUpdates = 0; let verificationUpdates = 0;
+    let sessions = 0; let reads = 0; let statusUpdates = 0; let verificationUpdates = 0; let expirationUpdates = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions++; return of({ authenticated: true }); } } },
-      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); }, updateVerification: () => { verificationUpdates++; return of(item); } } },
+      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); }, updateVerification: () => { verificationUpdates++; return of(item); }, updateExpiration: () => { expirationUpdates++; return of(item); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
-    expect({ sessions, reads, statusUpdates, verificationUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0, verificationUpdates: 0 });
+    expect({ sessions, reads, statusUpdates, verificationUpdates, expirationUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0, verificationUpdates: 0, expirationUpdates: 0 });
   });
 });

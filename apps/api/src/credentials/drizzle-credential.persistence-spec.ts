@@ -27,6 +27,7 @@ describe('DrizzleCredentialPersistence', () => {
           name: 'Example Draft Credential',
           issuer: 'Example Learning Provider',
           issuedOn: '2025-01-01',
+          expiresOn: null,
           verificationUrl: null,
           status: 'draft',
           displayOrder: 0,
@@ -43,6 +44,7 @@ describe('DrizzleCredentialPersistence', () => {
         name: 'Edited Draft Credential',
         issuer: 'Edited Learning Provider',
         issuedOn: '2025-02-01',
+        expiresOn: null,
         verificationUrl: null,
         status: 'draft',
         displayOrder: 0,
@@ -97,6 +99,26 @@ describe('DrizzleCredentialPersistence', () => {
     }
   });
 
+  it('updates only the expiration date and restores the Draft', async () => {
+    moduleFixture = await Test.createTestingModule({
+      imports: [DatabaseModule],
+      providers: [DrizzleCredentialPersistence],
+    }).compile();
+    const persistence = moduleFixture.get(DrizzleCredentialPersistence);
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = await persistence.findForAdminById(id);
+
+    try {
+      await expect(persistence.updateExpiration(id, '2027-01-01')).resolves.toEqual({
+        ...original,
+        expiresOn: '2027-01-01',
+      });
+      await expect(persistence.updateExpiration('00000000-0000-4000-8000-000000000099', null)).resolves.toBeUndefined();
+    } finally {
+      if (original) await persistence.updateExpiration(id, original.expiresOn);
+    }
+  });
+
   it('reads only published Credentials in global display order through the public projection', async () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleCredentialPersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleCredentialPersistence);
@@ -108,12 +130,12 @@ describe('DrizzleCredentialPersistence', () => {
       await persistence.updateStatus(originalId, 'published');
       await persistence.updateStatus(createdId, 'published');
       await expect(persistence.findPublished()).resolves.toEqual([
-        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', verificationUrl: null },
-        { name: 'Published Credential', issuer: 'Test Provider', issuedOn: '2026-01-01', verificationUrl: null },
+        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null },
+        { name: 'Published Credential', issuer: 'Test Provider', issuedOn: '2026-01-01', expiresOn: null, verificationUrl: null },
       ]);
       await persistence.updateStatus(createdId, 'archived');
       await expect(persistence.findPublished()).resolves.toEqual([
-        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', verificationUrl: null },
+        { name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null },
       ]);
     } finally {
       await persistence.updateStatus(originalId, 'draft');
@@ -135,7 +157,7 @@ describe('DrizzleCredentialPersistence', () => {
       expect(created).toMatchObject({ name: 'Created Credential', issuer: 'Test Provider', issuedOn: '2026-01-01', status: 'draft', displayOrder: 1 });
       expect(created.id).toMatch(/^[0-9a-f-]{36}$/);
       await expect(persistence.findForAdmin()).resolves.toEqual([
-        { id: '00000000-0000-4000-8000-000000000050', name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', verificationUrl: null, status: 'draft', displayOrder: 0 },
+        { id: '00000000-0000-4000-8000-000000000050', name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null, status: 'draft', displayOrder: 0 },
         created,
       ]);
     } finally {
@@ -154,11 +176,11 @@ describe('DrizzleCredentialPersistence', () => {
       await persistence.updateStatus(createdId, 'published');
       await expect(persistence.moveCredential(createdId, 'up')).resolves.toEqual([
         { ...created, status: 'published', displayOrder: 0 },
-        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', verificationUrl: null, status: 'draft', displayOrder: 1 },
+        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null, status: 'draft', displayOrder: 1 },
       ]);
       await expect(persistence.moveCredential(createdId, 'up')).resolves.toEqual([
         { ...created, status: 'published', displayOrder: 0 },
-        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', verificationUrl: null, status: 'draft', displayOrder: 1 },
+        { id: originalId, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null, status: 'draft', displayOrder: 1 },
       ]);
       await expect(persistence.moveCredential('00000000-0000-4000-8000-000000000099', 'up')).resolves.toBeUndefined();
     } finally {

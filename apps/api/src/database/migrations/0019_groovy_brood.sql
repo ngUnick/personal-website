@@ -1,0 +1,1 @@
+ALTER TABLE "credentials" ADD COLUMN "expires_on" date;

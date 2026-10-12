@@ -181,6 +181,7 @@ export const credentials = pgTable(
     name: text('name').notNull(),
     issuer: text('issuer').notNull(),
     issuedOn: date('issued_on').notNull(),
+    expiresOn: date('expires_on'),
     verificationUrl: text('verification_url'),
     status: credentialPublicationStatus('status').notNull().default('draft'),
     displayOrder: integer('display_order').notNull(),
@@ -195,6 +196,10 @@ export const credentials = pgTable(
     check(
       'credentials_display_order_non_negative',
       sql`${table.displayOrder} >= 0`,
+    ),
+    check(
+      'credentials_expiration_not_before_issued',
+      sql`${table.expiresOn} IS NULL OR ${table.expiresOn} >= ${table.issuedOn}`,
     ),
   ],
 );

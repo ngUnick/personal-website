@@ -1,0 +1,1 @@
+ALTER TABLE "credentials" ADD CONSTRAINT "credentials_expiration_not_before_issued" CHECK ("credentials"."expires_on" IS NULL OR "credentials"."expires_on" >= "credentials"."issued_on");
