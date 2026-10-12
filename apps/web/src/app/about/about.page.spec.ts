@@ -29,6 +29,7 @@ describe('AboutPage', () => {
                   issuer: 'First issuer',
                   issuedOn: '2025-01-01',
                   expiresOn: '2027-01-01',
+                  issuerUrl: 'https://issuer.example/first',
                   verificationUrl: 'https://verify.example/first',
                 },
                 {
@@ -36,6 +37,7 @@ describe('AboutPage', () => {
                   issuer: 'Second issuer',
                   issuedOn: '2026-01-01',
                   expiresOn: null,
+                  issuerUrl: null,
                   verificationUrl: null,
                 },
               ]);
@@ -61,6 +63,7 @@ describe('AboutPage', () => {
         .filter((link: HTMLAnchorElement) => link.textContent?.trim() === 'Verify credential')
         .map((link: HTMLAnchorElement) => link.href),
     ).toEqual(['https://verify.example/first']);
+    expect(links.filter((link: HTMLAnchorElement) => link.textContent?.trim() === 'First issuer').map((link: HTMLAnchorElement) => link.href)).toEqual(['https://issuer.example/first']);
   });
 
   it('omits the Credentials section when no published Credentials are available', async () => {

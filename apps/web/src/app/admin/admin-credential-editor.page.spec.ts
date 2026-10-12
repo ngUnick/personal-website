@@ -7,7 +7,7 @@ import { AdminCredentialsDataAccess } from './admin-credentials.data-access';
 import { AdminCredentialEditorPage } from './admin-credential-editor.page';
 
 describe('AdminCredentialEditorPage', () => {
-  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', expiresOn: null, verificationUrl: null, status: 'draft' as const };
+  const item = { id: '00000000-0000-4000-8000-000000000050', name: 'Draft Credential', issuer: 'Example Provider', issuedOn: '2025-01-01', expiresOn: null, issuerUrl: null, verificationUrl: null, status: 'draft' as const };
   const providers = (platform: string, data: unknown, auth = of({ authenticated: true }), navigateByUrl = () => Promise.resolve(true)) => [
     { provide: PLATFORM_ID, useValue: platform },
     { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
@@ -58,6 +58,17 @@ describe('AdminCredentialEditorPage', () => {
     expect(received).toBeNull();
   });
 
+  it('keeps issuer URL mutation separate, clears it, and applies the authoritative response', async () => {
+    let calls = 0; let received: string | null = 'unexpected';
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of({ ...item, issuerUrl: 'https://before.example' }), updateIssuerUrl: (_id: string, issuerUrl: string | null) => { calls++; received = issuerUrl; return of({ ...item, issuerUrl: 'https://canonical.example' }); } }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.issuerUrlForm.setValue({ issuerUrl: ' https://requested.example ' }); component.saveIssuerUrl();
+    expect({ calls, received }).toEqual({ calls: 1, received: 'https://requested.example' });
+    expect(component.issuerUrlForm.getRawValue()).toEqual({ issuerUrl: 'https://canonical.example' });
+    component.issuerUrlForm.setValue({ issuerUrl: ' ' }); component.saveIssuerUrl(); expect(received).toBeNull();
+  });
+
   it('renders an accessible save error', async () => {
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => throwError(() => new Error('save failed')) }) }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
@@ -77,6 +88,13 @@ describe('AdminCredentialEditorPage', () => {
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
     (fixture.componentInstance as any).saveExpiration(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential expiration date.');
+  });
+
+  it('renders an accessible issuer URL error without affecting content or status', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: providers('browser', { getCredential: () => of(item), updateContent: () => of(item), updateIssuerUrl: () => throwError(() => new Error('issuer URL failed')), updateStatus: () => of(item) }) }).compileComponents();
+    const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    (fixture.componentInstance as any).saveIssuerUrl(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save credential issuer URL.');
   });
 
   it('keeps publication changes separate and renders an accessible status error', async () => {
@@ -103,15 +121,15 @@ describe('AdminCredentialEditorPage', () => {
   });
 
   it('makes no private calls during SSR', async () => {
-    let sessions = 0; let reads = 0; let statusUpdates = 0; let verificationUpdates = 0; let expirationUpdates = 0;
+    let sessions = 0; let reads = 0; let statusUpdates = 0; let verificationUpdates = 0; let expirationUpdates = 0; let issuerUrlUpdates = 0;
     await TestBed.configureTestingModule({ imports: [AdminCredentialEditorPage], providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => item.id } } } },
       { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
       { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions++; return of({ authenticated: true }); } } },
-      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); }, updateVerification: () => { verificationUpdates++; return of(item); }, updateExpiration: () => { expirationUpdates++; return of(item); } } },
+      { provide: AdminCredentialsDataAccess, useValue: { getCredential: () => { reads++; return of(item); }, updateContent: () => of(item), updateStatus: () => { statusUpdates++; return of(item); }, updateVerification: () => { verificationUpdates++; return of(item); }, updateExpiration: () => { expirationUpdates++; return of(item); }, updateIssuerUrl: () => { issuerUrlUpdates++; return of(item); } } },
     ] }).compileComponents();
     const fixture = TestBed.createComponent(AdminCredentialEditorPage); fixture.detectChanges(); await fixture.whenStable();
-    expect({ sessions, reads, statusUpdates, verificationUpdates, expirationUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0, verificationUpdates: 0, expirationUpdates: 0 });
+    expect({ sessions, reads, statusUpdates, verificationUpdates, expirationUpdates, issuerUrlUpdates }).toEqual({ sessions: 0, reads: 0, statusUpdates: 0, verificationUpdates: 0, expirationUpdates: 0, issuerUrlUpdates: 0 });
   });
 });

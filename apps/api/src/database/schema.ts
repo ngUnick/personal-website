@@ -182,6 +182,7 @@ export const credentials = pgTable(
     issuer: text('issuer').notNull(),
     issuedOn: date('issued_on').notNull(),
     expiresOn: date('expires_on'),
+    issuerUrl: text('issuer_url'),
     verificationUrl: text('verification_url'),
     status: credentialPublicationStatus('status').notNull().default('draft'),
     displayOrder: integer('display_order').notNull(),

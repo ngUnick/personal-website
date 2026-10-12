@@ -14,5 +14,8 @@ export class CredentialResponseDto {
   expiresOn!: string | null;
 
   @ApiProperty({ nullable: true })
+  issuerUrl!: string | null;
+
+  @ApiProperty({ nullable: true })
   verificationUrl!: string | null;
 }

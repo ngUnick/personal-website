@@ -25,11 +25,16 @@ import { AdminCredentialsDataAccess } from './admin-credentials.data-access';
         <label>Expires on <input type="date" formControlName="expiresOn" /></label>
         <button type="submit">Save expiration date</button>
       </form>
+      <form [formGroup]="issuerUrlForm" (ngSubmit)="saveIssuerUrl()">
+        <label>Issuer URL <input type="url" formControlName="issuerUrl" /></label>
+        <button type="submit">Save issuer URL</button>
+      </form>
       <label>Publication status <select [value]="status()" (change)="changeStatus($any($event.target).value)"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
     }
     @if (saveError()) { <p role="alert">Unable to save credential changes. Please try again.</p> }
     @if (verificationError()) { <p role="alert">Unable to save credential verification URL. Please try again.</p> }
     @if (expirationError()) { <p role="alert">Unable to save credential expiration date. Please try again.</p> }
+    @if (issuerUrlError()) { <p role="alert">Unable to save credential issuer URL. Please try again.</p> }
     @if (statusError()) { <p role="alert">Unable to change credential publication status. Please try again.</p> }
   </main>`,
 })
@@ -43,6 +48,7 @@ export class AdminCredentialEditorPage {
   protected readonly saveError = signal(false);
   protected readonly verificationError = signal(false);
   protected readonly expirationError = signal(false);
+  protected readonly issuerUrlError = signal(false);
   protected readonly statusError = signal(false);
   protected readonly status = signal<'draft' | 'published' | 'archived'>('draft');
   protected readonly form = new FormGroup({
@@ -52,6 +58,7 @@ export class AdminCredentialEditorPage {
   });
   protected readonly verificationForm = new FormGroup({ verificationUrl: new FormControl('', { nonNullable: true }) });
   protected readonly expirationForm = new FormGroup({ expiresOn: new FormControl('', { nonNullable: true }) });
+  protected readonly issuerUrlForm = new FormGroup({ issuerUrl: new FormControl('', { nonNullable: true }) });
   private id = '';
 
   constructor() {
@@ -91,6 +98,16 @@ export class AdminCredentialEditorPage {
     });
   }
 
+  protected saveIssuerUrl() {
+    if (!this.id) return;
+    this.issuerUrlError.set(false);
+    const issuerUrl = this.issuerUrlForm.controls.issuerUrl.value.trim() || null;
+    this.data.updateIssuerUrl(this.id, issuerUrl).subscribe({
+      next: (value) => this.issuerUrlForm.setValue({ issuerUrl: value.issuerUrl ?? '' }),
+      error: () => this.issuerUrlError.set(true),
+    });
+  }
+
   protected changeStatus(status: 'draft' | 'published' | 'archived') {
     if (!this.id) return;
     this.statusError.set(false);
@@ -109,6 +126,7 @@ export class AdminCredentialEditorPage {
         this.form.setValue({ name: value.name, issuer: value.issuer, issuedOn: value.issuedOn });
         this.verificationForm.setValue({ verificationUrl: value.verificationUrl ?? '' });
         this.expirationForm.setValue({ expiresOn: value.expiresOn ?? '' });
+        this.issuerUrlForm.setValue({ issuerUrl: value.issuerUrl ?? '' });
         this.status.set(value.status);
         this.loaded.set(true);
       },

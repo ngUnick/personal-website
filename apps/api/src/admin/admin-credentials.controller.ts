@@ -8,6 +8,7 @@ import { CreateCredentialDraftDto } from './create-credential-draft.dto.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateCredentialContentDto } from './update-credential-content.dto.js';
 import { UpdateCredentialExpirationDto } from './update-credential-expiration.dto.js';
+import { UpdateCredentialIssuerUrlDto } from './update-credential-issuer-url.dto.js';
 import { UpdateCredentialOrderDto } from './update-credential-order.dto.js';
 import { UpdateCredentialStatusDto } from './update-credential-status.dto.js';
 import { UpdateCredentialVerificationDto } from './update-credential-verification.dto.js';
@@ -96,6 +97,20 @@ export class AdminCredentialsController {
     const credential = await this.credentials.getAdminCredential(id);
     if (expiresOn < credential.issuedOn) throw new BadRequestException('Credential expiration cannot be earlier than its issued date.');
     return this.credentials.updateExpiration(id, expiresOn);
+  }
+
+  @Patch(':id/issuer-url')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateCredentialIssuerUrlDto })
+  @ApiOkResponse({ type: AdminCredentialDetailResponseDto })
+  updateIssuerUrl(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateCredentialIssuerUrlDto) {
+    const issuerUrl = body?.issuerUrl;
+    if (issuerUrl === null) return this.credentials.updateIssuerUrl(id, null);
+    if (typeof issuerUrl !== 'string') throw new BadRequestException('An issuer URL or null is required.');
+    const trimmed = issuerUrl.trim();
+    try { const url = new URL(trimmed); if (!trimmed || url.protocol !== 'https:') throw new Error(); }
+    catch { throw new BadRequestException('A valid HTTPS issuer URL or null is required.'); }
+    return this.credentials.updateIssuerUrl(id, trimmed);
   }
 
   @Patch(':id/order')

@@ -56,6 +56,12 @@ describe('AdminCredentialsHttpService', () => {
     expect(expiration.request.withCredentials).toBe(true);
     expect(expiration.request.body).toEqual({ expiresOn: '2027-01-01' });
     expiration.flush({});
+    service.updateIssuerUrl(id, 'https://issuer.example').subscribe();
+    const issuerUrl = http.expectOne(`/api/admin/credentials/${id}/issuer-url`);
+    expect(issuerUrl.request.method).toBe('PATCH');
+    expect(issuerUrl.request.withCredentials).toBe(true);
+    expect(issuerUrl.request.body).toEqual({ issuerUrl: 'https://issuer.example' });
+    issuerUrl.flush({});
     service.updateStatus(id, 'published').subscribe();
     const status = http.expectOne(`/api/admin/credentials/${id}/status`);
     expect(status.request.method).toBe('PATCH');

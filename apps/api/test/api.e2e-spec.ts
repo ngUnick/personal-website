@@ -99,6 +99,7 @@ describe('API (e2e)', () => {
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
       expiresOn: null,
+      issuerUrl: null,
       verificationUrl: null,
     };
     const agent = await authenticatedAgent();
@@ -141,6 +142,7 @@ describe('API (e2e)', () => {
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
       expiresOn: null,
+      issuerUrl: null,
       verificationUrl: null,
     };
     await request(app.getHttpServer())
@@ -206,7 +208,7 @@ describe('API (e2e)', () => {
           updatedAt: 'never',
         })
         .expect(200)
-        .expect({ id, ...edited, expiresOn: null, verificationUrl: null, status: 'draft' });
+        .expect({ id, ...edited, expiresOn: null, issuerUrl: null, verificationUrl: null, status: 'draft' });
       const [stored] = await app
         .get(DatabaseService)
         .db.select()
@@ -216,6 +218,7 @@ describe('API (e2e)', () => {
         ...edited,
         status: 'draft',
         expiresOn: null,
+        issuerUrl: null,
         verificationUrl: null,
         displayOrder: 0,
       });
@@ -236,6 +239,7 @@ describe('API (e2e)', () => {
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
       expiresOn: null,
+      issuerUrl: null,
       verificationUrl: null,
       status: 'draft',
     };
@@ -319,6 +323,7 @@ describe('API (e2e)', () => {
             issuer: original.issuer,
             issuedOn: original.issuedOn,
             expiresOn: null,
+            issuerUrl: null,
             verificationUrl: 'https://verify.example/credential',
           },
         ]);
@@ -336,6 +341,29 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('changes only a Credential issuer URL through its protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000050';
+    const original = { id, name: 'Example Draft Credential', issuer: 'Example Learning Provider', issuedOn: '2025-01-01', expiresOn: null, issuerUrl: null, verificationUrl: null, status: 'draft' };
+    const agent = await authenticatedAgent();
+    await request(app.getHttpServer()).patch(`/api/admin/credentials/${id}/issuer-url`).send({ issuerUrl: 'https://issuer.example' }).expect(401);
+    await agent.patch(`/api/admin/credentials/${id}/issuer-url`).send({ issuerUrl: 'https://issuer.example' }).expect(403);
+    await agent.patch(`/api/admin/credentials/${id}/issuer-url`).set('Origin', 'https://untrusted.example').send({ issuerUrl: 'https://issuer.example' }).expect(403);
+    await agent.patch('/api/admin/credentials/not-a-uuid/issuer-url').set('Origin', 'http://localhost:4200').send({ issuerUrl: 'https://issuer.example' }).expect(400);
+    await agent.patch('/api/admin/credentials/00000000-0000-4000-8000-000000000099/issuer-url').set('Origin', 'http://localhost:4200').send({ issuerUrl: null }).expect(404);
+    for (const issuerUrl of [undefined, '', '  ', 'http://issuer.example', 'not a url', 1]) {
+      await agent.patch(`/api/admin/credentials/${id}/issuer-url`).set('Origin', 'http://localhost:4200').send({ issuerUrl }).expect(400);
+    }
+    try {
+      await agent.patch(`/api/admin/credentials/${id}/issuer-url`).set('Origin', 'http://localhost:4200').send({ issuerUrl: ' https://issuer.example ', name: 'Ignored', status: 'published', displayOrder: 99 }).expect(200).expect({ ...original, issuerUrl: 'https://issuer.example' });
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([{ name: original.name, issuer: original.issuer, issuedOn: original.issuedOn, expiresOn: null, issuerUrl: 'https://issuer.example', verificationUrl: null }]);
+    } finally {
+      await agent.patch(`/api/admin/credentials/${id}/issuer-url`).set('Origin', 'http://localhost:4200').send({ issuerUrl: null }).expect(200);
+      await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
+    }
+  });
+
   it('changes only a Credential expiration date through its protected boundary', async () => {
     const id = '00000000-0000-4000-8000-000000000050';
     const original = {
@@ -344,6 +372,7 @@ describe('API (e2e)', () => {
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
       expiresOn: null,
+      issuerUrl: null,
       verificationUrl: null,
       status: 'draft',
     };
@@ -375,7 +404,7 @@ describe('API (e2e)', () => {
       await agent.get(`/api/admin/credentials/${id}`).expect(200).expect({ ...original, expiresOn: '2027-01-01' });
       await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([]);
       await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'published' }).expect(200);
-      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([{ name: original.name, issuer: original.issuer, issuedOn: original.issuedOn, expiresOn: '2027-01-01', verificationUrl: null }]);
+      await request(app.getHttpServer()).get('/api/credentials').expect(200).expect([{ name: original.name, issuer: original.issuer, issuedOn: original.issuedOn, expiresOn: '2027-01-01', issuerUrl: null, verificationUrl: null }]);
     } finally {
       await agent.patch(`/api/admin/credentials/${id}/expiration`).set('Origin', 'http://localhost:4200').send({ expiresOn: null }).expect(200);
       await agent.patch(`/api/admin/credentials/${id}/status`).set('Origin', 'http://localhost:4200').send({ status: 'draft' }).expect(200);
@@ -428,6 +457,7 @@ describe('API (e2e)', () => {
         ...input,
         status: 'draft',
         expiresOn: null,
+        issuerUrl: null,
         verificationUrl: null,
       });
       const [stored] = await app
@@ -440,6 +470,7 @@ describe('API (e2e)', () => {
         ...input,
         status: 'draft',
         expiresOn: null,
+        issuerUrl: null,
         displayOrder: 1,
       });
     } finally {
@@ -459,6 +490,7 @@ describe('API (e2e)', () => {
       issuer: 'Example Learning Provider',
       issuedOn: '2025-01-01',
       expiresOn: null,
+      issuerUrl: null,
       verificationUrl: null,
       status: 'draft',
     };
