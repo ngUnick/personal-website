@@ -6,6 +6,7 @@ import {
   type AdminPersistedEducation,
   type EducationContentUpdate,
   type EducationLocationUpdate,
+  type EducationInstitutionUrlUpdate,
   type CreateEducationDraft,
   type EducationPublicationStatus,
   type EducationOrderDirection,
@@ -60,6 +61,12 @@ export class EducationService {
     return this.toAdminDetail(education);
   }
 
+  async updateInstitutionUrl(id: string, institutionUrl: EducationInstitutionUrlUpdate) {
+    const education = await this.persistence.updateInstitutionUrl(id, institutionUrl);
+    if (!education) throw new NotFoundException('Education not found.');
+    return this.toAdminDetail(education);
+  }
+
   async createDraft(input: CreateEducationDraft) {
     return this.toAdminDetail(await this.persistence.createDraft(input));
   }
@@ -88,6 +95,7 @@ export class EducationService {
       qualification,
       summary,
       location,
+      institutionUrl,
       startDate,
       endDate,
       status,
@@ -98,6 +106,7 @@ export class EducationService {
       qualification,
       summary,
       location,
+      institutionUrl,
       startDate,
       endDate,
       status,

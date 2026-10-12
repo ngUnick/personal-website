@@ -127,6 +127,13 @@
       "when": 1791769592255,
       "tag": "0017_next_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791771096344,
+      "tag": "0018_loving_mandrill",
+      "breakpoints": true
     }
   ]
 }

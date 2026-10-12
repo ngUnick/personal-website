@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { AdminEducationHttpService } from './admin-education-http.service';
 
 describe('AdminEducationHttpService', () => {
-  it('uses the private credentialed list, create, detail, content, location, status, and order endpoints', () => {
+  it('uses the private credentialed list, create, detail, content, location, institution URL, status, and order endpoints', () => {
     TestBed.configureTestingModule({
       providers: [
         AdminEducationHttpService,
@@ -52,6 +52,12 @@ describe('AdminEducationHttpService', () => {
     expect(location.request.withCredentials).toBe(true);
     expect(location.request.body).toEqual({ location: 'Example campus' });
     location.flush({});
+    service.updateInstitutionUrl(id, 'https://example.invalid').subscribe();
+    const institutionUrl = http.expectOne(`/api/admin/education/${id}/institution-url`);
+    expect(institutionUrl.request.method).toBe('PATCH');
+    expect(institutionUrl.request.withCredentials).toBe(true);
+    expect(institutionUrl.request.body).toEqual({ institutionUrl: 'https://example.invalid' });
+    institutionUrl.flush({});
     service.updateStatus(id, 'published').subscribe();
     const status = http.expectOne(`/api/admin/education/${id}/status`);
     expect(status.request.method).toBe('PATCH');

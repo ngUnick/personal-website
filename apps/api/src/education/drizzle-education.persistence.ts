@@ -8,6 +8,7 @@ import {
   type AdminPersistedEducation,
   type EducationContentUpdate,
   type EducationLocationUpdate,
+  type EducationInstitutionUrlUpdate,
   type CreateEducationDraft,
   type EducationOrderDirection,
   type EducationPublicationStatus,
@@ -24,6 +25,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
         qualification: educations.qualification,
         summary: educations.summary,
         location: educations.location,
+        institutionUrl: educations.institutionUrl,
         startDate: educations.startDate,
         endDate: educations.endDate,
       })
@@ -85,6 +87,11 @@ export class DrizzleEducationPersistence implements EducationPersistence {
     return education;
   }
 
+  async updateInstitutionUrl(id: string, institutionUrl: EducationInstitutionUrlUpdate): Promise<AdminPersistedEducation | undefined> {
+    const [education] = await this.database.db.update(educations).set({ ...institutionUrl, updatedAt: new Date() }).where(eq(educations.id, id)).returning(this.adminProjection);
+    return education;
+  }
+
   async createDraft(
     input: CreateEducationDraft,
   ): Promise<AdminPersistedEducation> {
@@ -142,6 +149,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
     qualification: educations.qualification,
     summary: educations.summary,
     location: educations.location,
+    institutionUrl: educations.institutionUrl,
     startDate: educations.startDate,
     endDate: educations.endDate,
     status: educations.status,

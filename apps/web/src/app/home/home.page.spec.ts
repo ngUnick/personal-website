@@ -44,6 +44,7 @@ describe('HomePage', () => {
                   qualification: 'Example Software Engineering Diploma',
                   summary: 'Fictional education fixture used to validate the public homepage path.',
                   location: 'Example campus',
+                  institutionUrl: 'https://example.invalid',
                   startDate: '2020-01-01',
                   endDate: '2023-01-01',
                 },
@@ -101,6 +102,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Education');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
     expect(fixture.nativeElement.textContent).toContain('Example Technical Institute');
+    expect(Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('a[href="https://example.invalid"]') as ArrayLike<HTMLElement>).map((link) => link.textContent)).toContain('Example Technical Institute');
     expect(fixture.nativeElement.textContent).toContain('Example campus');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
     expect(fixture.nativeElement.textContent).toContain(
@@ -182,6 +184,11 @@ describe('HomePage', () => {
     ).find((section) => section.querySelector('#experience-heading') !== null);
     expect(experienceSection).toBeDefined();
     expect(experienceSection?.querySelectorAll('article')).toHaveLength(0);
+  });
+
+  it('keeps an institution as plain text when its URL is absent', async () => {
+    await TestBed.configureTestingModule({ imports: [HomePage], providers: [provideRouter([]), { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([]) } }, { provide: EducationDataAccess, useValue: { getEducation: () => of([{ institution: 'Plain Institute', qualification: 'Qualification', summary: 'Summary', location: null, institutionUrl: null, startDate: '2020-01-01', endDate: null }]) } }, { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } }, { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } }, { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example', summary: 'Summary', about: 'About', location: null, contactEmail: null, githubUrl: null, linkedinUrl: null }) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(HomePage); fixture.detectChanges(); await fixture.whenStable(); const educationArticle = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('article') as ArrayLike<HTMLElement>).find((article) => article.textContent?.includes('Plain Institute')); expect(educationArticle?.textContent).toContain('Plain Institute'); expect(educationArticle?.querySelector('a')).toBeNull();
   });
 
   it('renders Contact when a professional link exists without an email address', async () => {

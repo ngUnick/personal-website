@@ -116,6 +116,7 @@ try {
       summary:
         'Fictional education fixture used to validate the public homepage path.',
       location: null,
+      institutionUrl: null,
       startDate: '2020-01-01',
       endDate: '2023-01-01',
       status: 'published',
@@ -129,6 +130,7 @@ try {
         summary:
           'Fictional education fixture used to validate the public homepage path.',
         location: null,
+        institutionUrl: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
         status: 'published',
@@ -145,6 +147,7 @@ try {
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
       location: null,
+      institutionUrl: null,
       startDate: '2024-01-01',
       endDate: null,
       status: 'draft',
@@ -158,6 +161,7 @@ try {
         summary:
           'Fictional draft education used only to validate private CMS authoring.',
         location: null,
+        institutionUrl: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'draft',

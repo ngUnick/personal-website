@@ -28,6 +28,7 @@ import { UpdateEducationStatusDto } from './update-education-status.dto.js';
 import { UpdateEducationOrderDto } from './update-education-order.dto.js';
 import { UpdateEducationLocationDto } from './update-education-location.dto.js';
 import { CreateEducationDraftDto } from './create-education-draft.dto.js';
+import { UpdateEducationInstitutionUrlDto } from './update-education-institution-url.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -126,6 +127,16 @@ export class AdminEducationController {
     return this.education.updateLocation(id, { location });
   }
 
+  @Patch(':id/institution-url')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateEducationInstitutionUrlDto })
+  @ApiOkResponse({ type: AdminEducationDetailResponseDto })
+  async updateInstitutionUrl(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateEducationInstitutionUrlDto) {
+    const institutionUrl = body?.institutionUrl === null ? null : typeof body?.institutionUrl === 'string' ? body.institutionUrl.trim() : undefined;
+    if (institutionUrl === undefined || institutionUrl === '' || (institutionUrl !== null && !this.isHttpsUrl(institutionUrl))) throw new BadRequestException('An absolute HTTPS institution URL or null is required.');
+    return this.education.updateInstitutionUrl(id, { institutionUrl });
+  }
+
   @Patch(':id/order')
   @UseGuards(AdminSessionGuard, TrustedOriginGuard)
   @ApiBody({ type: UpdateEducationOrderDto })
@@ -170,4 +181,6 @@ export class AdminEducationController {
       );
     return { institution, qualification, summary, startDate, endDate };
   }
+
+  private isHttpsUrl(value: string) { try { return new URL(value).protocol === 'https:'; } catch { return false; } }
 }

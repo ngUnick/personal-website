@@ -10,6 +10,7 @@ export type AdminEducation = {
 export type AdminEducationDetail = AdminEducation & {
   summary: string;
   location: string | null;
+  institutionUrl: string | null;
   startDate: string;
   endDate: string | null;
 };
@@ -35,6 +36,7 @@ export abstract class AdminEducationDataAccess {
     id: string,
     location: string | null,
   ): Observable<AdminEducationDetail>;
+  abstract updateInstitutionUrl(id: string, institutionUrl: string | null): Observable<AdminEducationDetail>;
   abstract createDraft(
     input: CreateEducationDraft,
   ): Observable<AdminEducationDetail>;

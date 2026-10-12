@@ -5,6 +5,7 @@ export type Education = {
   qualification: string;
   summary: string;
   location: string | null;
+  institutionUrl: string | null;
   startDate: string;
   endDate: string | null;
 };

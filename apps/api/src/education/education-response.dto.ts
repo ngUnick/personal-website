@@ -13,6 +13,9 @@ export class EducationResponseDto {
   @ApiProperty({ nullable: true })
   location!: string | null;
 
+  @ApiProperty({ nullable: true })
+  institutionUrl!: string | null;
+
   @ApiProperty()
   startDate!: string;
 

@@ -60,6 +60,7 @@ describe('API (e2e)', () => {
           summary:
             'Fictional education fixture used to validate the public homepage path.',
           location: null,
+          institutionUrl: null,
           startDate: '2020-01-01',
           endDate: '2023-01-01',
         },
@@ -2804,6 +2805,7 @@ describe('API (e2e)', () => {
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
       location: null,
+      institutionUrl: null,
       startDate: '2024-01-01',
       endDate: null,
     };
@@ -2814,6 +2816,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional education fixture used to validate the public homepage path.',
         location: null,
+        institutionUrl: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },
@@ -2864,7 +2867,7 @@ describe('API (e2e)', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ ...edited, status: 'published', displayOrder: 0 })
         .expect(200)
-        .expect({ id, ...edited, status: 'draft' });
+        .expect({ id, ...edited, institutionUrl: null, status: 'draft' });
       await request(app.getHttpServer())
         .get('/api/education')
         .expect(200)
@@ -2887,6 +2890,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional education fixture used to validate the public homepage path.',
         location: null,
+        institutionUrl: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },
@@ -2897,6 +2901,7 @@ describe('API (e2e)', () => {
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
       location: null,
+      institutionUrl: null,
       startDate: '2024-01-01',
       endDate: null,
     };
@@ -2976,6 +2981,7 @@ describe('API (e2e)', () => {
       qualification: 'Example Draft Software Program',
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
+      institutionUrl: null,
       startDate: '2024-01-01',
       endDate: null,
       status: 'draft',
@@ -2987,6 +2993,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional education fixture used to validate the public homepage path.',
         location: null,
+        institutionUrl: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },
@@ -3120,6 +3127,7 @@ describe('API (e2e)', () => {
             id: expect.any(String),
             ...input,
             location: null,
+            institutionUrl: null,
             status: 'draft',
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
@@ -3127,7 +3135,7 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/education/${id}`)
         .expect(200)
-        .expect({ id, ...input, location: null, status: 'draft' });
+        .expect({ id, ...input, location: null, institutionUrl: null, status: 'draft' });
       await agent
         .get('/api/admin/education')
         .expect(200)
@@ -3149,6 +3157,7 @@ describe('API (e2e)', () => {
             summary:
               'Fictional education fixture used to validate the public homepage path.',
           location: null,
+            institutionUrl: null,
             startDate: '2020-01-01',
             endDate: '2023-01-01',
           },
@@ -3162,6 +3171,21 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('updates only an Education institution URL through its protected boundary', async () => {
+    const id = '00000000-0000-4000-8000-000000000034';
+    await request(app.getHttpServer()).patch(`/api/admin/education/${id}/institution-url`).send({ institutionUrl: 'https://example.invalid' }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/education/${id}/institution-url`).send({ institutionUrl: 'https://example.invalid' }).expect(403);
+    await agent.patch(`/api/admin/education/${id}/institution-url`).set('Origin', 'https://untrusted.example').send({ institutionUrl: 'https://example.invalid' }).expect(403);
+    await agent.patch('/api/admin/education/not-a-uuid/institution-url').set('Origin', 'http://localhost:4200').send({ institutionUrl: null }).expect(400);
+    await agent.patch('/api/admin/education/00000000-0000-4000-8000-000000000099/institution-url').set('Origin', 'http://localhost:4200').send({ institutionUrl: null }).expect(404);
+    for (const institutionUrl of [undefined, '', '  ', 'http://example.invalid', 'bad', 1]) await agent.patch(`/api/admin/education/${id}/institution-url`).set('Origin', 'http://localhost:4200').send({ institutionUrl }).expect(400);
+    try {
+      await agent.patch(`/api/admin/education/${id}/institution-url`).set('Origin', 'http://localhost:4200').send({ institutionUrl: ' https://example.invalid ', status: 'published' }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, institutionUrl: 'https://example.invalid', status: 'draft' }));
+      await agent.patch(`/api/admin/education/${id}/institution-url`).set('Origin', 'http://localhost:4200').send({ institutionUrl: null }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, institutionUrl: null }));
+    } finally { await agent.patch(`/api/admin/education/${id}/institution-url`).set('Origin', 'http://localhost:4200').send({ institutionUrl: null }).expect(200); }
+  });
+
   it('moves Education through the protected adjacent ordering boundary', async () => {
     const id = '00000000-0000-4000-8000-000000000034';
     const publicFixture = [
@@ -3171,6 +3195,7 @@ describe('API (e2e)', () => {
         summary:
           'Fictional education fixture used to validate the public homepage path.',
         location: null,
+        institutionUrl: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },

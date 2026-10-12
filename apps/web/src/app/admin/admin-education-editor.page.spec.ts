@@ -13,6 +13,7 @@ describe('AdminEducationEditorPage', () => {
     qualification: 'Draft Qualification',
     summary: 'Fictional content.',
     location: null,
+    institutionUrl: null,
     startDate: '2024-01-01',
     endDate: null,
     status: 'draft' as const,
@@ -90,6 +91,18 @@ describe('AdminEducationEditorPage', () => {
     expect(saved).toBe('Example campus');
     component.clearLocation();
     expect(saved).toBeNull();
+  });
+
+  it('saves and clears institution URL separately from content', async () => {
+    let saved: string | null | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminEducationEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminEducationDataAccess, useValue: { getEducation: () => of(education), updateInstitutionUrl: (_id: string, institutionUrl: string | null) => { saved = institutionUrl; return of({ ...education, institutionUrl }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminEducationEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    component.institutionUrlControl.setValue(' https://example.invalid '); component.saveInstitutionUrl(); expect(saved).toBe('https://example.invalid'); component.clearInstitutionUrl(); expect(saved).toBeNull();
+  });
+
+  it('renders a distinct accessible institution URL failure', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminEducationEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminEducationDataAccess, useValue: { getEducation: () => of(education), updateInstitutionUrl: () => throwError(() => new Error('institution URL failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminEducationEditorPage); fixture.detectChanges(); await fixture.whenStable(); (fixture.componentInstance as any).saveInstitutionUrl(); fixture.detectChanges(); expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save education institution URL');
   });
 
   it('renders a distinct accessible location-save failure', async () => {

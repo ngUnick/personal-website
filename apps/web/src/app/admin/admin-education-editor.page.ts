@@ -40,6 +40,12 @@ import {
         <button type="button" (click)="saveLocation()">Save location</button>
         <button type="button" (click)="clearLocation()">Clear location</button>
       </section>
+      <section aria-label="Institution URL">
+        <h2>Institution URL</h2>
+        <label>Institution URL <input type="url" [formControl]="institutionUrlControl" /></label>
+        <button type="button" (click)="saveInstitutionUrl()">Save institution URL</button>
+        <button type="button" (click)="clearInstitutionUrl()">Clear institution URL</button>
+      </section>
       <section aria-label="Private education preview">
         <h2>Preview</h2>
         <h3>{{ education.institution }}</h3>
@@ -57,6 +63,7 @@ import {
     @if (locationError()) {
       <p role="alert">Unable to save education location. Please try again.</p>
     }
+    @if (institutionUrlError()) { <p role="alert">Unable to save education institution URL. Please try again.</p> }
   </main>`,
 })
 export class AdminEducationEditorPage {
@@ -69,10 +76,12 @@ export class AdminEducationEditorPage {
   protected readonly saveError = signal(false);
   protected readonly statusError = signal(false);
   protected readonly locationError = signal(false);
+  protected readonly institutionUrlError = signal(false);
   protected readonly statusControl = new FormControl<EducationPublicationStatus>('draft', {
     nonNullable: true,
   });
   protected readonly locationControl = new FormControl('', { nonNullable: true });
+  protected readonly institutionUrlControl = new FormControl('', { nonNullable: true });
   protected readonly form = new FormGroup({
     institution: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     qualification: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -132,6 +141,14 @@ export class AdminEducationEditorPage {
     });
   }
 
+  protected saveInstitutionUrl() {
+    if (!this.education) return;
+    this.institutionUrlError.set(false);
+    const institutionUrl = this.institutionUrlControl.getRawValue().trim() || null;
+    this.data.updateInstitutionUrl(this.education.id, institutionUrl).subscribe({ next: (education) => this.apply(education), error: () => this.institutionUrlError.set(true) });
+  }
+  protected clearInstitutionUrl() { this.institutionUrlControl.setValue(''); this.saveInstitutionUrl(); }
+
   private load() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.data.getEducation(id).subscribe((education) => this.apply(education));
@@ -147,6 +164,7 @@ export class AdminEducationEditorPage {
       endDate: education.endDate ?? '',
     });
     this.locationControl.setValue(education.location ?? '');
+    this.institutionUrlControl.setValue(education.institutionUrl ?? '');
     this.statusControl.setValue(education.status);
   }
 }

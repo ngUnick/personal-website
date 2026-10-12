@@ -3,6 +3,7 @@ export type PublicEducation = {
   qualification: string;
   summary: string;
   location: string | null;
+  institutionUrl: string | null;
   startDate: string;
   endDate: string | null;
 };
@@ -22,6 +23,7 @@ export type EducationContentUpdate = Pick<
 export type CreateEducationDraft = EducationContentUpdate;
 export type EducationOrderDirection = 'up' | 'down';
 export type EducationLocationUpdate = Pick<PublicEducation, 'location'>;
+export type EducationInstitutionUrlUpdate = Pick<PublicEducation, 'institutionUrl'>;
 
 export interface EducationPersistence {
   findPublished(): Promise<PublicEducation[]>;
@@ -39,6 +41,7 @@ export interface EducationPersistence {
     id: string,
     location: EducationLocationUpdate,
   ): Promise<AdminPersistedEducation | undefined>;
+  updateInstitutionUrl(id: string, institutionUrl: EducationInstitutionUrlUpdate): Promise<AdminPersistedEducation | undefined>;
   createDraft(input: CreateEducationDraft): Promise<AdminPersistedEducation>;
   moveEducation(
     id: string,
