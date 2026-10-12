@@ -12,6 +12,7 @@ describe('AdminEducationEditorPage', () => {
     institution: 'Draft Institute',
     qualification: 'Draft Qualification',
     summary: 'Fictional content.',
+    location: null,
     startDate: '2024-01-01',
     endDate: null,
     status: 'draft' as const,
@@ -57,6 +58,65 @@ describe('AdminEducationEditorPage', () => {
       endDate: null,
     });
     expect(component.education.institution).toBe('Edited Institute');
+  });
+
+  it('saves and clears location separately from content', async () => {
+    let saved: string | null | undefined;
+    await TestBed.configureTestingModule({
+      imports: [AdminEducationEditorPage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ActivatedRoute, useValue: route },
+        { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+        { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
+        {
+          provide: AdminEducationDataAccess,
+          useValue: {
+            getEducation: () => of(education),
+            updateLocation: (_id: string, location: string | null) => {
+              saved = location;
+              return of({ ...education, location });
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AdminEducationEditorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.locationControl.setValue(' Example campus ');
+    component.saveLocation();
+    expect(saved).toBe('Example campus');
+    component.clearLocation();
+    expect(saved).toBeNull();
+  });
+
+  it('renders a distinct accessible location-save failure', async () => {
+    await TestBed.configureTestingModule({
+      imports: [AdminEducationEditorPage],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        { provide: ActivatedRoute, useValue: route },
+        { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } },
+        { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } },
+        {
+          provide: AdminEducationDataAccess,
+          useValue: {
+            getEducation: () => of(education),
+            updateLocation: () => throwError(() => new Error('location failed')),
+          },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AdminEducationEditorPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (fixture.componentInstance as any).saveLocation();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Unable to save education location',
+    );
   });
 
   it('does not save invalid forms and renders failures accessibly', async () => {

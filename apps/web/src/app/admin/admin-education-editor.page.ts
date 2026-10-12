@@ -34,6 +34,12 @@ import {
           </select></label
         ><button type="button" (click)="updateStatus()">Update publication status</button>
       </section>
+      <section aria-label="Education location">
+        <h2>Location</h2>
+        <label>Location <input [formControl]="locationControl" /></label>
+        <button type="button" (click)="saveLocation()">Save location</button>
+        <button type="button" (click)="clearLocation()">Clear location</button>
+      </section>
       <section aria-label="Private education preview">
         <h2>Preview</h2>
         <h3>{{ education.institution }}</h3>
@@ -48,6 +54,9 @@ import {
     @if (statusError()) {
       <p role="alert">Unable to update education publication status. Please try again.</p>
     }
+    @if (locationError()) {
+      <p role="alert">Unable to save education location. Please try again.</p>
+    }
   </main>`,
 })
 export class AdminEducationEditorPage {
@@ -59,9 +68,11 @@ export class AdminEducationEditorPage {
   protected education: AdminEducationDetail | undefined;
   protected readonly saveError = signal(false);
   protected readonly statusError = signal(false);
+  protected readonly locationError = signal(false);
   protected readonly statusControl = new FormControl<EducationPublicationStatus>('draft', {
     nonNullable: true,
   });
+  protected readonly locationControl = new FormControl('', { nonNullable: true });
   protected readonly form = new FormGroup({
     institution: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     qualification: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -102,6 +113,25 @@ export class AdminEducationEditorPage {
       });
   }
 
+  protected saveLocation() {
+    if (!this.education) return;
+    this.locationError.set(false);
+    const location = this.locationControl.getRawValue().trim() || null;
+    this.data.updateLocation(this.education.id, location).subscribe({
+      next: (education) => this.apply(education),
+      error: () => this.locationError.set(true),
+    });
+  }
+
+  protected clearLocation() {
+    if (!this.education) return;
+    this.locationError.set(false);
+    this.data.updateLocation(this.education.id, null).subscribe({
+      next: (education) => this.apply(education),
+      error: () => this.locationError.set(true),
+    });
+  }
+
   private load() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.data.getEducation(id).subscribe((education) => this.apply(education));
@@ -116,6 +146,7 @@ export class AdminEducationEditorPage {
       startDate: education.startDate,
       endDate: education.endDate ?? '',
     });
+    this.locationControl.setValue(education.location ?? '');
     this.statusControl.setValue(education.status);
   }
 }

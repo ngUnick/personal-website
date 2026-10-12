@@ -30,6 +30,7 @@ describe('DrizzleEducationPersistence', () => {
         institution: 'Second Example Institute',
         qualification: 'Second Qualification',
         summary: 'Fictional ordered fixture.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'published',
@@ -40,6 +41,7 @@ describe('DrizzleEducationPersistence', () => {
         institution: 'Draft Institute',
         qualification: 'Draft Qualification',
         summary: 'Private fixture.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'draft',
@@ -50,6 +52,7 @@ describe('DrizzleEducationPersistence', () => {
         institution: 'Archived Institute',
         qualification: 'Archived Qualification',
         summary: 'Private fixture.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'archived',
@@ -64,6 +67,7 @@ describe('DrizzleEducationPersistence', () => {
           qualification: 'Example Software Engineering Diploma',
           summary:
             'Fictional education fixture used to validate the public homepage path.',
+          location: null,
           startDate: '2020-01-01',
           endDate: '2023-01-01',
         },
@@ -71,6 +75,7 @@ describe('DrizzleEducationPersistence', () => {
           institution: 'Second Example Institute',
           qualification: 'Second Qualification',
           summary: 'Fictional ordered fixture.',
+          location: null,
           startDate: '2024-01-01',
           endDate: null,
         },
@@ -106,6 +111,7 @@ describe('DrizzleEducationPersistence', () => {
         qualification: 'Example Draft Software Program',
         summary:
           'Fictional draft education used only to validate private CMS authoring.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'draft',
@@ -118,6 +124,7 @@ describe('DrizzleEducationPersistence', () => {
           qualification: 'Example Software Engineering Diploma',
           summary:
             'Fictional education fixture used to validate the public homepage path.',
+          location: null,
           startDate: '2020-01-01',
           endDate: '2023-01-01',
           status: 'published',
@@ -138,6 +145,7 @@ describe('DrizzleEducationPersistence', () => {
         institution: 'Edited Institute',
         qualification: 'Edited Qualification',
         summary: 'Edited fixture.',
+        location: null,
         startDate: '2025-02-01',
         endDate: '2025-12-31',
         status: 'draft',
@@ -146,11 +154,22 @@ describe('DrizzleEducationPersistence', () => {
       await expect(persistence.findPublished()).resolves.toEqual(
         publishedBeforeEdit,
       );
+      await expect(
+        persistence.updateLocation(id, { location: 'Example campus' }),
+      ).resolves.toMatchObject({
+        id,
+        location: 'Example campus',
+        institution: 'Edited Institute',
+        qualification: 'Edited Qualification',
+        summary: 'Edited fixture.',
+        displayOrder: 1,
+      });
       await expect(persistence.updateStatus(id, 'published')).resolves.toEqual({
         id,
         institution: 'Edited Institute',
         qualification: 'Edited Qualification',
         summary: 'Edited fixture.',
+        location: 'Example campus',
         startDate: '2025-02-01',
         endDate: '2025-12-31',
         status: 'published',
@@ -162,6 +181,7 @@ describe('DrizzleEducationPersistence', () => {
           institution: 'Edited Institute',
           qualification: 'Edited Qualification',
           summary: 'Edited fixture.',
+          location: 'Example campus',
           startDate: '2025-02-01',
           endDate: '2025-12-31',
         },
@@ -188,6 +208,7 @@ describe('DrizzleEducationPersistence', () => {
     } finally {
       if (original) {
         await persistence.updateContent(id, original);
+        await persistence.updateLocation(id, { location: original.location });
         await persistence.updateStatus(id, original.status);
       }
     }
@@ -218,6 +239,7 @@ describe('DrizzleEducationPersistence', () => {
         institution: 'Created Institute',
         qualification: 'Created Qualification',
         summary: 'Fictional creation fixture.',
+        location: null,
         startDate: '2026-01-01',
         endDate: null,
         status: 'draft',

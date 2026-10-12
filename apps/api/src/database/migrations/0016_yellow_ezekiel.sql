@@ -1,0 +1,1 @@
+ALTER TABLE "educations" ADD COLUMN "location" text;

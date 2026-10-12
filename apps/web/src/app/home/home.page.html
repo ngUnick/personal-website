@@ -95,6 +95,9 @@
       <article>
         <h3>{{ item.qualification }}</h3>
         <p>{{ item.institution }}</p>
+        @if (item.location) {
+          <p>{{ item.location }}</p>
+        }
         <p>{{ item.summary }}</p>
         <p>{{ item.startDate }} — {{ item.endDate ?? 'Present' }}</p>
       </article>

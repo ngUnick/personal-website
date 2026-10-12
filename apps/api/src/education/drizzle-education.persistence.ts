@@ -7,6 +7,7 @@ import {
   type EducationPersistence,
   type AdminPersistedEducation,
   type EducationContentUpdate,
+  type EducationLocationUpdate,
   type CreateEducationDraft,
   type EducationOrderDirection,
   type EducationPublicationStatus,
@@ -22,6 +23,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
         institution: educations.institution,
         qualification: educations.qualification,
         summary: educations.summary,
+        location: educations.location,
         startDate: educations.startDate,
         endDate: educations.endDate,
       })
@@ -32,16 +34,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
 
   async findForAdmin(): Promise<AdminPersistedEducation[]> {
     return this.database.db
-      .select({
-        id: educations.id,
-        institution: educations.institution,
-        qualification: educations.qualification,
-        summary: educations.summary,
-        startDate: educations.startDate,
-        endDate: educations.endDate,
-        status: educations.status,
-        displayOrder: educations.displayOrder,
-      })
+      .select(this.adminProjection)
       .from(educations)
       .orderBy(asc(educations.displayOrder));
   }
@@ -50,16 +43,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
     id: string,
   ): Promise<AdminPersistedEducation | undefined> {
     const [education] = await this.database.db
-      .select({
-        id: educations.id,
-        institution: educations.institution,
-        qualification: educations.qualification,
-        summary: educations.summary,
-        startDate: educations.startDate,
-        endDate: educations.endDate,
-        status: educations.status,
-        displayOrder: educations.displayOrder,
-      })
+      .select(this.adminProjection)
       .from(educations)
       .where(eq(educations.id, id))
       .limit(1);
@@ -74,16 +58,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
       .update(educations)
       .set({ ...content, updatedAt: new Date() })
       .where(eq(educations.id, id))
-      .returning({
-        id: educations.id,
-        institution: educations.institution,
-        qualification: educations.qualification,
-        summary: educations.summary,
-        startDate: educations.startDate,
-        endDate: educations.endDate,
-        status: educations.status,
-        displayOrder: educations.displayOrder,
-      });
+      .returning(this.adminProjection);
     return education;
   }
 
@@ -96,6 +71,18 @@ export class DrizzleEducationPersistence implements EducationPersistence {
       .set({ status, updatedAt: new Date() })
       .where(eq(educations.id, id));
     return this.findForAdminById(id);
+  }
+
+  async updateLocation(
+    id: string,
+    location: EducationLocationUpdate,
+  ): Promise<AdminPersistedEducation | undefined> {
+    const [education] = await this.database.db
+      .update(educations)
+      .set({ ...location, updatedAt: new Date() })
+      .where(eq(educations.id, id))
+      .returning(this.adminProjection);
+    return education;
   }
 
   async createDraft(
@@ -113,16 +100,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
           status: 'draft',
           displayOrder: order.value + 1,
         })
-        .returning({
-          id: educations.id,
-          institution: educations.institution,
-          qualification: educations.qualification,
-          summary: educations.summary,
-          startDate: educations.startDate,
-          endDate: educations.endDate,
-          status: educations.status,
-          displayOrder: educations.displayOrder,
-        });
+        .returning(this.adminProjection);
       return created;
     });
   }
@@ -163,6 +141,7 @@ export class DrizzleEducationPersistence implements EducationPersistence {
     institution: educations.institution,
     qualification: educations.qualification,
     summary: educations.summary,
+    location: educations.location,
     startDate: educations.startDate,
     endDate: educations.endDate,
     status: educations.status,

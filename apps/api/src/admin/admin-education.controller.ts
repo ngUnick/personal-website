@@ -26,6 +26,7 @@ import { TrustedOriginGuard } from './trusted-origin.guard.js';
 import { UpdateEducationContentDto } from './update-education-content.dto.js';
 import { UpdateEducationStatusDto } from './update-education-status.dto.js';
 import { UpdateEducationOrderDto } from './update-education-order.dto.js';
+import { UpdateEducationLocationDto } from './update-education-location.dto.js';
 import { CreateEducationDraftDto } from './create-education-draft.dto.js';
 
 function isCalendarDate(value: string): boolean {
@@ -102,6 +103,27 @@ export class AdminEducationController {
         'A valid education publication status is required.',
       );
     return this.education.updateStatus(id, status);
+  }
+
+  @Patch(':id/location')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateEducationLocationDto })
+  @ApiOkResponse({ type: AdminEducationDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  updateLocation(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() body: UpdateEducationLocationDto,
+  ) {
+    if (body?.location === null)
+      return this.education.updateLocation(id, { location: null });
+    const location = typeof body?.location === 'string' ? body.location.trim() : '';
+    if (!location)
+      throw new BadRequestException(
+        'A non-empty education location or null is required.',
+      );
+    return this.education.updateLocation(id, { location });
   }
 
   @Patch(':id/order')

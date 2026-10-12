@@ -115,6 +115,7 @@ try {
       qualification: 'Example Software Engineering Diploma',
       summary:
         'Fictional education fixture used to validate the public homepage path.',
+      location: null,
       startDate: '2020-01-01',
       endDate: '2023-01-01',
       status: 'published',
@@ -127,6 +128,7 @@ try {
         qualification: 'Example Software Engineering Diploma',
         summary:
           'Fictional education fixture used to validate the public homepage path.',
+        location: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
         status: 'published',
@@ -142,6 +144,7 @@ try {
       qualification: 'Example Draft Software Program',
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
+      location: null,
       startDate: '2024-01-01',
       endDate: null,
       status: 'draft',
@@ -154,6 +157,7 @@ try {
         qualification: 'Example Draft Software Program',
         summary:
           'Fictional draft education used only to validate private CMS authoring.',
+        location: null,
         startDate: '2024-01-01',
         endDate: null,
         status: 'draft',

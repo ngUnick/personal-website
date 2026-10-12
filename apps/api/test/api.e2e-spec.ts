@@ -59,6 +59,7 @@ describe('API (e2e)', () => {
           qualification: 'Example Software Engineering Diploma',
           summary:
             'Fictional education fixture used to validate the public homepage path.',
+          location: null,
           startDate: '2020-01-01',
           endDate: '2023-01-01',
         },
@@ -2778,6 +2779,7 @@ describe('API (e2e)', () => {
       qualification: 'Example Draft Software Program',
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
+      location: null,
       startDate: '2024-01-01',
       endDate: null,
     };
@@ -2787,6 +2789,7 @@ describe('API (e2e)', () => {
         qualification: 'Example Software Engineering Diploma',
         summary:
           'Fictional education fixture used to validate the public homepage path.',
+        location: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },
@@ -2828,6 +2831,7 @@ describe('API (e2e)', () => {
         institution: 'Edited Draft Institute',
         qualification: 'Edited Draft Program',
         summary: 'Edited fictional draft education.',
+        location: null,
         startDate: '2024-02-01',
         endDate: '2024-12-31',
       };
@@ -2858,6 +2862,7 @@ describe('API (e2e)', () => {
         qualification: 'Example Software Engineering Diploma',
         summary:
           'Fictional education fixture used to validate the public homepage path.',
+        location: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },
@@ -2867,6 +2872,7 @@ describe('API (e2e)', () => {
       qualification: 'Example Draft Software Program',
       summary:
         'Fictional draft education used only to validate private CMS authoring.',
+      location: null,
       startDate: '2024-01-01',
       endDate: null,
     };
@@ -2938,6 +2944,91 @@ describe('API (e2e)', () => {
     }
   });
 
+  it('updates Education location through an isolated protected mutation', async () => {
+    const id = '00000000-0000-4000-8000-000000000034';
+    const detail = {
+      id,
+      institution: 'Example Draft Institute',
+      qualification: 'Example Draft Software Program',
+      summary:
+        'Fictional draft education used only to validate private CMS authoring.',
+      startDate: '2024-01-01',
+      endDate: null,
+      status: 'draft',
+    };
+    const publicFixture = [
+      {
+        institution: 'Example Technical Institute',
+        qualification: 'Example Software Engineering Diploma',
+        summary:
+          'Fictional education fixture used to validate the public homepage path.',
+        location: null,
+        startDate: '2020-01-01',
+        endDate: '2023-01-01',
+      },
+    ];
+    await request(app.getHttpServer())
+      .patch(`/api/admin/education/${id}/location`)
+      .send({ location: 'Example campus' })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent
+      .patch(`/api/admin/education/${id}/location`)
+      .send({ location: 'Example campus' })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/education/${id}/location`)
+      .set('Origin', 'https://untrusted.example')
+      .send({ location: 'Example campus' })
+      .expect(403);
+    await agent
+      .patch('/api/admin/education/not-a-uuid/location')
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: 'Example campus' })
+      .expect(400);
+    await agent
+      .patch('/api/admin/education/00000000-0000-4000-8000-000000000099/location')
+      .set('Origin', 'http://localhost:4200')
+      .send({ location: 'Example campus' })
+      .expect(404);
+    for (const payload of [{}, { location: '' }, { location: '  ' }, { location: 1 }]) {
+      await agent
+        .patch(`/api/admin/education/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send(payload)
+        .expect(400);
+    }
+    try {
+      await agent
+        .patch(`/api/admin/education/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({
+          location: ' Example campus ',
+          institution: 'Ignored institution',
+          status: 'published',
+          displayOrder: 0,
+        })
+        .expect(200)
+        .expect({ ...detail, location: 'Example campus' });
+      await request(app.getHttpServer())
+        .get('/api/education')
+        .expect(200)
+        .expect(publicFixture);
+      await agent
+        .patch(`/api/admin/education/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: null })
+        .expect(200)
+        .expect({ ...detail, location: null });
+    } finally {
+      await agent
+        .patch(`/api/admin/education/${id}/location`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ location: null })
+        .expect(200);
+    }
+  });
+
   it('creates a server-owned Education Draft through the protected CMS boundary', async () => {
     const input = {
       institution: 'Temporary API Institute',
@@ -3004,6 +3095,7 @@ describe('API (e2e)', () => {
           expect(body).toEqual({
             id: expect.any(String),
             ...input,
+            location: null,
             status: 'draft',
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
@@ -3011,7 +3103,7 @@ describe('API (e2e)', () => {
       await agent
         .get(`/api/admin/education/${id}`)
         .expect(200)
-        .expect({ id, ...input, status: 'draft' });
+        .expect({ id, ...input, location: null, status: 'draft' });
       await agent
         .get('/api/admin/education')
         .expect(200)
@@ -3032,6 +3124,7 @@ describe('API (e2e)', () => {
             qualification: 'Example Software Engineering Diploma',
             summary:
               'Fictional education fixture used to validate the public homepage path.',
+          location: null,
             startDate: '2020-01-01',
             endDate: '2023-01-01',
           },
@@ -3053,6 +3146,7 @@ describe('API (e2e)', () => {
         qualification: 'Example Software Engineering Diploma',
         summary:
           'Fictional education fixture used to validate the public homepage path.',
+        location: null,
         startDate: '2020-01-01',
         endDate: '2023-01-01',
       },

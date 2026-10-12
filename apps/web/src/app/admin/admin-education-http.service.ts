@@ -41,6 +41,13 @@ export class AdminEducationHttpService extends AdminEducationDataAccess {
       { withCredentials: true },
     );
   }
+  updateLocation(id: string, location: string | null): Observable<AdminEducationDetail> {
+    return this.http.patch<AdminEducationDetail>(
+      `${this.apiBaseUrl}/admin/education/${id}/location`,
+      { location },
+      { withCredentials: true },
+    );
+  }
   createDraft(input: CreateEducationDraft): Observable<AdminEducationDetail> {
     return this.http.post<AdminEducationDetail>(`${this.apiBaseUrl}/admin/education`, input, {
       withCredentials: true,

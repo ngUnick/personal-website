@@ -10,6 +10,9 @@ export class EducationResponseDto {
   @ApiProperty()
   summary!: string;
 
+  @ApiProperty({ nullable: true })
+  location!: string | null;
+
   @ApiProperty()
   startDate!: string;
 

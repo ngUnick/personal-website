@@ -99,6 +99,7 @@ export const educations = pgTable(
     institution: text('institution').notNull(),
     qualification: text('qualification').notNull(),
     summary: text('summary').notNull(),
+    location: text('location'),
     startDate: date('start_date').notNull(),
     endDate: date('end_date'),
     status: educationPublicationStatus('status').notNull().default('draft'),

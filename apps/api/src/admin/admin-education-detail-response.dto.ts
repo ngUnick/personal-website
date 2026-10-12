@@ -5,6 +5,9 @@ export class AdminEducationDetailResponseDto extends AdminEducationResponseDto {
   @ApiProperty()
   summary!: string;
 
+  @ApiProperty({ nullable: true })
+  location!: string | null;
+
   @ApiProperty()
   startDate!: string;
 

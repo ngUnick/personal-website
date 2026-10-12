@@ -43,6 +43,7 @@ describe('HomePage', () => {
                   institution: 'Example Technical Institute',
                   qualification: 'Example Software Engineering Diploma',
                   summary: 'Fictional education fixture used to validate the public homepage path.',
+                  location: 'Example campus',
                   startDate: '2020-01-01',
                   endDate: '2023-01-01',
                 },
@@ -99,6 +100,7 @@ describe('HomePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Education');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
     expect(fixture.nativeElement.textContent).toContain('Example Technical Institute');
+    expect(fixture.nativeElement.textContent).toContain('Example campus');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineer');
     expect(fixture.nativeElement.textContent).toContain(
       'Fictional profile about text used to validate the public about path.',
