@@ -24,6 +24,7 @@ describe('HomePage', () => {
                   slug: 'placeholder-project',
                   title: 'Placeholder Project',
                   summary: 'Temporary sample content used to validate the application path.',
+                  completedOn: '2025-01-01',
                 },
               ]),
             getProject: () =>
@@ -31,6 +32,7 @@ describe('HomePage', () => {
                 slug: 'placeholder-project',
                 title: 'Placeholder Project',
                 summary: 'Temporary sample content used to validate the application path.',
+                completedOn: '2025-01-01',
               }),
           },
         },
@@ -99,6 +101,7 @@ describe('HomePage', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Featured projects');
+    expect(fixture.nativeElement.textContent).toContain('Completed 2025-01-01');
     expect(fixture.nativeElement.textContent).toContain('Education');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
     expect(fixture.nativeElement.textContent).toContain('Example Technical Institute');
@@ -184,6 +187,13 @@ describe('HomePage', () => {
     ).find((section) => section.querySelector('#experience-heading') !== null);
     expect(experienceSection).toBeDefined();
     expect(experienceSection?.querySelectorAll('article')).toHaveLength(0);
+  });
+
+  it('omits a featured project completion date when it is absent', async () => {
+    await TestBed.configureTestingModule({ imports: [HomePage], providers: [provideRouter([]), { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([{ slug: 'placeholder-project', title: 'Placeholder Project', summary: 'Summary', completedOn: null }]) } }, { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } }, { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } }, { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } }, { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example', summary: 'Summary', about: 'About', location: null, contactEmail: null, githubUrl: null, linkedinUrl: null }) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(HomePage); fixture.detectChanges(); await fixture.whenStable();
+    const project = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('article') as ArrayLike<HTMLElement>).find((article) => article.textContent?.includes('Placeholder Project'));
+    expect(project?.querySelector('time')).toBeNull();
   });
 
   it('keeps an institution as plain text when its URL is absent', async () => {

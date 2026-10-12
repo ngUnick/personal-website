@@ -12,6 +12,14 @@ import { CreateProjectDraftDto } from './create-project-draft.dto.js';
 import { UpdateProjectOrderDto } from './update-project-order.dto.js';
 import { UpdateProjectLinksDto } from './update-project-links.dto.js';
 import { UpdateProjectTechnologiesDto } from './update-project-technologies.dto.js';
+import { UpdateProjectCompletionDateDto } from './update-project-completion-date.dto.js';
+
+const calendarDate = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
 
 @ApiTags('admin')
 @Controller('admin/projects')
@@ -77,6 +85,20 @@ export class AdminProjectsController {
       this.validUrl(body?.repositoryUrl),
       this.validUrl(body?.liveUrl),
     );
+  }
+
+  @Patch(':slug/completion-date')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectCompletionDateDto })
+  @ApiOkResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  updateCompletionDate(@Param('slug') slug: string, @Body() body: UpdateProjectCompletionDateDto) {
+    const completedOn = body?.completedOn;
+    if (completedOn === null) return this.projects.updateCompletionDate(slug, null);
+    if (typeof completedOn !== 'string' || !calendarDate(completedOn)) throw new BadRequestException('A valid completion date or null is required.');
+    return this.projects.updateCompletionDate(slug, completedOn);
   }
 
   @Patch(':slug/technologies')

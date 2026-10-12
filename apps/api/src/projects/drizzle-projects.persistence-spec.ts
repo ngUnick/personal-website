@@ -25,6 +25,7 @@ describe('DrizzleProjectsPersistence', () => {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        completedOn: null,
       },
     ]);
   });
@@ -44,6 +45,7 @@ describe('DrizzleProjectsPersistence', () => {
       title: 'Placeholder Project',
       summary:
         'Temporary sample content used to validate the application path.',
+      completedOn: null,
       caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       repositoryUrl: null,
       liveUrl: null,
@@ -86,6 +88,7 @@ describe('DrizzleProjectsPersistence', () => {
           title: 'Placeholder Project',
           summary:
             'Temporary sample content used to validate the application path.',
+          completedOn: null,
         },
       ]);
     } finally {
@@ -144,11 +147,37 @@ describe('DrizzleProjectsPersistence', () => {
       slug: 'placeholder-project',
       title: 'Placeholder Project',
       summary: 'Temporary sample content used to validate the application path.',
+      completedOn: null,
     }]);
     await expect(persistence.updateLinks('placeholder-project', {
       repositoryUrl: null,
       liveUrl: null,
     })).resolves.toMatchObject({ repositoryUrl: null, liveUrl: null });
+  });
+
+  it('updates only a project completion date', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+
+    try {
+      await expect(persistence.updateCompletionDate('placeholder-project', '2025-01-01')).resolves.toMatchObject({
+        slug: 'placeholder-project',
+        completedOn: '2025-01-01',
+        title: 'Placeholder Project',
+        status: 'published',
+        featured: true,
+        displayOrder: 0,
+      });
+      await expect(persistence.findPublished()).resolves.toEqual([{
+        slug: 'placeholder-project',
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        completedOn: '2025-01-01',
+      }]);
+      await expect(persistence.updateCompletionDate('missing-project', null)).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateCompletionDate('placeholder-project', null);
+    }
   });
 
   it('replaces private technology associations while public detail filters drafts in global order', async () => {

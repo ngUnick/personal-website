@@ -22,6 +22,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         slug: projects.slug,
         title: projects.title,
         summary: projects.summary,
+        completedOn: projects.completedOn,
       })
       .from(projects)
       .where(eq(projects.status, 'published'))
@@ -34,6 +35,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         slug: projects.slug,
         title: projects.title,
         summary: projects.summary,
+        completedOn: projects.completedOn,
       })
       .from(projects)
       .where(and(eq(projects.status, 'published'), eq(projects.featured, true)))
@@ -48,6 +50,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         slug: projects.slug,
         title: projects.title,
         summary: projects.summary,
+        completedOn: projects.completedOn,
         caseStudy: projects.caseStudy,
         repositoryUrl: projects.repositoryUrl,
         liveUrl: projects.liveUrl,
@@ -62,14 +65,14 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
 
   async findForAdmin() {
     return this.database.db
-      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
       .from(projects)
       .orderBy(asc(projects.displayOrder));
   }
 
   async findForAdminBySlug(slug: string) {
     const [project] = await this.database.db
-      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
       .from(projects)
       .where(eq(projects.slug, slug))
       .limit(1);
@@ -82,7 +85,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ featured, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
   }
 
@@ -91,7 +94,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ ...content, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -101,7 +104,17 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ ...links, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+    if (!project) return undefined;
+    return { ...project, technologyIds: await this.findTechnologyIds(slug) };
+  }
+
+  async updateCompletionDate(slug: string, completedOn: string | null) {
+    const [project] = await this.database.db
+      .update(projects)
+      .set({ completedOn, updatedAt: new Date() })
+      .where(eq(projects.slug, slug))
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -116,7 +129,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       }
       await transaction.delete(projectTechnologies).where(eq(projectTechnologies.projectId, project.id));
       if (technologyIds.length) await transaction.insert(projectTechnologies).values(technologyIds.map(technologyId => ({ projectId: project.id, technologyId })));
-      const [updated] = await transaction.select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder }).from(projects).where(eq(projects.id, project.id));
+      const [updated] = await transaction.select({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder }).from(projects).where(eq(projects.id, project.id));
       return { ...updated!, technologyIds };
     });
   }
@@ -126,7 +139,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ status, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -134,7 +147,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
   async moveProject(slug: string, direction: ProjectOrderDirection) {
     return this.database.db.transaction(async (transaction) => {
       const ordered = await transaction
-        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
         .from(projects)
         .orderBy(asc(projects.displayOrder));
       const index = ordered.findIndex((project) => project.slug === slug);
@@ -147,7 +160,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       await transaction.update(projects).set({ displayOrder: neighbor.displayOrder, updatedAt: now }).where(eq(projects.slug, project.slug));
       await transaction.update(projects).set({ displayOrder: project.displayOrder, updatedAt: now }).where(eq(projects.slug, neighbor.slug));
       return transaction
-        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+        .select({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
         .from(projects)
         .orderBy(asc(projects.displayOrder));
     });
@@ -162,7 +175,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         .insert(projects)
         .values({ id: randomUUID(), ...input, status: 'draft', featured: false, displayOrder: order.value + 1 })
         .onConflictDoNothing({ target: projects.slug })
-        .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+        .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
       return project;
     });
   }

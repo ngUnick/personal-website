@@ -112,4 +112,23 @@ describe('AdminProjectEditorPage', () => {
     const alerts = [...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent);
     expect(alerts).toContain('Unable to update publication status. Please try again.');
   });
+
+  it('saves and clears completion dates separately from project content', async () => {
+    const requests: (string | null)[] = [];
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', completedOn: null, status: 'draft', featured: false }), updateCompletionDate: (_slug: string, completedOn: string | null) => { requests.push(completedOn); return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', completedOn, status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.completionDateForm.setValue({ completedOn: '2025-01-01' }); component.saveCompletionDate();
+    component.completionDateForm.setValue({ completedOn: '' }); component.saveCompletionDate();
+    expect(requests).toEqual(['2025-01-01', null]);
+    expect(component.project.completedOn).toBeNull();
+  });
+
+  it('shows an accessible alert when saving a completion date fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', completedOn: null, status: 'draft', featured: false }), updateCompletionDate: () => throwError(() => new Error('completion date failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.completionDateForm.setValue({ completedOn: '2025-01-01' }); component.saveCompletionDate(); await fixture.whenStable(); fixture.detectChanges();
+    expect(component.completionDateError()).toBe(true);
+    expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to save project completion date. Please try again.');
+  });
 });

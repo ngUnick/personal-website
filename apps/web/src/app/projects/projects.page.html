@@ -12,6 +12,7 @@
         <article class="project-card">
           <h3>{{ project.title }}</h3>
           <p>{{ project.summary }}</p>
+          @if (project.completedOn) { <p><time [attr.datetime]="project.completedOn">Completed {{ project.completedOn }}</time></p> }
           <a [routerLink]="['/projects', project.slug]" [attr.aria-label]="'View ' + project.title"
             >View project</a
           >

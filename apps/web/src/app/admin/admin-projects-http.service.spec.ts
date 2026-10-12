@@ -68,4 +68,13 @@ describe('AdminProjectsHttpService', () => {
     expect(request.request.method).toBe('PATCH'); expect(request.request.withCredentials).toBe(true); expect(request.request.body).toEqual({ direction: 'up' });
     request.flush([]); http.verify();
   });
+
+  it('uses the credentialed completion-date endpoint', () => {
+    TestBed.configureTestingModule({ providers: [AdminProjectsHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
+    const service = TestBed.inject(AdminProjectsHttpService); const http = TestBed.inject(HttpTestingController);
+    service.updateCompletionDate('placeholder-project', '2025-01-01').subscribe();
+    const request = http.expectOne('/api/admin/projects/placeholder-project/completion-date');
+    expect(request.request.method).toBe('PATCH'); expect(request.request.withCredentials).toBe(true); expect(request.request.body).toEqual({ completedOn: '2025-01-01' });
+    request.flush({ slug: 'placeholder-project', title: 'Placeholder Project', summary: 'Summary', completedOn: '2025-01-01', status: 'published', featured: true }); http.verify();
+  });
 });

@@ -43,6 +43,7 @@ export const projects = pgTable(
     title: text('title').notNull(),
     summary: text('summary').notNull(),
     caseStudy: text('case_study').notNull().default(''),
+    completedOn: date('completed_on'),
     repositoryUrl: text('repository_url'),
     liveUrl: text('live_url'),
     status: projectPublicationStatus('status').notNull().default('draft'),

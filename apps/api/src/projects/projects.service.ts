@@ -11,7 +11,7 @@ export type AdminProject = Pick<
 >;
 export type AdminProjectDetail = Pick<
   AdminPersistedProject,
-  'slug' | 'title' | 'summary' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
+  'slug' | 'title' | 'summary' | 'completedOn' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
 >;
 
 @Injectable()
@@ -68,6 +68,12 @@ export class ProjectsService {
     return this.toAdminProjectDetail(project);
   }
 
+  async updateCompletionDate(slug: string, completedOn: string | null): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateCompletionDate(slug, completedOn);
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
   async updateTechnologies(slug: string, technologyIds: string[]): Promise<AdminProjectDetail> {
     const project = await this.projectsPersistence.updateTechnologies(slug, { technologyIds });
     if (!project) throw new NotFoundException('Project or technology not found.');
@@ -98,7 +104,7 @@ export class ProjectsService {
   }
 
   private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
-    const { slug, title, summary, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
-    return { slug, title, summary, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
+    const { slug, title, summary, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
+    return { slug, title, summary, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
   }
 }
