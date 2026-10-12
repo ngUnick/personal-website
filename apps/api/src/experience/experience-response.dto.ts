@@ -21,4 +21,6 @@ export class ExperienceResponseDto {
 
   @ApiProperty({ nullable: true })
   endDate!: string | null;
+
+  @ApiProperty({ type: [Object] }) technologies!: { name: string; category: string }[];
 }

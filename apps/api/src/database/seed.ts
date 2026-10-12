@@ -1,3 +1,4 @@
+import { inArray } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from './database-url.js';
@@ -6,6 +7,7 @@ import {
   credentials,
   educations,
   experiences,
+  experienceTechnologies,
   profiles,
   projects,
   technologies,
@@ -20,6 +22,10 @@ const pool = new Pool({ connectionString: getDatabaseUrl() });
 const db = drizzle({ client: pool });
 
 try {
+  await db.delete(experienceTechnologies).where(inArray(experienceTechnologies.experienceId, [
+    '00000000-0000-4000-8000-000000000010',
+    '00000000-0000-4000-8000-000000000014',
+  ]));
   await db
     .insert(credentials)
     .values({

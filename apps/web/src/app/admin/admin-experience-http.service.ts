@@ -14,6 +14,7 @@ export class AdminExperienceHttpService extends AdminExperienceDataAccess {
   updateFeatured(id: string, featured: boolean): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/featured`, { featured }, { withCredentials: true }); }
   updateLocation(id: string, location: string | null): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/location`, { location }, { withCredentials: true }); }
   updateOrganizationUrl(id: string, organizationUrl: string | null): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/organization-url`, { organizationUrl }, { withCredentials: true }); }
+  updateTechnologies(id: string, technologyIds: string[]): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/technologies`, { technologyIds }, { withCredentials: true }); }
   createDraft(input: CreateExperienceDraft): Observable<AdminExperienceDetail> { return this.http.post<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience`, input, { withCredentials: true }); }
   moveExperience(id: string, direction: ExperienceOrderDirection): Observable<AdminExperience[]> { return this.http.patch<AdminExperience[]>(`${this.apiBaseUrl}/admin/experience/${id}/order`, { direction }, { withCredentials: true }); }
 }

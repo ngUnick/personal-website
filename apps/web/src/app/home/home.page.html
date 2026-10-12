@@ -82,6 +82,7 @@
           <p>{{ item.location }}</p>
         }
         <p>{{ item.summary }}</p>
+        @if (item.technologies.length) { <p>@for (technology of item.technologies; track technology.name) { <span>{{ technology.name }} — {{ technology.category }}</span> }</p> }
         <p>
           <time [attr.datetime]="item.startDate">{{ item.startDate }}</time> —
           @if (item.endDate) {

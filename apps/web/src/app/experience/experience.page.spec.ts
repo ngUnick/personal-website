@@ -22,6 +22,7 @@ describe('ExperiencePage', () => {
                   organizationUrl: 'https://example.invalid',
                   startDate: '2024-01-01',
                   endDate: null,
+                  technologies: [{ name: 'TypeScript', category: 'Languages' }],
                 },
               ]),
           },
@@ -35,5 +36,6 @@ describe('ExperiencePage', () => {
     expect(fixture.nativeElement.textContent).toContain('Example Software Studio');
     expect(fixture.nativeElement.textContent).toContain('Remote');
     expect(fixture.nativeElement.querySelector('a[href="https://example.invalid"]')?.textContent).toContain('Example Software Studio');
+    expect(fixture.nativeElement.textContent).toContain('TypeScript — Languages');
   });
 });

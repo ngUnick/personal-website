@@ -12,6 +12,7 @@ import { UpdateExperienceOrderDto } from './update-experience-order.dto.js';
 import { UpdateExperienceFeaturedDto } from './update-experience-featured.dto.js';
 import { UpdateExperienceLocationDto } from './update-experience-location.dto.js';
 import { UpdateExperienceOrganizationUrlDto } from './update-experience-organization-url.dto.js';
+import { UpdateExperienceTechnologiesDto } from './update-experience-technologies.dto.js';
 
 function isCalendarDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -115,6 +116,19 @@ export class AdminExperienceController {
     const organizationUrl = body?.organizationUrl === null ? null : typeof body?.organizationUrl === 'string' ? body.organizationUrl.trim() : undefined;
     if (organizationUrl === undefined || organizationUrl === '' || (organizationUrl !== null && !this.isHttpsUrl(organizationUrl))) throw new BadRequestException('An absolute HTTPS organization URL or null is required.');
     return this.experience.updateOrganizationUrl(id, organizationUrl);
+  }
+
+  @Patch(':id/technologies')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateExperienceTechnologiesDto })
+  @ApiOkResponse({ type: AdminExperienceDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse()
+  async updateTechnologies(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() body: UpdateExperienceTechnologiesDto) {
+    const technologyIds = body?.technologyIds;
+    if (!Array.isArray(technologyIds) || technologyIds.some((technologyId) => typeof technologyId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(technologyId)) || new Set(technologyIds).size !== technologyIds.length) throw new BadRequestException('Technology IDs must be unique UUIDs.');
+    return this.experience.updateTechnologies(id, technologyIds);
   }
 
   @Patch(':id/order')

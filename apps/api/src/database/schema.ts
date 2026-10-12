@@ -175,6 +175,15 @@ export const projectTechnologies = pgTable(
   (table) => [primaryKey({ columns: [table.projectId, table.technologyId] })],
 );
 
+export const experienceTechnologies = pgTable(
+  'experience_technologies',
+  {
+    experienceId: uuid('experience_id').notNull().references(() => experiences.id, { onDelete: 'cascade' }),
+    technologyId: uuid('technology_id').notNull().references(() => technologies.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.experienceId, table.technologyId] })],
+);
+
 export const credentials = pgTable(
   'credentials',
   {

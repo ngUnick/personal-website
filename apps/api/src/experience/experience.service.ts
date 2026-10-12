@@ -54,6 +54,12 @@ export class ExperienceService {
     return this.toAdminDetail(experience);
   }
 
+  async updateTechnologies(id: string, technologyIds: string[]): Promise<AdminExperienceDetail> {
+    const experience = await this.experiencePersistence.updateTechnologies(id, { technologyIds });
+    if (!experience) throw new NotFoundException('Experience not found.');
+    return this.toAdminDetail(experience);
+  }
+
   async createDraft(input: CreateExperienceDraft): Promise<AdminExperienceDetail> {
     return this.toAdminDetail(await this.experiencePersistence.createDraft(input));
   }
@@ -65,7 +71,7 @@ export class ExperienceService {
   }
 
   private toAdminDetail(experience: AdminPersistedExperience): AdminExperienceDetail {
-    const { id, organization, role, summary, location, organizationUrl, startDate, endDate, status, featured } = experience;
-    return { id, organization, role, summary, location, organizationUrl, startDate, endDate, status, featured };
+    const { id, organization, role, summary, location, organizationUrl, startDate, endDate, status, featured, technologyIds } = experience;
+    return { id, organization, role, summary, location, organizationUrl, startDate, endDate, status, featured, technologyIds: technologyIds ?? [] };
   }
 }

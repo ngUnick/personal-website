@@ -20,6 +20,7 @@
             }
             @if (experience.location) { <p>{{ experience.location }}</p> }
             <p>{{ experience.summary }}</p>
+            @if (experience.technologies.length) { <p>@for (technology of experience.technologies; track technology.name) { <span>{{ technology.name }} — {{ technology.category }}</span> }</p> }
             <p class="dates">
               <time [attr.datetime]="experience.startDate">{{ experience.startDate }}</time> –
               @if (experience.endDate) {

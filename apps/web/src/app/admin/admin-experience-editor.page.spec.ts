@@ -4,15 +4,30 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminAuthDataAccess } from '../admin-auth/admin-auth.data-access';
 import { AdminExperienceDataAccess } from './admin-experience.data-access';
+import { AdminTechnologiesDataAccess } from './admin-technologies.data-access';
 import { AdminExperienceEditorPage } from './admin-experience-editor.page';
 
 describe('AdminExperienceEditorPage', () => {
-  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', location: null, organizationUrl: null, startDate: '2025-01-01', endDate: null, status: 'draft' as const };
+  const experience = { id: 'id', organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', location: null, organizationUrl: null, startDate: '2025-01-01', endDate: null, technologyIds: [], status: 'draft' as const };
+  const technologies = { getTechnologies: () => of([]) };
   it('maps blank end dates to null and updates the private preview', async () => {
     let saved: unknown;
-    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: (_id: string, value: unknown) => { saved = value; return of({ ...experience, organization: 'Edited Studio' }); } } }] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: technologies }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: (_id: string, value: unknown) => { saved = value; return of({ ...experience, organization: 'Edited Studio' }); } } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
     expect(component.form.getRawValue().endDate).toBe(''); component.save(); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); expect(saved).toEqual({ organization: 'Draft Studio', role: 'Engineer', summary: 'Fake', startDate: '2025-01-01', endDate: null }); expect(component.experience.organization).toBe('Edited Studio');
+  });
+
+  it('loads and saves selected technologies separately from Experience content', async () => {
+    let saved: string[] | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => of([{ id: 'technology-id', name: 'TypeScript', category: 'Language', status: 'published' as const }]) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateTechnologies: (_id: string, ids: string[]) => { saved = ids; return of({ ...experience, technologyIds: ids }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    expect(fixture.nativeElement.textContent).toContain('TypeScript'); component.toggleTechnology('technology-id', true); component.saveTechnologies(); expect(saved).toEqual(['technology-id']);
+  });
+
+  it('renders an accessible technologies failure and can clear the selection', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminTechnologiesDataAccess, useValue: technologies }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of({ ...experience, technologyIds: ['technology-id'] }), updateTechnologies: () => throwError(() => new Error('failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); const component = fixture.componentInstance as any;
+    component.toggleTechnology('technology-id', false); expect(component.technologyIds.value).toEqual([]); component.saveTechnologies(); fixture.detectChanges(); expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to save experience technologies');
   });
 
   it('saves and clears location separately from content', async () => {
@@ -43,9 +58,9 @@ describe('AdminExperienceEditorPage', () => {
   });
 
   it('makes no session or private data requests during SSR', async () => {
-    let sessions = 0; let dataCalls = 0; let organizationUrlUpdates = 0;
-    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: true }); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => { dataCalls += 1; return of(experience); }, updateContent: () => of(experience), updateOrganizationUrl: () => { organizationUrlUpdates += 1; return of(experience); } } }] }).compileComponents();
-    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0); expect(organizationUrlUpdates).toBe(0);
+    let sessions = 0; let dataCalls = 0; let technologyCalls = 0; let organizationUrlUpdates = 0;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { sessions += 1; return of({ authenticated: true }); } } }, { provide: AdminTechnologiesDataAccess, useValue: { getTechnologies: () => { technologyCalls += 1; return of([]); } } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => { dataCalls += 1; return of(experience); }, updateContent: () => of(experience), updateOrganizationUrl: () => { organizationUrlUpdates += 1; return of(experience); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); expect(sessions).toBe(0); expect(dataCalls).toBe(0); expect(technologyCalls).toBe(0); expect(organizationUrlUpdates).toBe(0);
   });
 
   it('updates publication separately and renders a status failure accessibly', async () => {

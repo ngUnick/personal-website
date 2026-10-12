@@ -6,6 +6,11 @@ export type PersistedExperience = {
   organizationUrl: string | null;
   startDate: string;
   endDate: string | null;
+  technologies?: { name: string; category: string }[];
+};
+
+export type PublicPersistedExperience = Omit<PersistedExperience, 'technologies'> & {
+  technologies: { name: string; category: string }[];
 };
 
 export type ExperiencePublicationStatus = 'draft' | 'published' | 'archived';
@@ -15,6 +20,7 @@ export type AdminPersistedExperience = PersistedExperience & {
   status: ExperiencePublicationStatus;
   featured: boolean;
   displayOrder: number;
+  technologyIds?: string[];
 };
 
 export type ExperienceContentUpdate = Pick<
@@ -23,10 +29,11 @@ export type ExperienceContentUpdate = Pick<
 >;
 export type CreateExperienceDraft = ExperienceContentUpdate;
 export type ExperienceOrderDirection = 'up' | 'down';
+export type ExperienceTechnologyUpdate = { technologyIds: string[] };
 
 export interface ExperiencePersistence {
-  findPublished(): Promise<PersistedExperience[]>;
-  findFeaturedPublished(): Promise<PersistedExperience[]>;
+  findPublished(): Promise<PublicPersistedExperience[]>;
+  findFeaturedPublished(): Promise<PublicPersistedExperience[]>;
   findForAdmin(): Promise<AdminPersistedExperience[]>;
   findForAdminById(id: string): Promise<AdminPersistedExperience | undefined>;
   updateContent(id: string, content: ExperienceContentUpdate): Promise<AdminPersistedExperience | undefined>;
@@ -34,6 +41,7 @@ export interface ExperiencePersistence {
   updateFeatured(id: string, featured: boolean): Promise<AdminPersistedExperience | undefined>;
   updateLocation(id: string, location: string | null): Promise<AdminPersistedExperience | undefined>;
   updateOrganizationUrl(id: string, organizationUrl: string | null): Promise<AdminPersistedExperience | undefined>;
+  updateTechnologies(id: string, input: ExperienceTechnologyUpdate): Promise<AdminPersistedExperience | undefined>;
   createDraft(input: CreateExperienceDraft): Promise<AdminPersistedExperience>;
   moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined>;
 }

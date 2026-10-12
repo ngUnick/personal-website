@@ -1359,6 +1359,7 @@ describe('API (e2e)', () => {
           organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
+          technologies: [],
         },
       ]));
 
@@ -2222,6 +2223,7 @@ describe('API (e2e)', () => {
           organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
+          technologies: [],
         },
       ]);
     await request(app.getHttpServer()).get('/api/admin/experience').expect(401);
@@ -2333,6 +2335,7 @@ describe('API (e2e)', () => {
             ...original,
             status: 'draft',
             featured: false,
+            technologyIds: [],
           });
           expect(body).not.toHaveProperty('displayOrder');
           expect(body).not.toHaveProperty('createdAt');
@@ -2390,6 +2393,7 @@ describe('API (e2e)', () => {
         organizationUrl: null,
         startDate: '2024-01-01',
         endDate: null,
+        technologies: [],
       },
     ];
     await request(app.getHttpServer())
@@ -2450,6 +2454,7 @@ describe('API (e2e)', () => {
             organizationUrl: null,
             startDate: '2025-01-01',
             endDate: null,
+            technologyIds: [],
             status: 'published',
             featured: false,
           }),
@@ -2469,6 +2474,7 @@ describe('API (e2e)', () => {
               organizationUrl: null,
               startDate: '2025-01-01',
               endDate: null,
+              technologies: [],
             },
           ]),
         );
@@ -2503,6 +2509,7 @@ describe('API (e2e)', () => {
           organizationUrl: null,
         startDate: '2024-01-01',
         endDate: null,
+        technologies: [],
       },
     ];
 
@@ -2676,6 +2683,25 @@ describe('API (e2e)', () => {
       await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: 'Example Draft Studio' })));
       await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(200).expect(({ body }) => expect(body).toMatchObject({ id, organizationUrl: null }));
     } finally { await agent.patch(`/api/admin/experience/${id}/organization-url`).set('Origin', 'http://localhost:4200').send({ organizationUrl: null }).expect(200); }
+  });
+
+  it('replaces Experience technologies through its protected boundary without leaking draft technologies publicly', async () => {
+    const id = '00000000-0000-4000-8000-000000000010';
+    const ids = ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041', '00000000-0000-4000-8000-000000000042'];
+    await request(app.getHttpServer()).patch(`/api/admin/experience/${id}/technologies`).send({ technologyIds: ids }).expect(401);
+    const agent = await authenticatedAgent();
+    await agent.patch(`/api/admin/experience/${id}/technologies`).send({ technologyIds: ids }).expect(403);
+    await agent.patch(`/api/admin/experience/${id}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0], ids[0]] }).expect(400);
+    await agent.patch(`/api/admin/experience/${id}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ['00000000-0000-4000-8000-000000000099'] }).expect(404);
+    try {
+      await agent.patch(`/api/admin/experience/${id}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: ids }).expect(200).expect(({ body }) => expect(body.technologyIds).toEqual(ids));
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body[0].technologies).toEqual([{ name: 'Example TypeScript', category: 'Languages' }, { name: 'Example PostgreSQL', category: 'Data' }]));
+      await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000014/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [ids[0]] }).expect(200);
+      await request(app.getHttpServer()).get('/api/experience').expect(200).expect(({ body }) => expect(body).not.toContainEqual(expect.objectContaining({ organization: 'Example Draft Studio' })));
+    } finally {
+      await agent.patch(`/api/admin/experience/${id}/technologies`).set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
+      await agent.patch('/api/admin/experience/00000000-0000-4000-8000-000000000014/technologies').set('Origin', 'http://localhost:4200').send({ technologyIds: [] }).expect(200);
+    }
   });
 
   it('moves Experience through the protected adjacent ordering boundary', async () => {
@@ -2880,6 +2906,7 @@ describe('API (e2e)', () => {
             featured: false,
             location: null,
             organizationUrl: null,
+            technologyIds: [],
           });
           expect(id).not.toBe('00000000-0000-4000-8000-000000000099');
         });
@@ -2891,6 +2918,7 @@ describe('API (e2e)', () => {
           ...input,
           location: null,
           organizationUrl: null,
+          technologyIds: [],
           status: 'draft',
           featured: false,
         });

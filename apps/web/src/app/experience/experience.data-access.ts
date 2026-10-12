@@ -8,6 +8,7 @@ export interface Experience {
   organizationUrl: string | null;
   startDate: string;
   endDate: string | null;
+  technologies: { name: string; category: string }[];
 }
 
 export abstract class ExperienceDataAccess {

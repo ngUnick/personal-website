@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseModule } from '../database/database.module.js';
 import { DatabaseService } from '../database/database.service.js';
-import { experiences } from '../database/schema.js';
+import { experienceTechnologies, experiences } from '../database/schema.js';
 import { DrizzleExperiencePersistence } from './drizzle-experience.persistence.js';
 
 describe('DrizzleExperiencePersistence', () => {
@@ -69,6 +69,7 @@ describe('DrizzleExperiencePersistence', () => {
           organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
+          technologies: [],
         },
         {
           organization: 'Second Example Studio',
@@ -78,6 +79,7 @@ describe('DrizzleExperiencePersistence', () => {
           organizationUrl: null,
           startDate: '2025-01-01',
           endDate: null,
+          technologies: [],
         },
       ]);
     } finally {
@@ -115,6 +117,7 @@ describe('DrizzleExperiencePersistence', () => {
           organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
+          technologies: [],
         },
       ]);
       await expect(persistence.updateFeatured(draftId, true)).resolves.toEqual({
@@ -131,6 +134,7 @@ describe('DrizzleExperiencePersistence', () => {
           organizationUrl: null,
           startDate: '2024-01-01',
           endDate: null,
+          technologies: [],
         },
       ]);
       await expect(persistence.updateFeatured(publishedId, false)).resolves.toEqual({
@@ -161,11 +165,12 @@ describe('DrizzleExperiencePersistence', () => {
         featured: false,
       status: 'draft',
       displayOrder: 1,
+      technologyIds: [],
     });
     await expect(persistence.findForAdminById('00000000-0000-4000-8000-000000000099')).resolves.toBeUndefined();
     try {
       const updated = await persistence.updateContent(draftId, { organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', startDate: '2025-02-01', endDate: '2025-12-31' });
-      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', location: null, organizationUrl: null, startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', featured: false, displayOrder: 1 });
+      expect(updated).toEqual({ id: draftId, organization: 'Edited Draft Studio', role: 'Edited Draft Engineer', summary: 'Edited fictional draft content.', location: null, organizationUrl: null, startDate: '2025-02-01', endDate: '2025-12-31', status: 'draft', featured: false, displayOrder: 1, technologyIds: [] });
       await expect(persistence.findPublished()).resolves.not.toContainEqual(expect.objectContaining({ organization: 'Edited Draft Studio' }));
     } finally {
       await persistence.updateContent(draftId, original);
@@ -195,6 +200,25 @@ describe('DrizzleExperiencePersistence', () => {
       await expect(persistence.updateOrganizationUrl('00000000-0000-4000-8000-000000000099', null)).resolves.toBeUndefined();
     } finally {
       await persistence.updateOrganizationUrl(id, original!.organizationUrl);
+    }
+  });
+
+  it('replaces Experience technologies atomically and preserves them across unrelated mutations', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence);
+    const database = moduleFixture.get(DatabaseService);
+    const id = '00000000-0000-4000-8000-000000000010';
+    const ids = ['00000000-0000-4000-8000-000000000040', '00000000-0000-4000-8000-000000000041'];
+    const original = await persistence.findForAdminById(id);
+    try {
+      await expect(persistence.updateTechnologies(id, { technologyIds: ids })).resolves.toMatchObject({ ...original, technologyIds: ids });
+      await expect(persistence.updateContent(id, { organization: original!.organization, role: original!.role, summary: original!.summary, startDate: original!.startDate, endDate: original!.endDate })).resolves.toMatchObject({ technologyIds: ids });
+      await expect(persistence.updateTechnologies(id, { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
+      await expect(persistence.findForAdminById(id)).resolves.toMatchObject({ technologyIds: ids });
+      await expect(persistence.updateTechnologies(id, { technologyIds: [] })).resolves.toMatchObject({ technologyIds: [] });
+    } finally {
+      await database.db.delete(experienceTechnologies).where(eq(experienceTechnologies.experienceId, id));
+      if (original!.technologyIds.length) await database.db.insert(experienceTechnologies).values(original!.technologyIds.map((technologyId) => ({ experienceId: id, technologyId })));
     }
   });
 
