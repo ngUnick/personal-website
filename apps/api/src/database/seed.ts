@@ -202,6 +202,7 @@ try {
       caseStudy:
         'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       completedOn: null,
+      startedOn: null,
       repositoryUrl: null,
       liveUrl: null,
       status: 'published',
@@ -216,6 +217,7 @@ try {
           'Temporary sample content used to validate the application path.',
         caseStudy:
           'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+        startedOn: null,
         completedOn: null,
         repositoryUrl: null,
         liveUrl: null,
@@ -236,6 +238,7 @@ try {
       caseStudy:
         'Fictional draft narrative used only to validate private case-study authoring.',
       completedOn: null,
+      startedOn: null,
       repositoryUrl: null,
       liveUrl: null,
       status: 'draft',
@@ -250,6 +253,7 @@ try {
           'Fictional draft content used only to validate private project authoring.',
         caseStudy:
           'Fictional draft narrative used only to validate private case-study authoring.',
+        startedOn: null,
         completedOn: null,
         repositoryUrl: null,
         liveUrl: null,

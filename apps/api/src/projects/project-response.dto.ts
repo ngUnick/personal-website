@@ -10,6 +10,9 @@ export class ProjectResponseDto {
   @ApiProperty({ example: 'Temporary sample content used to validate the application path.' })
   summary!: string;
 
+  @ApiProperty({ nullable: true, example: '2024-01-01' })
+  startedOn!: string | null;
+
   @ApiProperty({ nullable: true, example: '2025-01-01' })
   completedOn!: string | null;
 }

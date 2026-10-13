@@ -2,6 +2,7 @@ export type PersistedProject = {
   slug: string;
   title: string;
   summary: string;
+  startedOn: string | null;
   completedOn: string | null;
 };
 export type ProjectTechnology = { name: string; category: string };
@@ -17,6 +18,7 @@ export type ProjectPublicationStatus = 'draft' | 'published' | 'archived';
 export type ProjectContentUpdate = Pick<PersistedProjectDetail, 'title' | 'summary' | 'caseStudy'>;
 export type ProjectLinksUpdate = Pick<PersistedProjectDetail, 'repositoryUrl' | 'liveUrl'>;
 export type ProjectCompletionDateUpdate = Pick<PersistedProject, 'completedOn'>;
+export type ProjectStartDateUpdate = Pick<PersistedProject, 'startedOn'>;
 export type ProjectTechnologyUpdate = { technologyIds: string[] };
 export type CreateProjectDraft = Pick<PersistedProject, 'slug' | 'title' | 'summary'>;
 export type ProjectOrderDirection = 'up' | 'down';
@@ -31,6 +33,7 @@ export interface ProjectsPersistence {
   updateContent(slug: string, content: ProjectContentUpdate): Promise<AdminPersistedProject | undefined>;
   updateLinks(slug: string, links: ProjectLinksUpdate): Promise<AdminPersistedProject | undefined>;
   updateCompletionDate(slug: string, completedOn: string | null): Promise<AdminPersistedProject | undefined>;
+  updateStartDate(slug: string, startedOn: string | null): Promise<AdminPersistedProject | undefined>;
   updateTechnologies(slug: string, input: ProjectTechnologyUpdate): Promise<AdminPersistedProject | undefined>;
   updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminPersistedProject | undefined>;
   moveProject(slug: string, direction: ProjectOrderDirection): Promise<AdminPersistedProject[] | undefined>;

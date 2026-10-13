@@ -76,6 +76,7 @@ describe('API (e2e)', () => {
           title: 'Placeholder Project',
           summary:
             'Temporary sample content used to validate the application path.',
+          startedOn: null,
           completedOn: null,
         },
       ]));
@@ -1341,6 +1342,7 @@ describe('API (e2e)', () => {
           title: 'Placeholder Project',
           summary:
             'Temporary sample content used to validate the application path.',
+          startedOn: null,
           completedOn: null,
         },
       ]));
@@ -1474,6 +1476,7 @@ describe('API (e2e)', () => {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        startedOn: null,
         completedOn: null,
         caseStudy:
           'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
@@ -1666,6 +1669,7 @@ describe('API (e2e)', () => {
             'Fictional draft content used only to validate private project authoring.',
           caseStudy:
             'Fictional draft narrative used only to validate private case-study authoring.',
+          startedOn: null,
           completedOn: null,
           repositoryUrl: null,
           liveUrl: null,
@@ -1709,6 +1713,7 @@ describe('API (e2e)', () => {
             title: 'Edited Draft',
             summary: 'Edited fictional draft content.',
             caseStudy: 'Edited fictional narrative.',
+            startedOn: null,
             completedOn: null,
             repositoryUrl: null,
             liveUrl: null,
@@ -1735,29 +1740,40 @@ describe('API (e2e)', () => {
     }
   });
 
-  it('updates only a project completion date through the protected CMS boundary', async () => {
+  it('updates only Project timeline dates through the protected CMS boundary', async () => {
     const slug = 'placeholder-project';
-    const path = `/api/admin/projects/${slug}/completion-date`;
-    await request(app.getHttpServer()).patch(path).send({ completedOn: '2025-01-01' }).expect(401);
+    const completionPath = `/api/admin/projects/${slug}/completion-date`;
+    const startPath = `/api/admin/projects/${slug}/start-date`;
+    await request(app.getHttpServer()).patch(startPath).send({ startedOn: '2024-01-01' }).expect(401);
     const agent = await authenticatedAgent();
-    await agent.patch(path).send({ completedOn: '2025-01-01' }).expect(403);
-    await agent.patch(path).set('Origin', 'https://untrusted.example').send({ completedOn: '2025-01-01' }).expect(403);
+    await agent.patch(startPath).send({ startedOn: '2024-01-01' }).expect(403);
+    await agent.patch(startPath).set('Origin', 'https://untrusted.example').send({ startedOn: '2024-01-01' }).expect(403);
+    await agent.patch(completionPath).send({ completedOn: '2025-01-01' }).expect(403);
     for (const completedOn of ['', '2025-02-30', '2025-1-1', ' 2025-01-01 ', 42]) {
-      await agent.patch(path).set('Origin', 'http://localhost:4200').send({ completedOn }).expect(400);
+      await agent.patch(completionPath).set('Origin', 'http://localhost:4200').send({ completedOn }).expect(400);
     }
-    await agent.patch('/api/admin/projects/unknown/completion-date').set('Origin', 'http://localhost:4200').send({ completedOn: null }).expect(404);
+    for (const startedOn of ['', '2025-02-30', '2025-1-1', ' 2025-01-01 ', 42]) {
+      await agent.patch(startPath).set('Origin', 'http://localhost:4200').send({ startedOn }).expect(400);
+    }
+    await agent.patch('/api/admin/projects/unknown/start-date').set('Origin', 'http://localhost:4200').send({ startedOn: null }).expect(404);
     try {
-      await agent.patch(path).set('Origin', 'http://localhost:4200').send({ completedOn: '2025-01-01', title: 'Ignored', status: 'draft', displayOrder: 99 }).expect(200)
-        .expect(({ body }) => expect(body).toMatchObject({ slug, completedOn: '2025-01-01', title: 'Placeholder Project', status: 'published', featured: true }));
-      await request(app.getHttpServer()).get('/api/projects').expect(200).expect([{ slug, title: 'Placeholder Project', summary: 'Temporary sample content used to validate the application path.', completedOn: '2025-01-01' }]);
-      await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect([{ slug, title: 'Placeholder Project', summary: 'Temporary sample content used to validate the application path.', completedOn: '2025-01-01' }]);
-      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body.completedOn).toBe('2025-01-01'));
+      await agent.patch(completionPath).set('Origin', 'http://localhost:4200').send({ completedOn: '2025-01-01', title: 'Ignored', status: 'draft', displayOrder: 99 }).expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ slug, startedOn: null, completedOn: '2025-01-01', title: 'Placeholder Project', status: 'published', featured: true }));
+      await agent.patch(startPath).set('Origin', 'http://localhost:4200').send({ startedOn: '2024-01-01', title: 'Ignored', status: 'draft', displayOrder: 99 }).expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ slug, startedOn: '2024-01-01', completedOn: '2025-01-01', title: 'Placeholder Project', status: 'published', featured: true }));
+      await request(app.getHttpServer()).get('/api/projects').expect(200).expect([{ slug, title: 'Placeholder Project', summary: 'Temporary sample content used to validate the application path.', startedOn: '2024-01-01', completedOn: '2025-01-01' }]);
+      await request(app.getHttpServer()).get('/api/projects?featured=true').expect(200).expect([{ slug, title: 'Placeholder Project', summary: 'Temporary sample content used to validate the application path.', startedOn: '2024-01-01', completedOn: '2025-01-01' }]);
+      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body).toMatchObject({ startedOn: '2024-01-01', completedOn: '2025-01-01' }));
       await agent.get('/api/admin/projects').expect(200).expect(({ body }) => expect(body).toEqual([{ slug, title: 'Placeholder Project', status: 'published', featured: true }, { slug: 'draft-placeholder-project', title: 'Draft Placeholder Project', status: 'draft', featured: false }]));
-      await agent.patch('/api/admin/projects/draft-placeholder-project/completion-date').set('Origin', 'http://localhost:4200').send({ completedOn: '2024-01-01' }).expect(200);
+      await agent.patch(startPath).set('Origin', 'http://localhost:4200').send({ startedOn: '2026-01-01' }).expect(400);
+      await agent.patch(completionPath).set('Origin', 'http://localhost:4200').send({ completedOn: '2023-01-01' }).expect(400);
+      await request(app.getHttpServer()).get(`/api/projects/${slug}`).expect(200).expect(({ body }) => expect(body).toMatchObject({ startedOn: '2024-01-01', completedOn: '2025-01-01' }));
+      await agent.patch('/api/admin/projects/draft-placeholder-project/start-date').set('Origin', 'http://localhost:4200').send({ startedOn: '2024-01-01' }).expect(200);
       await request(app.getHttpServer()).get('/api/projects/draft-placeholder-project').expect(404);
     } finally {
-      await agent.patch(path).set('Origin', 'http://localhost:4200').send({ completedOn: null }).expect(200);
-      await agent.patch('/api/admin/projects/draft-placeholder-project/completion-date').set('Origin', 'http://localhost:4200').send({ completedOn: null }).expect(200);
+      await agent.patch(startPath).set('Origin', 'http://localhost:4200').send({ startedOn: null }).expect(200);
+      await agent.patch(completionPath).set('Origin', 'http://localhost:4200').send({ completedOn: null }).expect(200);
+      await agent.patch('/api/admin/projects/draft-placeholder-project/start-date').set('Origin', 'http://localhost:4200').send({ startedOn: null }).expect(200);
     }
   });
 
@@ -1815,7 +1831,7 @@ describe('API (e2e)', () => {
               'Temporary sample content used to validate the application path.',
             caseStudy:
               'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
-            completedOn: null,
+            startedOn: null,
             completedOn: null,
             repositoryUrl: 'https://github.com/example/project',
             liveUrl: 'https://example.test/live',
@@ -1833,6 +1849,7 @@ describe('API (e2e)', () => {
             title: 'Placeholder Project',
             summary:
               'Temporary sample content used to validate the application path.',
+            startedOn: null,
             completedOn: null,
             caseStudy:
               'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
@@ -1850,6 +1867,7 @@ describe('API (e2e)', () => {
             title: 'Placeholder Project',
             summary:
               'Temporary sample content used to validate the application path.',
+            startedOn: null,
             completedOn: null,
           },
         ]);
@@ -2028,6 +2046,7 @@ describe('API (e2e)', () => {
               'Fictional draft content used only to validate private project authoring.',
             caseStudy:
               'Fictional draft narrative used only to validate private case-study authoring.',
+            startedOn: null,
             completedOn: null,
             repositoryUrl: null,
             liveUrl: null,
@@ -2062,6 +2081,7 @@ describe('API (e2e)', () => {
             title: 'Placeholder Project',
             summary:
               'Temporary sample content used to validate the application path.',
+            startedOn: null,
             completedOn: null,
           },
         ]);
@@ -2145,6 +2165,7 @@ describe('API (e2e)', () => {
           expect(body).toEqual({
             ...input,
             caseStudy: '',
+            startedOn: null,
             completedOn: null,
             repositoryUrl: null,
             liveUrl: null,
@@ -2164,6 +2185,7 @@ describe('API (e2e)', () => {
         .expect({
           ...input,
           caseStudy: '',
+          startedOn: null,
           completedOn: null,
           repositoryUrl: null,
           liveUrl: null,

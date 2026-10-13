@@ -25,6 +25,7 @@ describe('DrizzleProjectsPersistence', () => {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        startedOn: null,
         completedOn: null,
       },
     ]);
@@ -45,6 +46,7 @@ describe('DrizzleProjectsPersistence', () => {
       title: 'Placeholder Project',
       summary:
         'Temporary sample content used to validate the application path.',
+      startedOn: null,
       completedOn: null,
       caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       repositoryUrl: null,
@@ -88,6 +90,7 @@ describe('DrizzleProjectsPersistence', () => {
           title: 'Placeholder Project',
           summary:
             'Temporary sample content used to validate the application path.',
+          startedOn: null,
           completedOn: null,
         },
       ]);
@@ -147,6 +150,7 @@ describe('DrizzleProjectsPersistence', () => {
       slug: 'placeholder-project',
       title: 'Placeholder Project',
       summary: 'Temporary sample content used to validate the application path.',
+      startedOn: null,
       completedOn: null,
     }]);
     await expect(persistence.updateLinks('placeholder-project', {
@@ -155,13 +159,15 @@ describe('DrizzleProjectsPersistence', () => {
     })).resolves.toMatchObject({ repositoryUrl: null, liveUrl: null });
   });
 
-  it('updates only a project completion date', async () => {
+  it('updates only Project timeline dates and preserves chronology at the database boundary', async () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+    const database = moduleFixture.get(DatabaseService);
 
     try {
       await expect(persistence.updateCompletionDate('placeholder-project', '2025-01-01')).resolves.toMatchObject({
         slug: 'placeholder-project',
+        startedOn: null,
         completedOn: '2025-01-01',
         title: 'Placeholder Project',
         status: 'published',
@@ -172,10 +178,35 @@ describe('DrizzleProjectsPersistence', () => {
         slug: 'placeholder-project',
         title: 'Placeholder Project',
         summary: 'Temporary sample content used to validate the application path.',
+        startedOn: null,
         completedOn: '2025-01-01',
       }]);
+      await expect(persistence.updateStartDate('placeholder-project', '2024-01-01')).resolves.toMatchObject({
+        slug: 'placeholder-project',
+        startedOn: '2024-01-01',
+        completedOn: '2025-01-01',
+        title: 'Placeholder Project',
+        status: 'published',
+        featured: true,
+        displayOrder: 0,
+      });
+      await expect(persistence.findPublished()).resolves.toEqual([{
+        slug: 'placeholder-project',
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        startedOn: '2024-01-01',
+        completedOn: '2025-01-01',
+      }]);
+      await expect(
+        database.db
+          .update(projects)
+          .set({ startedOn: '2026-01-01' })
+          .where(eq(projects.slug, 'placeholder-project')),
+      ).rejects.toThrow();
+      await expect(persistence.updateStartDate('missing-project', null)).resolves.toBeUndefined();
       await expect(persistence.updateCompletionDate('missing-project', null)).resolves.toBeUndefined();
     } finally {
+      await persistence.updateStartDate('placeholder-project', null);
       await persistence.updateCompletionDate('placeholder-project', null);
     }
   });

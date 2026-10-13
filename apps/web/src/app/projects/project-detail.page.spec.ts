@@ -23,6 +23,7 @@ describe('ProjectDetailPage', () => {
                 slug: 'placeholder-project',
                 title: 'Placeholder Project',
                 summary: 'Temporary sample content used to validate the application path.',
+                startedOn: '2024-01-01',
                 completedOn: '2025-01-01',
                 caseStudy: 'Fictional plain-text case-study narrative.',
                 repositoryUrl: 'https://github.com/example/project',
@@ -42,6 +43,7 @@ describe('ProjectDetailPage', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Temporary sample content used to validate the application path.',
     );
+    expect(fixture.nativeElement.textContent).toContain('Started 2024-01-01');
     expect(fixture.nativeElement.textContent).toContain('Completed 2025-01-01');
     expect(fixture.nativeElement.textContent).toContain('Fictional plain-text case-study narrative.');
     expect(fixture.nativeElement.querySelector('a[href="https://github.com/example/project"]')?.textContent).toContain('Repository');
@@ -60,6 +62,17 @@ describe('ProjectDetailPage', () => {
     const fixture = TestBed.createComponent(ProjectDetailPage); fixture.detectChanges(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[aria-label="Project links"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('time')).toBeNull();
+  });
+
+  it('renders start-only and completion-only Project detail timelines independently', async () => {
+    const detail = (startedOn: string | null, completedOn: string | null) => ({ slug: 'placeholder-project', title: 'Placeholder Project', summary: 'Summary', startedOn, completedOn, caseStudy: '', repositoryUrl: null, liveUrl: null, technologies: [] });
+    await TestBed.configureTestingModule({ imports: [ProjectDetailPage], providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ slug: 'placeholder-project' })) } }, { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getProject: () => of(detail('2024-01-01', null)) } }] }).compileComponents();
+    const startFixture = TestBed.createComponent(ProjectDetailPage); startFixture.detectChanges(); await startFixture.whenStable();
+    expect(startFixture.nativeElement.textContent).toContain('Started 2024-01-01'); expect(startFixture.nativeElement.textContent).not.toContain('Completed');
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [ProjectDetailPage], providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ slug: 'placeholder-project' })) } }, { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getProject: () => of(detail(null, '2025-01-01')) } }] }).compileComponents();
+    const completionFixture = TestBed.createComponent(ProjectDetailPage); completionFixture.detectChanges(); await completionFixture.whenStable();
+    expect(completionFixture.nativeElement.textContent).toContain('Completed 2025-01-01'); expect(completionFixture.nativeElement.textContent).not.toContain('Started');
   });
 
   it('renders HTML-like case-study content as text rather than DOM', async () => {

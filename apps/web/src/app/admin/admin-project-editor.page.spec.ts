@@ -124,6 +124,25 @@ describe('AdminProjectEditorPage', () => {
     expect(component.project.completedOn).toBeNull();
   });
 
+  it('saves and clears start dates separately from project content', async () => {
+    const requests: (string | null)[] = [];
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', startedOn: null, completedOn: null, status: 'draft', featured: false }), updateStartDate: (_slug: string, startedOn: string | null) => { requests.push(startedOn); return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', startedOn, completedOn: null, status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.startDateForm.setValue({ startedOn: '2024-01-01' }); component.saveStartDate();
+    component.startDateForm.setValue({ startedOn: '' }); component.saveStartDate();
+    expect(requests).toEqual(['2024-01-01', null]);
+    expect(component.project.startedOn).toBeNull();
+  });
+
+  it('shows an accessible alert when saving a start date fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', startedOn: null, completedOn: null, status: 'draft', featured: false }), updateStartDate: () => throwError(() => new Error('start date failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.startDateForm.setValue({ startedOn: '2024-01-01' }); component.saveStartDate(); await fixture.whenStable(); fixture.detectChanges();
+    expect(component.startDateError()).toBe(true);
+    expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to save project start date. Please try again.');
+  });
+
   it('shows an accessible alert when saving a completion date fails', async () => {
     await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', completedOn: null, status: 'draft', featured: false }), updateCompletionDate: () => throwError(() => new Error('completion date failed')) } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();

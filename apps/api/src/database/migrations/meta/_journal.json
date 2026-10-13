@@ -169,6 +169,13 @@
       "when": 1791843234939,
       "tag": "0023_typical_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791910301485,
+      "tag": "0024_luxuriant_energizer",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,7 @@ describe('HomePage', () => {
                   slug: 'placeholder-project',
                   title: 'Placeholder Project',
                   summary: 'Temporary sample content used to validate the application path.',
+                  startedOn: '2024-01-01',
                   completedOn: '2025-01-01',
                 },
               ]),
@@ -32,6 +33,7 @@ describe('HomePage', () => {
                 slug: 'placeholder-project',
                 title: 'Placeholder Project',
                 summary: 'Temporary sample content used to validate the application path.',
+                startedOn: '2024-01-01',
                 completedOn: '2025-01-01',
               }),
           },
@@ -102,6 +104,7 @@ describe('HomePage', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Featured projects');
+    expect(fixture.nativeElement.textContent).toContain('Started 2024-01-01');
     expect(fixture.nativeElement.textContent).toContain('Completed 2025-01-01');
     expect(fixture.nativeElement.textContent).toContain('Education');
     expect(fixture.nativeElement.textContent).toContain('Example Software Engineering Diploma');
@@ -196,6 +199,16 @@ describe('HomePage', () => {
     const fixture = TestBed.createComponent(HomePage); fixture.detectChanges(); await fixture.whenStable();
     const project = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('article') as ArrayLike<HTMLElement>).find((article) => article.textContent?.includes('Placeholder Project'));
     expect(project?.querySelector('time')).toBeNull();
+  });
+
+  it('renders each available featured Project timeline date independently', async () => {
+    await TestBed.configureTestingModule({ imports: [HomePage], providers: [provideRouter([]), { provide: ProjectsDataAccess, useValue: { getProjects: () => of([]), getFeaturedProjects: () => of([{ slug: 'started-only', title: 'Started only', summary: 'Summary', startedOn: '2024-01-01', completedOn: null }, { slug: 'completed-only', title: 'Completed only', summary: 'Summary', startedOn: null, completedOn: '2025-01-01' }]) } }, { provide: EducationDataAccess, useValue: { getEducation: () => of([]) } }, { provide: ExperienceDataAccess, useValue: { getExperience: () => of([]), getFeaturedExperience: () => of([]) } }, { provide: TechnologyDataAccess, useValue: { getTechnologies: () => of([]) } }, { provide: ProfileDataAccess, useValue: { getProfile: () => of({ headline: 'Example', summary: 'Summary', about: 'About', location: null, contactEmail: null, githubUrl: null, linkedinUrl: null }) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(HomePage); fixture.detectChanges(); await fixture.whenStable();
+    const articles = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('article') as ArrayLike<HTMLElement>);
+    expect(articles.find((article) => article.textContent?.includes('Started only'))?.textContent).toContain('Started 2024-01-01');
+    expect(articles.find((article) => article.textContent?.includes('Started only'))?.textContent).not.toContain('Completed');
+    expect(articles.find((article) => article.textContent?.includes('Completed only'))?.textContent).toContain('Completed 2025-01-01');
+    expect(articles.find((article) => article.textContent?.includes('Completed only'))?.textContent).not.toContain('Started');
   });
 
   it('keeps an institution as plain text when its URL is absent', async () => {

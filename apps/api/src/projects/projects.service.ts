@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectResponseDto } from './project-response.dto.js';
 import { ProjectDetailResponseDto } from './project-detail-response.dto.js';
 import { PROJECTS_PERSISTENCE } from './projects.persistence.js';
@@ -11,7 +11,7 @@ export type AdminProject = Pick<
 >;
 export type AdminProjectDetail = Pick<
   AdminPersistedProject,
-  'slug' | 'title' | 'summary' | 'completedOn' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
+  'slug' | 'title' | 'summary' | 'startedOn' | 'completedOn' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
 >;
 
 @Injectable()
@@ -69,7 +69,17 @@ export class ProjectsService {
   }
 
   async updateCompletionDate(slug: string, completedOn: string | null): Promise<AdminProjectDetail> {
+    const current = await this.getAdminProject(slug);
+    if (completedOn && current.startedOn && completedOn < current.startedOn) throw new BadRequestException('Completion date cannot be before the project start date.');
     const project = await this.projectsPersistence.updateCompletionDate(slug, completedOn);
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
+  async updateStartDate(slug: string, startedOn: string | null): Promise<AdminProjectDetail> {
+    const current = await this.getAdminProject(slug);
+    if (startedOn && current.completedOn && startedOn > current.completedOn) throw new BadRequestException('Start date cannot be after the project completion date.');
+    const project = await this.projectsPersistence.updateStartDate(slug, startedOn);
     if (!project) throw new NotFoundException('Project not found.');
     return this.toAdminProjectDetail(project);
   }
@@ -104,7 +114,7 @@ export class ProjectsService {
   }
 
   private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
-    const { slug, title, summary, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
-    return { slug, title, summary, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
+    const { slug, title, summary, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
+    return { slug, title, summary, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
   }
 }

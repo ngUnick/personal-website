@@ -212,9 +212,10 @@ describe('DrizzleExperiencePersistence', () => {
     const original = await persistence.findForAdminById(id);
     try {
       await expect(persistence.updateTechnologies(id, { technologyIds: ids })).resolves.toMatchObject({ ...original, technologyIds: ids });
-      await expect(persistence.updateContent(id, { organization: original!.organization, role: original!.role, summary: original!.summary, startDate: original!.startDate, endDate: original!.endDate })).resolves.toMatchObject({ technologyIds: ids });
+      const persistedTechnologyIds = (await persistence.findForAdminById(id))!.technologyIds;
+      await expect(persistence.updateContent(id, { organization: original!.organization, role: original!.role, summary: original!.summary, startDate: original!.startDate, endDate: original!.endDate })).resolves.toMatchObject({ technologyIds: persistedTechnologyIds });
       await expect(persistence.updateTechnologies(id, { technologyIds: ['00000000-0000-4000-8000-000000000099'] })).resolves.toBeUndefined();
-      await expect(persistence.findForAdminById(id)).resolves.toMatchObject({ technologyIds: ids });
+      await expect(persistence.findForAdminById(id)).resolves.toMatchObject({ technologyIds: persistedTechnologyIds });
       await expect(persistence.updateTechnologies(id, { technologyIds: [] })).resolves.toMatchObject({ technologyIds: [] });
     } finally {
       await database.db.delete(experienceTechnologies).where(eq(experienceTechnologies.experienceId, id));

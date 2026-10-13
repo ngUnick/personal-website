@@ -1,0 +1,2 @@
+ALTER TABLE "projects" ADD COLUMN "started_on" date;--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_start_not_after_completion" CHECK ("projects"."started_on" IS NULL OR "projects"."completed_on" IS NULL OR "projects"."started_on" <= "projects"."completed_on");

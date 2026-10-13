@@ -4,6 +4,7 @@ export interface Project {
   slug: string;
   title: string;
   summary: string;
+  startedOn: string | null;
   completedOn: string | null;
 }
 export interface ProjectDetail extends Project { caseStudy: string; repositoryUrl: string | null; liveUrl: string | null; technologies: { name: string; category: string }[]; }

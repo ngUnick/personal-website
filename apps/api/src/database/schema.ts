@@ -43,6 +43,7 @@ export const projects = pgTable(
     title: text('title').notNull(),
     summary: text('summary').notNull(),
     caseStudy: text('case_study').notNull().default(''),
+    startedOn: date('started_on'),
     completedOn: date('completed_on'),
     repositoryUrl: text('repository_url'),
     liveUrl: text('live_url'),
@@ -61,6 +62,10 @@ export const projects = pgTable(
     check(
       'projects_display_order_non_negative',
       sql`${table.displayOrder} >= 0`,
+    ),
+    check(
+      'projects_start_not_after_completion',
+      sql`${table.startedOn} IS NULL OR ${table.completedOn} IS NULL OR ${table.startedOn} <= ${table.completedOn}`,
     ),
   ],
 );
