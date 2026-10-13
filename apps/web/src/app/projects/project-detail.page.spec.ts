@@ -23,6 +23,7 @@ describe('ProjectDetailPage', () => {
                 slug: 'placeholder-project',
                 title: 'Placeholder Project',
                 summary: 'Temporary sample content used to validate the application path.',
+                role: 'Software Engineer',
                 startedOn: '2024-01-01',
                 completedOn: '2025-01-01',
                 caseStudy: 'Fictional plain-text case-study narrative.',
@@ -45,6 +46,7 @@ describe('ProjectDetailPage', () => {
     );
     expect(fixture.nativeElement.textContent).toContain('Started 2024-01-01');
     expect(fixture.nativeElement.textContent).toContain('Completed 2025-01-01');
+    expect(fixture.nativeElement.textContent).toContain('Role: Software Engineer');
     expect(fixture.nativeElement.textContent).toContain('Fictional plain-text case-study narrative.');
     expect(fixture.nativeElement.querySelector('a[href="https://github.com/example/project"]')?.textContent).toContain('Repository');
     expect(fixture.nativeElement.querySelector('a[href="https://example.test/project"]')?.textContent).toContain('Live project');
@@ -62,6 +64,7 @@ describe('ProjectDetailPage', () => {
     const fixture = TestBed.createComponent(ProjectDetailPage); fixture.detectChanges(); await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[aria-label="Project links"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('time')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Role:');
   });
 
   it('renders start-only and completion-only Project detail timelines independently', async () => {

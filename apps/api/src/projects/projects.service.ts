@@ -9,10 +9,10 @@ export type AdminProject = Pick<
   AdminPersistedProject,
   'slug' | 'title' | 'status' | 'featured'
 >;
-export type AdminProjectDetail = Pick<
+export type AdminProjectDetail = Omit<Pick<
   AdminPersistedProject,
-  'slug' | 'title' | 'summary' | 'startedOn' | 'completedOn' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
->;
+  'slug' | 'title' | 'summary' | 'role' | 'startedOn' | 'completedOn' | 'caseStudy' | 'repositoryUrl' | 'liveUrl' | 'status' | 'featured' | 'technologyIds'
+>, 'role'> & { role: string | null };
 
 @Injectable()
 export class ProjectsService {
@@ -84,6 +84,12 @@ export class ProjectsService {
     return this.toAdminProjectDetail(project);
   }
 
+  async updateRole(slug: string, role: string | null): Promise<AdminProjectDetail> {
+    const project = await this.projectsPersistence.updateRole(slug, role);
+    if (!project) throw new NotFoundException('Project not found.');
+    return this.toAdminProjectDetail(project);
+  }
+
   async updateTechnologies(slug: string, technologyIds: string[]): Promise<AdminProjectDetail> {
     const project = await this.projectsPersistence.updateTechnologies(slug, { technologyIds });
     if (!project) throw new NotFoundException('Project or technology not found.');
@@ -114,7 +120,7 @@ export class ProjectsService {
   }
 
   private toAdminProjectDetail(project: AdminPersistedProject): AdminProjectDetail {
-    const { slug, title, summary, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
-    return { slug, title, summary, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
+    const { slug, title, summary, role, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured } = project;
+    return { slug, title, summary, role: role ?? null, startedOn, completedOn, caseStudy, repositoryUrl, liveUrl, status, featured, technologyIds: project.technologyIds ?? [] };
   }
 }

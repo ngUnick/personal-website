@@ -6,9 +6,10 @@ export type PersistedProject = {
   completedOn: string | null;
 };
 export type ProjectTechnology = { name: string; category: string };
-export type PersistedProjectDetail = PersistedProject & { caseStudy: string; repositoryUrl: string | null; liveUrl: string | null };
+export type PersistedProjectDetail = PersistedProject & { role: string | null; caseStudy: string; repositoryUrl: string | null; liveUrl: string | null };
 export type PublicPersistedProjectDetail = PersistedProjectDetail & { technologies: ProjectTechnology[] };
-export type AdminPersistedProject = PersistedProjectDetail & {
+export type AdminPersistedProject = Omit<PersistedProjectDetail, 'role'> & {
+  role?: string | null;
   status: ProjectPublicationStatus;
   featured: boolean;
   displayOrder: number;
@@ -19,6 +20,7 @@ export type ProjectContentUpdate = Pick<PersistedProjectDetail, 'title' | 'summa
 export type ProjectLinksUpdate = Pick<PersistedProjectDetail, 'repositoryUrl' | 'liveUrl'>;
 export type ProjectCompletionDateUpdate = Pick<PersistedProject, 'completedOn'>;
 export type ProjectStartDateUpdate = Pick<PersistedProject, 'startedOn'>;
+export type ProjectRoleUpdate = Pick<PersistedProjectDetail, 'role'>;
 export type ProjectTechnologyUpdate = { technologyIds: string[] };
 export type CreateProjectDraft = Pick<PersistedProject, 'slug' | 'title' | 'summary'>;
 export type ProjectOrderDirection = 'up' | 'down';
@@ -34,6 +36,7 @@ export interface ProjectsPersistence {
   updateLinks(slug: string, links: ProjectLinksUpdate): Promise<AdminPersistedProject | undefined>;
   updateCompletionDate(slug: string, completedOn: string | null): Promise<AdminPersistedProject | undefined>;
   updateStartDate(slug: string, startedOn: string | null): Promise<AdminPersistedProject | undefined>;
+  updateRole(slug: string, role: string | null): Promise<AdminPersistedProject | undefined>;
   updateTechnologies(slug: string, input: ProjectTechnologyUpdate): Promise<AdminPersistedProject | undefined>;
   updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminPersistedProject | undefined>;
   moveProject(slug: string, direction: ProjectOrderDirection): Promise<AdminPersistedProject[] | undefined>;

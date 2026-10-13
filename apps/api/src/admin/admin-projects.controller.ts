@@ -14,6 +14,7 @@ import { UpdateProjectLinksDto } from './update-project-links.dto.js';
 import { UpdateProjectTechnologiesDto } from './update-project-technologies.dto.js';
 import { UpdateProjectCompletionDateDto } from './update-project-completion-date.dto.js';
 import { UpdateProjectStartDateDto } from './update-project-start-date.dto.js';
+import { UpdateProjectRoleDto } from './update-project-role.dto.js';
 
 const calendarDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -114,6 +115,19 @@ export class AdminProjectsController {
     if (startedOn === null) return this.projects.updateStartDate(slug, null);
     if (typeof startedOn !== 'string' || !calendarDate(startedOn)) throw new BadRequestException('A valid start date or null is required.');
     return this.projects.updateStartDate(slug, startedOn);
+  }
+
+  @Patch(':slug/role')
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiBody({ type: UpdateProjectRoleDto })
+  @ApiOkResponse({ type: AdminProjectDetailResponseDto })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  updateRole(@Param('slug') slug: string, @Body() body: UpdateProjectRoleDto) {
+    if (body?.role === null) return this.projects.updateRole(slug, null);
+    if (typeof body?.role !== 'string' || !body.role.trim()) throw new BadRequestException('A non-empty project role or null is required.');
+    return this.projects.updateRole(slug, body.role.trim());
   }
 
   @Patch(':slug/technologies')

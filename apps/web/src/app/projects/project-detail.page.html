@@ -6,6 +6,7 @@
       <p class="eyebrow">Project detail</p>
       <h1>{{ project.title }}</h1>
       <p class="summary">{{ project.summary }}</p>
+      @if (project.role) { <p>Role: {{ project.role }}</p> }
       @if (project.startedOn) { <p><time [attr.datetime]="project.startedOn">Started {{ project.startedOn }}</time></p> }
       @if (project.completedOn) { <p><time [attr.datetime]="project.completedOn">Completed {{ project.completedOn }}</time></p> }
       <section aria-label="Case study"><h2>Case study</h2><p class="case-study">{{ project.caseStudy }}</p></section>

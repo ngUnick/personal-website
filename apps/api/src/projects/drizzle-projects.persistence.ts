@@ -52,6 +52,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         slug: projects.slug,
         title: projects.title,
         summary: projects.summary,
+        role: projects.role,
         startedOn: projects.startedOn,
         completedOn: projects.completedOn,
         caseStudy: projects.caseStudy,
@@ -75,7 +76,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
 
   async findForAdminBySlug(slug: string) {
     const [project] = await this.database.db
-      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
+      .select({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder })
       .from(projects)
       .where(eq(projects.slug, slug))
       .limit(1);
@@ -88,7 +89,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ featured, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     return project;
   }
 
@@ -97,7 +98,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ ...content, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -107,7 +108,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ ...links, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -117,7 +118,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ completedOn, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -127,9 +128,18 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ startedOn, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
+  }
+
+  async updateRole(slug: string, role: string | null) {
+    const [project] = await this.database.db
+      .update(projects)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(projects.slug, slug))
+      .returning({ slug: projects.slug });
+    return project ? this.findForAdminBySlug(project.slug) : undefined;
   }
 
   async updateTechnologies(slug: string, { technologyIds }: { technologyIds: string[] }) {
@@ -142,7 +152,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       }
       await transaction.delete(projectTechnologies).where(eq(projectTechnologies.projectId, project.id));
       if (technologyIds.length) await transaction.insert(projectTechnologies).values(technologyIds.map(technologyId => ({ projectId: project.id, technologyId })));
-      const [updated] = await transaction.select({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder }).from(projects).where(eq(projects.id, project.id));
+      const [updated] = await transaction.select({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder }).from(projects).where(eq(projects.id, project.id));
       return { ...updated!, technologyIds };
     });
   }
@@ -152,7 +162,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
       .update(projects)
       .set({ status, updatedAt: new Date() })
       .where(eq(projects.slug, slug))
-      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+      .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
     if (!project) return undefined;
     return { ...project, technologyIds: await this.findTechnologyIds(slug) };
   }
@@ -188,7 +198,7 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
         .insert(projects)
         .values({ id: randomUUID(), ...input, status: 'draft', featured: false, displayOrder: order.value + 1 })
         .onConflictDoNothing({ target: projects.slug })
-        .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
+        .returning({ slug: projects.slug, title: projects.title, summary: projects.summary, role: projects.role, startedOn: projects.startedOn, completedOn: projects.completedOn, caseStudy: projects.caseStudy, repositoryUrl: projects.repositoryUrl, liveUrl: projects.liveUrl, status: projects.status, featured: projects.featured, displayOrder: projects.displayOrder });
       return project;
     });
   }

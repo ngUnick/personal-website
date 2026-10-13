@@ -1476,6 +1476,7 @@ describe('API (e2e)', () => {
         title: 'Placeholder Project',
         summary:
           'Temporary sample content used to validate the application path.',
+        role: null,
         startedOn: null,
         completedOn: null,
         caseStudy:
@@ -1667,6 +1668,7 @@ describe('API (e2e)', () => {
           title: 'Draft Placeholder Project',
           summary:
             'Fictional draft content used only to validate private project authoring.',
+          role: null,
           caseStudy:
             'Fictional draft narrative used only to validate private case-study authoring.',
           startedOn: null,
@@ -1712,6 +1714,7 @@ describe('API (e2e)', () => {
             slug: 'draft-placeholder-project',
             title: 'Edited Draft',
             summary: 'Edited fictional draft content.',
+            role: null,
             caseStudy: 'Edited fictional narrative.',
             startedOn: null,
             completedOn: null,
@@ -1829,6 +1832,7 @@ describe('API (e2e)', () => {
             title: 'Placeholder Project',
             summary:
               'Temporary sample content used to validate the application path.',
+            role: null,
             caseStudy:
               'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
             startedOn: null,
@@ -1849,6 +1853,7 @@ describe('API (e2e)', () => {
             title: 'Placeholder Project',
             summary:
               'Temporary sample content used to validate the application path.',
+            role: null,
             startedOn: null,
             completedOn: null,
             caseStudy:
@@ -1890,6 +1895,43 @@ describe('API (e2e)', () => {
         .set('Origin', 'http://localhost:4200')
         .send({ repositoryUrl: null, liveUrl: null })
         .expect(200);
+    }
+  });
+
+  it('updates and clears a project role through the protected CMS boundary', async () => {
+    const slug = 'placeholder-project';
+    await request(app.getHttpServer())
+      .patch(`/api/admin/projects/${slug}/role`)
+      .send({ role: 'Software Engineer' })
+      .expect(401);
+    const agent = await authenticatedAgent();
+    await agent
+      .patch(`/api/admin/projects/${slug}/role`)
+      .send({ role: 'Software Engineer' })
+      .expect(403);
+    await agent
+      .patch(`/api/admin/projects/${slug}/role`)
+      .set('Origin', 'http://localhost:4200')
+      .send({ role: '   ' })
+      .expect(400);
+    try {
+      await agent
+        .patch(`/api/admin/projects/${slug}/role`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ role: ' Software Engineer ' })
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ slug, role: 'Software Engineer' }));
+      await request(app.getHttpServer())
+        .get(`/api/projects/${slug}`)
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ slug, role: 'Software Engineer' }));
+    } finally {
+      await agent
+        .patch(`/api/admin/projects/${slug}/role`)
+        .set('Origin', 'http://localhost:4200')
+        .send({ role: null })
+        .expect(200)
+        .expect(({ body }) => expect(body).toMatchObject({ slug, role: null }));
     }
   });
 
@@ -2044,6 +2086,7 @@ describe('API (e2e)', () => {
             title: 'Draft Placeholder Project',
             summary:
               'Fictional draft content used only to validate private project authoring.',
+            role: null,
             caseStudy:
               'Fictional draft narrative used only to validate private case-study authoring.',
             startedOn: null,
@@ -2164,6 +2207,7 @@ describe('API (e2e)', () => {
         .expect(({ body }) => {
           expect(body).toEqual({
             ...input,
+            role: null,
             caseStudy: '',
             startedOn: null,
             completedOn: null,
@@ -2184,6 +2228,7 @@ describe('API (e2e)', () => {
         .expect(200)
         .expect({
           ...input,
+          role: null,
           caseStudy: '',
           startedOn: null,
           completedOn: null,

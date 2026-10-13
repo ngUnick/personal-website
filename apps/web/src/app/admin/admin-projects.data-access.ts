@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 export type ProjectPublicationStatus = 'draft' | 'published' | 'archived';
 export type AdminProject = { slug: string; title: string; status: ProjectPublicationStatus; featured: boolean };
-export type AdminProjectDetail = AdminProject & { summary: string; startedOn: string | null; completedOn: string | null; caseStudy: string; repositoryUrl: string | null; liveUrl: string | null; technologyIds: string[] };
+export type AdminProjectDetail = AdminProject & { summary: string; role: string | null; startedOn: string | null; completedOn: string | null; caseStudy: string; repositoryUrl: string | null; liveUrl: string | null; technologyIds: string[] };
 export type ProjectContentUpdate = { title: string; summary: string; caseStudy: string };
 export type CreateProjectDraft = { slug: string; title: string; summary: string };
 export type ProjectOrderDirection = 'up' | 'down';
@@ -15,6 +15,7 @@ export abstract class AdminProjectsDataAccess {
   abstract updateLinks(slug: string, links: Pick<AdminProjectDetail, 'repositoryUrl' | 'liveUrl'>): Observable<AdminProjectDetail>;
   abstract updateCompletionDate(slug: string, completedOn: string | null): Observable<AdminProjectDetail>;
   abstract updateStartDate(slug: string, startedOn: string | null): Observable<AdminProjectDetail>;
+  abstract updateRole(slug: string, role: string | null): Observable<AdminProjectDetail>;
   abstract updateTechnologies(slug: string, technologyIds: string[]): Observable<AdminProjectDetail>;
   abstract updateStatus(slug: string, status: ProjectPublicationStatus): Observable<AdminProjectDetail>;
   abstract createDraft(input: CreateProjectDraft): Observable<AdminProjectDetail>;

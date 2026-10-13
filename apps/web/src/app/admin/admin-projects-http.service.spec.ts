@@ -33,6 +33,12 @@ describe('AdminProjectsHttpService', () => {
     expect(update.request.withCredentials).toBe(true);
     expect(update.request.body).toEqual({ title: 'Edited Draft', summary: 'Edited summary', caseStudy: 'Edited narrative' });
     update.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', status: 'draft', featured: false });
+    service.updateRole('draft-placeholder-project', 'Software Engineer').subscribe();
+    const role = http.expectOne('/api/admin/projects/draft-placeholder-project/role');
+    expect(role.request.method).toBe('PATCH');
+    expect(role.request.withCredentials).toBe(true);
+    expect(role.request.body).toEqual({ role: 'Software Engineer' });
+    role.flush({ slug: 'draft-placeholder-project', title: 'Edited Draft', summary: 'Edited summary', role: 'Software Engineer', status: 'draft', featured: false });
     service.updateTechnologies('draft-placeholder-project', ['00000000-0000-4000-8000-000000000040']).subscribe();
     const technologies = http.expectOne('/api/admin/projects/draft-placeholder-project/technologies');
     expect(technologies.request.method).toBe('PATCH');

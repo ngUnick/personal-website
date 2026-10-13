@@ -5,6 +5,7 @@ export class AdminProjectDetailResponseDto implements AdminProjectDetail {
   @ApiProperty() slug!: string;
   @ApiProperty() title!: string;
   @ApiProperty() summary!: string;
+  @ApiProperty({ nullable: true }) role!: string | null;
   @ApiProperty({ nullable: true }) startedOn!: string | null;
   @ApiProperty({ nullable: true }) completedOn!: string | null;
   @ApiProperty() caseStudy!: string;

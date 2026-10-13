@@ -42,6 +42,7 @@ export const projects = pgTable(
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     summary: text('summary').notNull(),
+    role: text('role'),
     caseStudy: text('case_study').notNull().default(''),
     startedOn: date('started_on'),
     completedOn: date('completed_on'),

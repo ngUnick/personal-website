@@ -33,6 +33,26 @@ describe('AdminProjectEditorPage', () => {
     expect(component.project.summary).toBe('Server value');
   });
 
+  it('saves and clears the project role separately from project content', async () => {
+    const requests: (string | null)[] = [];
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', role: null, status: 'draft', featured: false }), updateRole: (_slug: string, role: string | null) => { requests.push(role); return of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', role, status: 'draft', featured: false }); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any;
+    component.roleForm.setValue({ role: ' Software Engineer ' }); component.saveRole();
+    component.roleForm.setValue({ role: '' }); component.saveRole();
+    fixture.detectChanges();
+    expect(requests).toEqual(['Software Engineer', null]);
+    expect(component.project.role).toBeNull();
+  });
+
+  it('shows an accessible alert when saving a project role fails', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', role: null, status: 'draft', featured: false }), updateRole: () => throwError(() => new Error('role failed')) } }]}).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance as any; component.roleForm.setValue({ role: 'Software Engineer' }); component.saveRole(); await fixture.whenStable(); fixture.detectChanges();
+    expect(component.roleError()).toBe(true);
+    expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to save project role. Please try again.');
+  });
+
   it('skips requests during server rendering', async () => {
     let calls = 0;
     await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'server' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => { calls += 1; return of({ authenticated: true }); } } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => { calls += 1; return of({}); }, updateContent: () => { calls += 1; return of({}); } } }] }).compileComponents();

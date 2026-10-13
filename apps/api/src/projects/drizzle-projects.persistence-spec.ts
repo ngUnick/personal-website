@@ -48,6 +48,7 @@ describe('DrizzleProjectsPersistence', () => {
         'Temporary sample content used to validate the application path.',
       startedOn: null,
       completedOn: null,
+      role: null,
       caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
       repositoryUrl: null,
       liveUrl: null,
@@ -157,6 +158,39 @@ describe('DrizzleProjectsPersistence', () => {
       repositoryUrl: null,
       liveUrl: null,
     })).resolves.toMatchObject({ repositoryUrl: null, liveUrl: null });
+  });
+
+  it('updates a project role without widening compact lists or changing other detail fields', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence);
+
+    try {
+      await expect(persistence.updateRole('placeholder-project', 'Software Engineer')).resolves.toMatchObject({
+        slug: 'placeholder-project',
+        role: 'Software Engineer',
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        caseStudy: 'Fictional narrative used to validate the published project detail path.\n\nIt is deliberately not personal portfolio content.',
+      });
+      await expect(persistence.findPublished()).resolves.toEqual([{
+        slug: 'placeholder-project',
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        startedOn: null,
+        completedOn: null,
+      }]);
+      await expect(persistence.findFeaturedPublished()).resolves.toEqual([{
+        slug: 'placeholder-project',
+        title: 'Placeholder Project',
+        summary: 'Temporary sample content used to validate the application path.',
+        startedOn: null,
+        completedOn: null,
+      }]);
+      await expect(persistence.findPublishedBySlug('placeholder-project')).resolves.toMatchObject({ role: 'Software Engineer' });
+      await expect(persistence.updateRole('missing-project', null)).resolves.toBeUndefined();
+    } finally {
+      await persistence.updateRole('placeholder-project', null);
+    }
   });
 
   it('updates only Project timeline dates and preserves chronology at the database boundary', async () => {
