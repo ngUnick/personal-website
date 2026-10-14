@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../core/api-base-url';
 import { AdminExperienceHttpService } from './admin-experience-http.service';
 
 describe('AdminExperienceHttpService', () => {
-  it('uses the private credentialed list, detail, content, technologies, location, organization URL, status, featured, creation, and ordering endpoints', () => {
+  it('uses the private credentialed list, detail, content, technologies, location, organization URL, status, featured, creation, deletion, and ordering endpoints', () => {
     TestBed.configureTestingModule({ providers: [AdminExperienceHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
     const service = TestBed.inject(AdminExperienceHttpService); const http = TestBed.inject(HttpTestingController); const id = '00000000-0000-4000-8000-000000000014';
     service.getExperiences().subscribe(); const list = http.expectOne('/api/admin/experience'); expect(list.request.method).toBe('GET'); expect(list.request.withCredentials).toBe(true); list.flush([]);
@@ -18,6 +18,7 @@ describe('AdminExperienceHttpService', () => {
     service.updateLocation(id, 'Remote').subscribe(); const location = http.expectOne(`/api/admin/experience/${id}/location`); expect(location.request.method).toBe('PATCH'); expect(location.request.withCredentials).toBe(true); expect(location.request.body).toEqual({ location: 'Remote' }); location.flush({});
     service.updateOrganizationUrl(id, 'https://example.invalid').subscribe(); const organizationUrl = http.expectOne(`/api/admin/experience/${id}/organization-url`); expect(organizationUrl.request.method).toBe('PATCH'); expect(organizationUrl.request.withCredentials).toBe(true); expect(organizationUrl.request.body).toEqual({ organizationUrl: 'https://example.invalid' }); organizationUrl.flush({});
     service.createDraft(content).subscribe(); const create = http.expectOne('/api/admin/experience'); expect(create.request.method).toBe('POST'); expect(create.request.withCredentials).toBe(true); expect(create.request.body).toEqual(content); create.flush({});
+    service.deleteDraft(id).subscribe(); const deletion = http.expectOne(`/api/admin/experience/${id}`); expect(deletion.request.method).toBe('DELETE'); expect(deletion.request.withCredentials).toBe(true); deletion.flush(null);
     service.moveExperience(id, 'up').subscribe(); const order = http.expectOne(`/api/admin/experience/${id}/order`); expect(order.request.method).toBe('PATCH'); expect(order.request.withCredentials).toBe(true); expect(order.request.body).toEqual({ direction: 'up' }); order.flush([]); http.verify();
   });
 });

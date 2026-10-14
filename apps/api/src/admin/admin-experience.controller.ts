@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ExperienceService } from '../experience/experience.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
@@ -40,6 +40,18 @@ export class AdminExperienceController {
   @ApiForbiddenResponse()
   async createDraft(@Body() body: CreateExperienceDraftDto) {
     return this.experience.createDraft(this.validContent(body));
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiNoContentResponse({ description: 'Draft experience deleted.' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse()
+  @ApiNotFoundResponse({ description: 'Experience not found.' })
+  @ApiConflictResponse({ description: 'Only Draft experiences can be deleted.' })
+  deleteDraft(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.experience.deleteDraft(id);
   }
 
   @Get(':id')

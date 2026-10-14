@@ -98,6 +98,11 @@ export class DrizzleExperiencePersistence implements ExperiencePersistence {
     });
   }
 
+  async deleteDraft(id: string): Promise<boolean> {
+    const deleted = await this.database.db.delete(experiences).where(and(eq(experiences.id, id), eq(experiences.status, 'draft'))).returning({ id: experiences.id });
+    return deleted.length === 1;
+  }
+
   async moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined> {
     return this.database.db.transaction(async (transaction) => {
       const ordered = await transaction.select(this.adminProjection).from(experiences).orderBy(asc(experiences.displayOrder));

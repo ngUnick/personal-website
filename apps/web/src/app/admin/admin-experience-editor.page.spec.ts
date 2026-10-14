@@ -73,4 +73,23 @@ describe('AdminExperienceEditorPage', () => {
     await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), updateContent: () => of(experience), updateStatus: () => throwError(() => new Error('status failed')) } }] }).compileComponents();
     const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable(); (fixture.componentInstance as any).updateStatus(); fixture.detectChanges(); expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to update publication status');
   });
+
+  it('shows deletion only for Drafts and returns to the Experience list after deletion', async () => {
+    const navigations: string[] = []; let deleted: string | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: (url: string) => { navigations.push(url); return Promise.resolve(true); } } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), deleteDraft: (id: string) => { deleted = id; return of(undefined); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).toContain('Delete draft'); (fixture.componentInstance as any).deleteDraft();
+    expect(deleted).toBe('id'); expect(navigations).toEqual(['/admin/experience']);
+  });
+
+  it('hides deletion for non-Drafts and reports deletion failures accessibly', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of({ ...experience, status: 'published' as const }), deleteDraft: () => throwError(() => new Error('delete failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminExperienceEditorPage); fixture.detectChanges(); await fixture.whenStable();
+    expect(fixture.nativeElement.textContent).not.toContain('Delete draft');
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [AdminExperienceEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'id' } } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminExperienceDataAccess, useValue: { getExperience: () => of(experience), deleteDraft: () => throwError(() => new Error('delete failed')) } }] }).compileComponents();
+    const draftFixture = TestBed.createComponent(AdminExperienceEditorPage); draftFixture.detectChanges(); await draftFixture.whenStable(); (draftFixture.componentInstance as any).deleteDraft(); draftFixture.detectChanges();
+    expect(draftFixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('Unable to delete this draft');
+  });
 });

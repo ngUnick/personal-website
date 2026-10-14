@@ -16,5 +16,6 @@ export class AdminExperienceHttpService extends AdminExperienceDataAccess {
   updateOrganizationUrl(id: string, organizationUrl: string | null): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/organization-url`, { organizationUrl }, { withCredentials: true }); }
   updateTechnologies(id: string, technologyIds: string[]): Observable<AdminExperienceDetail> { return this.http.patch<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience/${id}/technologies`, { technologyIds }, { withCredentials: true }); }
   createDraft(input: CreateExperienceDraft): Observable<AdminExperienceDetail> { return this.http.post<AdminExperienceDetail>(`${this.apiBaseUrl}/admin/experience`, input, { withCredentials: true }); }
+  deleteDraft(id: string): Observable<void> { return this.http.delete<void>(`${this.apiBaseUrl}/admin/experience/${id}`, { withCredentials: true }); }
   moveExperience(id: string, direction: ExperienceOrderDirection): Observable<AdminExperience[]> { return this.http.patch<AdminExperience[]>(`${this.apiBaseUrl}/admin/experience/${id}/order`, { direction }, { withCredentials: true }); }
 }

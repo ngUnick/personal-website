@@ -17,5 +17,6 @@ export abstract class AdminExperienceDataAccess {
   abstract updateOrganizationUrl(id: string, organizationUrl: string | null): Observable<AdminExperienceDetail>;
   abstract updateTechnologies(id: string, technologyIds: string[]): Observable<AdminExperienceDetail>;
   abstract createDraft(input: CreateExperienceDraft): Observable<AdminExperienceDetail>;
+  abstract deleteDraft(id: string): Observable<void>;
   abstract moveExperience(id: string, direction: ExperienceOrderDirection): Observable<AdminExperience[]>;
 }

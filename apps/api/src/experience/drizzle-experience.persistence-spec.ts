@@ -261,6 +261,29 @@ describe('DrizzleExperiencePersistence', () => {
     }
   });
 
+  it('deletes only Draft Experiences, cascades technologies, and preserves other records', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleExperiencePersistence); const database = moduleFixture.get(DatabaseService);
+    const draft = { id: '00000000-0000-4000-8000-000000000071', organization: 'Deletable Draft Studio', role: 'Engineer', summary: 'Fake deletion fixture.', startDate: '2025-01-01', endDate: null, status: 'draft' as const, featured: false, displayOrder: 71 };
+    const published = { ...draft, id: '00000000-0000-4000-8000-000000000072', organization: 'Undeletable Published Studio', status: 'published' as const, displayOrder: 72 };
+    const archived = { ...draft, id: '00000000-0000-4000-8000-000000000073', organization: 'Undeletable Archived Studio', status: 'archived' as const, displayOrder: 73 };
+    await database.db.insert(experiences).values([draft, published, archived]);
+    await database.db.insert(experienceTechnologies).values({ experienceId: draft.id, technologyId: '00000000-0000-4000-8000-000000000040' });
+    try {
+      await expect(persistence.deleteDraft('00000000-0000-4000-8000-000000000099')).resolves.toBe(false);
+      await expect(persistence.deleteDraft(published.id)).resolves.toBe(false);
+      await expect(persistence.deleteDraft(archived.id)).resolves.toBe(false);
+      await expect(persistence.deleteDraft(draft.id)).resolves.toBe(true);
+      expect(await persistence.findForAdminById(draft.id)).toBeUndefined();
+      expect(await database.db.select().from(experienceTechnologies).where(eq(experienceTechnologies.experienceId, draft.id))).toEqual([]);
+      expect(await persistence.findForAdminById(published.id)).toMatchObject({ status: 'published', displayOrder: 72 });
+      expect(await persistence.findForAdminById(archived.id)).toMatchObject({ status: 'archived', displayOrder: 73 });
+    } finally {
+      await database.db.delete(experiences).where(eq(experiences.id, published.id));
+      await database.db.delete(experiences).where(eq(experiences.id, archived.id));
+    }
+  });
+
   it('moves adjacent Experience records without changing their content or status', async () => {
     moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleExperiencePersistence] }).compile();
     const persistence = moduleFixture.get(DrizzleExperiencePersistence);

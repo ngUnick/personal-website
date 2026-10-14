@@ -43,6 +43,7 @@ export interface ExperiencePersistence {
   updateOrganizationUrl(id: string, organizationUrl: string | null): Promise<AdminPersistedExperience | undefined>;
   updateTechnologies(id: string, input: ExperienceTechnologyUpdate): Promise<AdminPersistedExperience | undefined>;
   createDraft(input: CreateExperienceDraft): Promise<AdminPersistedExperience>;
+  deleteDraft(id: string): Promise<boolean>;
   moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminPersistedExperience[] | undefined>;
 }
 

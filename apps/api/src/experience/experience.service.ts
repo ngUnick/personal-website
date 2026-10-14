@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ExperienceResponseDto } from './experience-response.dto.js';
 import { EXPERIENCE_PERSISTENCE } from './experience.persistence.js';
 import type { ExperienceContentUpdate, ExperiencePersistence, AdminPersistedExperience, ExperiencePublicationStatus, CreateExperienceDraft, ExperienceOrderDirection } from './experience.persistence.js';
@@ -62,6 +62,13 @@ export class ExperienceService {
 
   async createDraft(input: CreateExperienceDraft): Promise<AdminExperienceDetail> {
     return this.toAdminDetail(await this.experiencePersistence.createDraft(input));
+  }
+
+  async deleteDraft(id: string): Promise<void> {
+    const experience = await this.experiencePersistence.findForAdminById(id);
+    if (!experience) throw new NotFoundException('Experience not found.');
+    if (experience.status !== 'draft') throw new ConflictException('Only Draft experiences can be deleted.');
+    if (!await this.experiencePersistence.deleteDraft(id)) throw new NotFoundException('Experience not found.');
   }
 
   async moveExperience(id: string, direction: ExperienceOrderDirection): Promise<AdminExperience[]> {
