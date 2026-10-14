@@ -75,6 +75,15 @@ describe('AdminProjectsHttpService', () => {
     request.flush([]); http.verify();
   });
 
+  it('uses the credentialed draft deletion endpoint', () => {
+    TestBed.configureTestingModule({ providers: [AdminProjectsHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
+    const service = TestBed.inject(AdminProjectsHttpService); const http = TestBed.inject(HttpTestingController);
+    service.deleteDraft('draft-placeholder-project').subscribe();
+    const request = http.expectOne('/api/admin/projects/draft-placeholder-project');
+    expect(request.request.method).toBe('DELETE'); expect(request.request.withCredentials).toBe(true);
+    request.flush(null); http.verify();
+  });
+
   it('uses the credentialed completion-date endpoint', () => {
     TestBed.configureTestingModule({ providers: [AdminProjectsHttpService, provideHttpClient(), provideHttpClientTesting(), { provide: API_BASE_URL, useValue: '/api' }] });
     const service = TestBed.inject(AdminProjectsHttpService); const http = TestBed.inject(HttpTestingController);

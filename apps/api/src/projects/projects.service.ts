@@ -114,6 +114,13 @@ export class ProjectsService {
     return this.toAdminProjectDetail(project);
   }
 
+  async deleteDraft(slug: string): Promise<void> {
+    const project = await this.projectsPersistence.findForAdminBySlug(slug);
+    if (!project) throw new NotFoundException('Project not found.');
+    if (project.status !== 'draft') throw new ConflictException('Only draft projects can be deleted.');
+    if (!await this.projectsPersistence.deleteDraft(slug)) throw new NotFoundException('Project not found.');
+  }
+
   private toAdminProject(project: AdminPersistedProject): AdminProject {
     const { slug, title, status, featured } = project;
     return { slug, title, status, featured };

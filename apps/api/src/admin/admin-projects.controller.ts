@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ProjectsService } from '../projects/projects.service.js';
 import { AdminSessionGuard } from './admin-session.guard.js';
 import { TrustedOriginGuard } from './trusted-origin.guard.js';
@@ -49,6 +49,18 @@ export class AdminProjectsController {
     const summary = typeof body?.summary === 'string' ? body.summary.trim() : '';
     if (!slug || !title || !summary || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new BadRequestException('A lowercase kebab-case slug, title, and summary are required.');
     return this.projects.createDraft(slug, title, summary);
+  }
+
+  @Delete(':slug')
+  @HttpCode(204)
+  @UseGuards(AdminSessionGuard, TrustedOriginGuard)
+  @ApiNoContentResponse({ description: 'Draft project deleted.' })
+  @ApiUnauthorizedResponse()
+  @ApiForbiddenResponse({ description: 'A trusted origin is required.' })
+  @ApiNotFoundResponse({ description: 'Project not found.' })
+  @ApiConflictResponse({ description: 'Only Draft projects can be deleted.' })
+  deleteDraft(@Param('slug') slug: string) {
+    return this.projects.deleteDraft(slug);
   }
 
   @Get(':slug')

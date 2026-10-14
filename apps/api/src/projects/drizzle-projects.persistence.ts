@@ -203,6 +203,14 @@ export class DrizzleProjectsPersistence implements ProjectsPersistence {
     });
   }
 
+  async deleteDraft(slug: string) {
+    const [deleted] = await this.database.db
+      .delete(projects)
+      .where(and(eq(projects.slug, slug), eq(projects.status, 'draft')))
+      .returning({ slug: projects.slug });
+    return Boolean(deleted);
+  }
+
   private async findTechnologyIds(slug: string): Promise<string[]> {
     const rows = await this.database.db.select({ id: technologies.id }).from(projectTechnologies).innerJoin(projects, eq(projectTechnologies.projectId, projects.id)).innerJoin(technologies, eq(projectTechnologies.technologyId, technologies.id)).where(eq(projects.slug, slug)).orderBy(asc(technologies.displayOrder));
     return rows.map(row => row.id);

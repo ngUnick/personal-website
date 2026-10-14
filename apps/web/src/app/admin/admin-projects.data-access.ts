@@ -19,5 +19,6 @@ export abstract class AdminProjectsDataAccess {
   abstract updateTechnologies(slug: string, technologyIds: string[]): Observable<AdminProjectDetail>;
   abstract updateStatus(slug: string, status: ProjectPublicationStatus): Observable<AdminProjectDetail>;
   abstract createDraft(input: CreateProjectDraft): Observable<AdminProjectDetail>;
+  abstract deleteDraft(slug: string): Observable<void>;
   abstract moveProject(slug: string, direction: ProjectOrderDirection): Observable<AdminProject[]>;
 }

@@ -41,6 +41,7 @@ export interface ProjectsPersistence {
   updateStatus(slug: string, status: ProjectPublicationStatus): Promise<AdminPersistedProject | undefined>;
   moveProject(slug: string, direction: ProjectOrderDirection): Promise<AdminPersistedProject[] | undefined>;
   createDraft(input: CreateProjectDraft): Promise<AdminPersistedProject | undefined>;
+  deleteDraft(slug: string): Promise<boolean>;
 }
 
 export const PROJECTS_PERSISTENCE = Symbol('PROJECTS_PERSISTENCE');

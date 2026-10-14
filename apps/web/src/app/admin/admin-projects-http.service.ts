@@ -19,5 +19,6 @@ export class AdminProjectsHttpService extends AdminProjectsDataAccess {
   updateTechnologies(slug: string, technologyIds: string[]): Observable<AdminProjectDetail> { return this.http.patch<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects/${slug}/technologies`, { technologyIds }, { withCredentials: true }); }
   updateStatus(slug: string, status: ProjectPublicationStatus): Observable<AdminProjectDetail> { return this.http.patch<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects/${slug}/status`, { status }, { withCredentials: true }); }
   createDraft(input: CreateProjectDraft): Observable<AdminProjectDetail> { return this.http.post<AdminProjectDetail>(`${this.apiBaseUrl}/admin/projects`, input, { withCredentials: true }); }
+  deleteDraft(slug: string): Observable<void> { return this.http.delete<void>(`${this.apiBaseUrl}/admin/projects/${slug}`, { withCredentials: true }); }
   moveProject(slug: string, direction: ProjectOrderDirection): Observable<AdminProject[]> { return this.http.patch<AdminProject[]>(`${this.apiBaseUrl}/admin/projects/${slug}/order`, { direction }, { withCredentials: true }); }
 }

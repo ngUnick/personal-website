@@ -170,4 +170,27 @@ describe('AdminProjectEditorPage', () => {
     expect(component.completionDateError()).toBe(true);
     expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to save project completion date. Please try again.');
   });
+
+  it('shows draft deletion only for drafts and returns to the project list after deletion', async () => {
+    const redirects: string[] = [];
+    let deleted: string | undefined;
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: (url: string) => { redirects.push(url); return Promise.resolve(true); } } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), deleteDraft: (slug: string) => { deleted = slug; return of(undefined); } } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Delete draft');
+    (fixture.componentInstance as any).deleteDraft();
+    expect(deleted).toBe('draft-placeholder-project'); expect(redirects).toEqual(['/admin/projects']);
+  });
+
+  it('does not show draft deletion for a published project', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'published-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'published-project', title: 'Published', summary: 'Summary', status: 'published', featured: false }) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[aria-label="Delete draft"]')).toBeNull();
+  });
+
+  it('reports draft deletion failures accessibly', async () => {
+    await TestBed.configureTestingModule({ imports: [AdminProjectEditorPage], providers: [{ provide: PLATFORM_ID, useValue: 'browser' }, { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ slug: 'draft-placeholder-project' }) } } }, { provide: Router, useValue: { navigateByUrl: () => Promise.resolve(true) } }, { provide: AdminAuthDataAccess, useValue: { getSession: () => of({ authenticated: true }) } }, { provide: AdminProjectsDataAccess, useValue: { getProject: () => of({ slug: 'draft-placeholder-project', title: 'Draft', summary: 'Summary', status: 'draft', featured: false }), deleteDraft: () => throwError(() => new Error('delete failed')) } }] }).compileComponents();
+    const fixture = TestBed.createComponent(AdminProjectEditorPage); fixture.detectChanges(); await fixture.whenStable(); (fixture.componentInstance as any).deleteDraft(); await fixture.whenStable(); fixture.detectChanges();
+    expect((fixture.componentInstance as any).deleteError()).toBe(true);
+    expect([...fixture.nativeElement.querySelectorAll('[role="alert"]')].map((alert: Element) => alert.textContent)).toContain('Unable to delete this draft. Please try again.');
+  });
 });

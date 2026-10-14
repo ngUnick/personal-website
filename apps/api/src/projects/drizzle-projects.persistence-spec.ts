@@ -3,7 +3,7 @@ import { asc, eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DatabaseModule } from '../database/database.module.js';
 import { DatabaseService } from '../database/database.service.js';
-import { projects, technologies } from '../database/schema.js';
+import { projectTechnologies, projects, technologies } from '../database/schema.js';
 import { DrizzleProjectsPersistence } from './drizzle-projects.persistence.js';
 
 describe('DrizzleProjectsPersistence', () => {
@@ -297,6 +297,26 @@ describe('DrizzleProjectsPersistence', () => {
     } finally {
       await database.db.delete(projects).where(eq(projects.slug, input.slug));
     }
+  });
+
+  it('deletes only Drafts, cascades their technologies, and leaves other Projects untouched', async () => {
+    moduleFixture = await Test.createTestingModule({ imports: [DatabaseModule], providers: [DrizzleProjectsPersistence] }).compile();
+    const persistence = moduleFixture.get(DrizzleProjectsPersistence); const database = moduleFixture.get(DatabaseService);
+    const draft = { id: '00000000-0000-4000-8000-000000000061', slug: 'deletable-draft', title: 'Deletable Draft', summary: 'Fake deletion fixture.', status: 'draft' as const, featured: false, displayOrder: 61 };
+    const published = { ...draft, id: '00000000-0000-4000-8000-000000000062', slug: 'undeletable-published', status: 'published' as const, displayOrder: 62 };
+    const archived = { ...draft, id: '00000000-0000-4000-8000-000000000063', slug: 'undeletable-archived', status: 'archived' as const, displayOrder: 63 };
+    await database.db.insert(projects).values([draft, published, archived]);
+    await database.db.insert(projectTechnologies).values({ projectId: draft.id, technologyId: '00000000-0000-4000-8000-000000000040' });
+    try {
+      await expect(persistence.deleteDraft('missing-draft')).resolves.toBe(false);
+      await expect(persistence.deleteDraft(published.slug)).resolves.toBe(false);
+      await expect(persistence.deleteDraft(archived.slug)).resolves.toBe(false);
+      await expect(persistence.deleteDraft(draft.slug)).resolves.toBe(true);
+      expect(await persistence.findForAdminBySlug(draft.slug)).toBeUndefined();
+      expect(await database.db.select().from(projectTechnologies).where(eq(projectTechnologies.projectId, draft.id))).toEqual([]);
+      expect(await persistence.findForAdminBySlug(published.slug)).toMatchObject({ status: 'published', displayOrder: 62 });
+      expect(await persistence.findForAdminBySlug(archived.slug)).toMatchObject({ status: 'archived', displayOrder: 63 });
+    } finally { await database.db.delete(projects).where(eq(projects.slug, published.slug)); await database.db.delete(projects).where(eq(projects.slug, archived.slug)); }
   });
 
   it('moves adjacent projects without changing their content or state', async () => {

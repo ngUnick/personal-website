@@ -21,4 +21,12 @@ describe('AdminProjectsController', () => {
       expect(() => controller.updateRole('placeholder-project', body as never)).toThrow(BadRequestException);
     }
   });
+
+  it('delegates draft deletion without accepting a request body', async () => {
+    const deleteDraft = vi.fn().mockResolvedValue(undefined);
+    const controller = new AdminProjectsController({ deleteDraft } as unknown as ProjectsService);
+
+    await expect(controller.deleteDraft('draft-placeholder-project')).resolves.toBeUndefined();
+    expect(deleteDraft).toHaveBeenCalledWith('draft-placeholder-project');
+  });
 });
